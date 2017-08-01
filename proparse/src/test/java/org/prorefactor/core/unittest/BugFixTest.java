@@ -412,6 +412,11 @@ public class BugFixTest {
   }
 
   @Test
+  public void testOnEvent() {
+    genericTest("onEvent.p");
+  }
+
+  @Test
   public void testGetDbClient() {
     genericTest("getdbclient.p");
   }

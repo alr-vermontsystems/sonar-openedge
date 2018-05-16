@@ -472,6 +472,11 @@ public class BugFixTest {
   }
 
   @Test
+  public void testDefined() throws ANTLRException {
+    genericTest("defined.p");
+  }
+
+  @Test
   public void testTTLikeDB02() throws ANTLRException {
     ParseUnit unit = new ParseUnit(new File("src/test/resources/data/bugsfixed/ttlikedb02.p"), session);
     assertNull(unit.getTopNode());

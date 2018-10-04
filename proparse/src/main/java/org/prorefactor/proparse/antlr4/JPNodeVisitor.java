@@ -2818,7 +2818,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
    * ANTLR2 construct ruleName: rule | token ... {## = #([NodeType], ##, [TailNodeType]);}
    */
   private JPNode.Builder createTree(RuleNode ctx, ABLNodeType parentType, ABLNodeType tail) {
-    JPNode.Builder node = new JPNode.Builder(parentType);
+    JPNode.Builder node = new JPNode.Builder(parentType).setRuleNode(ctx);
     JPNode.Builder down = createNode(ctx);
     node.setDown(down);
     if (down == null) {

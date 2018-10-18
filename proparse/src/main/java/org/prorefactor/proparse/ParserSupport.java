@@ -206,7 +206,7 @@ public class ParserSupport {
 
   public void defVarInline() {
     if (lastFieldIDNode == null) {
-      LOG.warn("Trying to define inline variable, but no ID symbol availble");
+      LOG.warn("Trying to define inline variable, but no ID symbol available");
     } else {
       currentScope.defineInlineVar(lastFieldIDNode.getText());
       // I'm not sure if this would ever be inheritable. Doesn't hurt to check.
@@ -217,7 +217,7 @@ public class ParserSupport {
   // TEMP-ANTLR4
   public void defVarInlineAntlr4() {
     if (lastFieldIDStr == null) {
-      LOG.warn("Trying to define inline variable, but no ID symbol availble");
+      LOG.warn("Trying to define inline variable, but no ID symbol available");
     } else {
       currentScope.defineInlineVar(lastFieldIDStr);
     }

@@ -9,6 +9,9 @@ import org.prorefactor.proparse.antlr4.Proparse.ProgramContext;
 import org.prorefactor.proparse.antlr4.nodetypes.BlockNode;
 import org.prorefactor.proparse.antlr4.treeparser.Block;
 import org.prorefactor.refactor.RefactorSession;
+import org.prorefactor.treeparser.IBlock;
+import org.prorefactor.treeparser.ITreeParserRootSymbolScope;
+import org.prorefactor.treeparser.ITreeParserSymbolScope;
 import org.prorefactor.treeparser.ParseUnit;
 import org.prorefactor.treeparser.TreeParserRootSymbolScope;
 import org.prorefactor.treeparser.TreeParserSymbolScope;
@@ -19,10 +22,10 @@ public class TreeParser extends ProparseBaseListener {
   private final ParserSupport support;
   private final RefactorSession refSession;
   private final ParseUnit unit;
-  private final TreeParserRootSymbolScope rootScope;
+  private final ITreeParserRootSymbolScope rootScope;
 
-  private Block currentBlock;
-  private TreeParserSymbolScope currentScope;
+  private IBlock currentBlock;
+  private ITreeParserSymbolScope currentScope;
   
   /*
    * Note that blockStack is *only* valid for determining the current block - the stack itself cannot be used for
@@ -31,7 +34,7 @@ public class TreeParser extends ProparseBaseListener {
    * is always the program block, but a programmer may code a scope into a non-root block... which we need to make
    * current again once done inside the scope.
    */
-  private List<Block> blockStack = new ArrayList<>();
+  private List<IBlock> blockStack = new ArrayList<>();
 
   public TreeParser(ParserSupport support, RefactorSession session, ParseUnit unit) {
     this.support = support;
@@ -44,12 +47,12 @@ public class TreeParser extends ProparseBaseListener {
 
   }
 
-  private Block popBlock() {
+  private IBlock popBlock() {
     blockStack.remove(blockStack.size() - 1);
     return blockStack.get(blockStack.size() - 1);
   }
 
-  private Block pushBlock(Block block) {
+  private IBlock pushBlock(IBlock block) {
     blockStack.add(block);
     return block;
   }

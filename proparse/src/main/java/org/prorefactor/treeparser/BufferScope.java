@@ -26,7 +26,7 @@ public class BufferScope {
   private IBlock block;
   private ITableBuffer symbol;
 
-  enum Strength {
+  public enum Strength {
     STRONG(1), WEAK(2), REFERENCE(3),
     /**
      * A "hidden cursor" is a BufferScope which has no side-effects on surrounding blocks like strong, weak, and

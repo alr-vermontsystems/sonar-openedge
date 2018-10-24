@@ -20,8 +20,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.prorefactor.core.JPNode;
 import org.prorefactor.core.nodetypes.RecordNameNode;
+import org.prorefactor.proparse.antlr4.JPNode;
 import org.prorefactor.treeparser.BufferScope.Strength;
 import org.prorefactor.treeparser.FieldLookupResult;
 import org.prorefactor.treeparser.IBlock;

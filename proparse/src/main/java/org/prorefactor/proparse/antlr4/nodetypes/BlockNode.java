@@ -14,13 +14,25 @@
  ********************************************************************************/
 package org.prorefactor.proparse.antlr4.nodetypes;
 
+import org.prorefactor.core.IConstants;
 import org.prorefactor.proparse.antlr4.JPNode;
 import org.prorefactor.proparse.antlr4.ProToken;
+import org.prorefactor.treeparser.IBlock;
 
 public class BlockNode extends JPNode {
 
   public BlockNode(ProToken t) {
     super(t);
+  }
+
+  public IBlock getBlock() {
+    IBlock block = (IBlock) getLink(IConstants.BLOCK);
+    assert block != null;
+    return block;
+  }
+
+  public void setBlock(IBlock block) {
+    setLink(IConstants.BLOCK, block);
   }
 
 }

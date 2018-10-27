@@ -17,6 +17,9 @@
 // This tree parser adds base attributes to the tree, such as name resolution, scoping, etc.
 // To find actions taken within this grammar, search for "action.", which is the tree parser action object.
 
+// Migration to ANTLR4 comments
+// TRANSLATED, SPLIT, REMOVED, TODO
+
 header {
   package org.prorefactor.treeparser01;
 
@@ -1194,37 +1197,37 @@ dostate:
     )
   ;
 
-downstate:
+downstate: // TRANSLATED
     #(  head:DOWN  { action.frameInitializingStatement(#head); }
       ((stream_name_or_handle (expression)?) | (expression (stream_name_or_handle)?))? (framephrase)?
       state_end  { action.frameStatementEnd(); }
     )
   ;
 
-emptytemptablestate:
+emptytemptablestate: // TRANSLATED
     #(EMPTY TEMPTABLE tbl[ContextQualifier.TEMPTABLESYMBOL] (NOERROR_KW)? state_end )
   ;
 
-enablestate:
+enablestate: // TRANSLATED
     #(  head:ENABLE  { action.frameEnablingStatement(#head); }
       (UNLESSHIDDEN)? (#(ALL (#(EXCEPT (fld[ContextQualifier.SYMBOL])*))?) | (form_item2[ContextQualifier.SYMBOL])+)?
       (#(IN_KW WINDOW expression))? (framephrase)? state_end  { action.frameStatementEnd(); }
     )
   ;
 
-exportstate:
+exportstate: // TRANSLATED
     #(EXPORT (stream_name_or_handle)? (#(DELIMITER constant))? (display_item)* (#(EXCEPT (fld1[ContextQualifier.SYMBOL])*))? (NOLOBS)? state_end )
   ;
 
-extentphrase:
+extentphrase: // TRANSLATED
     #(ex:EXTENT (expression)?)
   ;
 
-extentphrase_def_symbol:
+extentphrase_def_symbol: // TRANSLATED 
     #(ex:EXTENT (expression)? {action.defExtent(#ex);} )
   ;
 
-fieldoption:
+fieldoption: // TRANSLATED
     #(as:AS
       (  CLASS TYPE_NAME
       |  datatype_field
@@ -1255,7 +1258,7 @@ fieldoption:
   |  SERIALIZEHIDDEN
   ;
 
-findstate:
+findstate: // TRANSLATED
     #(  FIND (findwhich)?
       #(  r:RECORD_NAME
         {action.recordNameNode(#r, ContextQualifier.INIT);}
@@ -1265,11 +1268,11 @@ findstate:
     )
   ;
 
-fixcodepage_pseudfn:
+fixcodepage_pseudfn: // TODO
     #(FIXCODEPAGE LEFTPAREN fld[ContextQualifier.SYMBOL] RIGHTPAREN )
   ;
 
-forstate:
+forstate: // TRANSLATED
     #(  f:FOR 
       {  action.blockBegin(#f); 
         action.frameBlockCheck(#f);
@@ -1280,7 +1283,7 @@ forstate:
   ;
 
 // Also used in PRESELECT
-for_record_spec2[ContextQualifier contextQualifier]:
+for_record_spec2[ContextQualifier contextQualifier]: // TRANSLATED
      (findwhich)?
     #(  rp1:RECORD_NAME
       {action.recordNameNode(#rp1, contextQualifier);}
@@ -1297,7 +1300,7 @@ for_record_spec2[ContextQualifier contextQualifier]:
 form_item2[ContextQualifier contextQualifier]
 {  /* RULE_INIT */ ContextQualifier tblQualifier = contextQualifier;
   if (contextQualifier==ContextQualifier.SYMBOL) tblQualifier = ContextQualifier.BUFFERSYMBOL;
-}:
+}: // TRANSLATED
     #(  fi:Form_item
       (  tbl[tblQualifier]  {action.formItem(#fi);}
       |  #(TEXT LEFTPAREN (form_item2[contextQualifier])* RIGHTPAREN )
@@ -1313,7 +1316,7 @@ form_item2[ContextQualifier contextQualifier]
     )
   ;
 
-formstate:
+formstate: // TRANSLATED
     #(  head:FORMAT  { action.frameInitializingStatement(#head); }
       (form_item2[ContextQualifier.SYMBOL])*
       (  #(HEADER (display_item)+ )
@@ -1325,7 +1328,7 @@ formstate:
     )
   ;
 
-formatphrase:
+formatphrase: // TRANSLATED
     #(  Format_phrase
       (  #(AS datatype_var )
       |  atphrase
@@ -1355,11 +1358,11 @@ formatphrase:
     )
   ;
 
-frame_ref:
+frame_ref: // TRANSLATED
     #(FRAME f:ID) { action.frameRef(#f); }
   ;
 
-framephrase:
+framephrase: // TRANSLATED
     #(  WITH
       (  #(ACCUMULATE (expression)? )
       |  ATTRSPACE | NOATTRSPACE
@@ -1413,7 +1416,7 @@ framephrase:
     )
   ;
 
-functionstate:
+functionstate: // TRANSLATED
     #(  f:FUNCTION id:ID {action.funcBegin(#f, #id);}
       (RETURNS|RETURN)?
       {action.routineReturnDatatype(functionstate_AST_in);}
@@ -1433,7 +1436,7 @@ functionstate:
     {  action.funcEnd(#f); }
   ;
 
-function_param { /* RULE_INIT */ action.paramForRoutine(function_param_AST_in); }:
+function_param { /* RULE_INIT */ action.paramForRoutine(function_param_AST_in); }: // SPLIT
      (
       #(  b:BUFFER (id:ID)? FOR rec:tbl[ContextQualifier.SYMBOL] (PRESELECT)?
         {  if (#id!=null) {
@@ -1452,7 +1455,7 @@ function_param { /* RULE_INIT */ action.paramForRoutine(function_param_AST_in); 
     { action.paramEnd(); }
   ;
 
-function_param_arg:
+function_param_arg: // SPLIT
     TABLE (FOR)? tb1:tbl[ContextQualifier.TEMPTABLESYMBOL] (APPEND)? (BIND {action.paramBind();})?
     {  action.paramProgressType(TEMPTABLE);
       action.paramSymbol(#tb1);
@@ -1485,11 +1488,11 @@ function_param_arg:
     (CLASS TYPE_NAME | datatype_var) (extentphrase_def_symbol)?
   ;
 
-getkeyvaluestate:
+getkeyvaluestate: // TRANSLATED
     #(GETKEYVALUE SECTION expression KEY (DEFAULT|expression) VALUE fld[ContextQualifier.UPDATING] state_end )
   ;
 
-importstate:
+importstate: // TRANSLATED
     #(  IMPORT (stream_name_or_handle)?
       ( #(DELIMITER constant) | UNFORMATTED )?
       (  tbl[ContextQualifier.UPDATING] (#(EXCEPT (fld1[ContextQualifier.SYMBOL])*))?
@@ -1499,18 +1502,18 @@ importstate:
     )
   ;
 
-insertstate:
+insertstate: // TRANSLATED
     #(  head:INSERT  { action.frameInitializingStatement(#head); }
       tbl[ContextQualifier.UPDATING] (#(EXCEPT (fld1[ContextQualifier.SYMBOL])*))? (#(USING (ROWID|RECID) expression))?
       (framephrase)? (NOERROR_KW)? state_end  { action.frameStatementEnd(); }
     )
   ;
 
-ldbnamefunc:
+ldbnamefunc: // TRANSLATED
     #(LDBNAME LEFTPAREN (#(BUFFER tbl[ContextQualifier.BUFFERSYMBOL]) | expression) RIGHTPAREN )
   ;
 
-messagestate:
+messagestate: // TRANSLATED
     #(  MESSAGE
       ( #(COLOR anyorvalue) )?
       ( #(Form_item (skipphrase | expression) ) )* // No call to formItem() for MESSAGE.
@@ -1527,7 +1530,7 @@ messagestate:
     )
   ;
 
-methodstate { /* RULE_INIT */ JPNode returnTypeNode = null; }:
+methodstate { /* RULE_INIT */ JPNode returnTypeNode = null; }: // TRANSLATED
     #(  m:METHOD def_modifiers
       {returnTypeNode = (JPNode) _t;}
       (  VOID
@@ -1550,11 +1553,11 @@ methodstate { /* RULE_INIT */ JPNode returnTypeNode = null; }:
   ;
 
 // Note that NEXT-PROMPT would not initialize a frame, add fields to a frame, etc.
-nextpromptstate:
+nextpromptstate: // TRANSLATED
     #(NEXTPROMPT fld[ContextQualifier.SYMBOL] (framephrase)? state_end )
   ;
 
-onstate:
+onstate: // SPLIT
     #(  onNode:ON
       {action.scopeAdd(#onNode);}
       (  (ASSIGN|CREATE|DELETE_KW|FIND|WRITE)=>
@@ -1606,7 +1609,7 @@ onstate:
     )
   ;
 
-openquerystate:
+openquerystate: // TRANSLATED
     #(  OPEN QUERY ID (FOR|PRESELECT) for_record_spec2[ContextQualifier.INIT]
       (  querytuningphrase
       |  BREAK
@@ -1619,7 +1622,7 @@ openquerystate:
     )
   ;
 
-procedurestate:
+procedurestate: // TRANSLATED
     #(  p:PROCEDURE id:ID
       {  action.procedureBegin(#p, #id); }
       (  #(  EXTERNAL constant
@@ -1638,7 +1641,7 @@ procedurestate:
     )
   ;
 
-promptforstate:
+promptforstate: // TRANSLATED
     #(  head:PROMPTFOR  { action.frameEnablingStatement(#head); }
       (stream_name_or_handle)? (UNLESSHIDDEN)? (form_item2[ContextQualifier.SYMBOL])*
       (goonphrase)?  (#(EXCEPT (fld1[ContextQualifier.SYMBOL])*))?  (#(IN_KW WINDOW expression))?
@@ -1647,7 +1650,7 @@ promptforstate:
     )
   ;
 
-publishstate:
+publishstate: // TRANSLATED
     #(  pu:PUBLISH expression (#(FROM expression) )?
       {action.callBegin(#pu);}
       (parameterlist)?
@@ -1656,16 +1659,16 @@ publishstate:
     )
   ;
 
-rawtransferstate:
+rawtransferstate: // TRANSLATED
     #(RAWTRANSFER (BUFFER|FIELD)? (tbl[ContextQualifier.REF]|fld[ContextQualifier.REF]) TO (BUFFER|FIELD)? (tbl[ContextQualifier.UPDATING]|fld[ContextQualifier.UPDATING]) (NOERROR_KW)? state_end )
   ;
 
-record_fields:
+record_fields: // TRANSLATED
     #(FIELDS (LEFTPAREN (fld1[ContextQualifier.SYMBOL] (#(WHEN expression))?)* RIGHTPAREN)? )
   |  #(EXCEPT (LEFTPAREN (fld1[ContextQualifier.SYMBOL] (#(WHEN expression))?)* RIGHTPAREN)? )
   ;
 
-recordphrase:
+recordphrase: // TRANSLATED
     (record_fields)? (options{greedy=true;}:TODAY|NOW|constant)?
     (  #(LEFT OUTERJOIN )
     |  OUTERJOIN
@@ -1681,11 +1684,11 @@ recordphrase:
     )*
   ;
 
-releasestate:
+releasestate: // TRANSLATED
     #(RELEASE tbl[ContextQualifier.REF] (NOERROR_KW)? state_end )
   ;
 
-repeatstate:
+repeatstate: // TRANSLATED
     #(  r:REPEAT
       {  action.blockBegin(#r);
         action.frameBlockCheck(#r);
@@ -1695,7 +1698,7 @@ repeatstate:
     )
   ;
 
-runstate:
+runstate: // TRANSLATED
     #(  r:RUN filenameorvalue { action.runBegin(#r); } 
       (LEFTANGLE LEFTANGLE filenameorvalue RIGHTANGLE RIGHTANGLE)?
       (  #(PERSISTENT ( #(SET (hnd:fld[ContextQualifier.UPDATING] { action.runPersistentSet(#hnd); } )? ) )? )
@@ -1716,7 +1719,7 @@ runstate:
     )
   ;
 
-runstoredprocedurestate:
+runstoredprocedurestate: // TRANSLATED
     #(  r:RUN STOREDPROCEDURE ID (assign_equal)? (NOERROR_KW)?
       {action.callBegin(#r);}
       (parameterlist)?
@@ -1725,18 +1728,18 @@ runstoredprocedurestate:
     )
   ;
 
-runsuperstate:
+runsuperstate: // TRANSLATED
     #(r:RUN {action.callBegin(#r);} SUPER (parameterlist)? (NOERROR_KW)? state_end {action.callEnd();} )
   ;
 
-scrollstate:
+scrollstate: // TRANSLATED
     #(  head:SCROLL  { action.frameInitializingStatement(#head); }
       (FROMCURRENT)? (UP)? (DOWN)? (framephrase)?
       state_end  { action.frameStatementEnd(); }
     )
   ;
 
-setstate:
+setstate: // TRANSLATED
     #(  head:SET  { action.frameInitializingStatement(#head); }
       (stream_name_or_handle)? (UNLESSHIDDEN)?
       (form_item2[ContextQualifier.UPDATING])*
@@ -1746,11 +1749,11 @@ setstate:
     )
   ;
 
-systemdialogcolorstate:
+systemdialogcolorstate: // TRANSLATED
     #(SYSTEMDIALOG COLOR expression ( #(UPDATE fld[ContextQualifier.UPDATING]) )? (#(IN_KW WINDOW expression))? state_end )
   ;
 
-systemdialogfontstate:
+systemdialogfontstate: // TRANSLATED
     #(  SYSTEMDIALOG FONT expression
       (  ANSIONLY
       |  FIXEDONLY
@@ -1763,7 +1766,7 @@ systemdialogfontstate:
     )
   ;
 
-systemdialoggetdirstate:
+systemdialoggetdirstate: // TRANSLATED
     #(  SYSTEMDIALOG GETDIR fld[ContextQualifier.REFUP]
       (  #(INITIALDIR expression)
       |  RETURNTOSTARTDIR
@@ -1774,7 +1777,7 @@ systemdialoggetdirstate:
     )
   ;
 
-systemdialoggetfilestate:
+systemdialoggetfilestate: // TRANSLATED
     #(  SYSTEMDIALOG GETFILE fld[ContextQualifier.REFUP]
       (  #(  FILTERS expression expression (COMMA expression expression)*
           ( #(INITIALFILTER expression ) )?
@@ -1795,18 +1798,18 @@ systemdialoggetfilestate:
     )
   ;
 
-systemdialogprintersetupstate:
+systemdialogprintersetupstate: // TRANSLATED
     #(  SYSTEMDIALOG PRINTERSETUP
       ( #(NUMCOPIES expression) | #(UPDATE fld[ContextQualifier.UPDATING]) | LANDSCAPE | PORTRAIT | #(IN_KW WINDOW expression) )*
       state_end
     )
   ;
 
-thisobjectstate:
+thisobjectstate: // TRANSLATED
     #(to:THISOBJECT {action.callBegin(#to);} parameterlist_noroot state_end {action.callEnd();} )
   ;
 
-triggerphrase:
+triggerphrase: // TRANSLATED
     #(  TRIGGERS block_colon
       #(  Code_block
         (  #(  on:ON {action.scopeAdd(#on);}
@@ -1820,7 +1823,7 @@ triggerphrase:
     )
   ;
 
-triggerprocedurestate:
+triggerprocedurestate: // SPLIT
     #(  TRIGGER PROCEDURE FOR
       (  (CREATE|DELETE_KW|FIND|REPLICATIONCREATE|REPLICATIONDELETE)
         OF t1:tbl[ContextQualifier.SYMBOL] (label_constant)?
@@ -1853,26 +1856,26 @@ triggerprocedurestate:
     )
   ;
 
-underlinestate:
+underlinestate: // TRANSLATED
     #(  head:UNDERLINE  { action.frameInitializingStatement(#head); }
       (stream_name_or_handle)? (#(fi:Form_item fld[ContextQualifier.SYMBOL] {action.formItem(#fi);} (formatphrase)? ))* (framephrase)?
       state_end  { action.frameStatementEnd(); }
     )
   ;
 
-upstate:
+upstate: // TRANSLATED
     #(  head:UP  { action.frameInitializingStatement(#head); }
       (options{greedy=true;}:stream_name_or_handle)? (expression)? (stream_name_or_handle)? (framephrase)?
       state_end  { action.frameStatementEnd(); }
     )
   ;
 
-updatestatement:
+updatestatement: // TRANSLATED
     (#(UPDATE tbl[ContextQualifier.SYMBOL] SET))=> sqlupdatestate
   |  updatestate
   ;
 
-updatestate:
+updatestate: // TRANSLATED
     #(  head:UPDATE  { action.frameEnablingStatement(#head); }
       (UNLESSHIDDEN)?  
       (form_item2[ContextQualifier.REFUP])*
@@ -1884,15 +1887,15 @@ updatestate:
     )
   ;
 
-validatestate:
+validatestate: // TRANSLATED
     #(VALIDATE tbl[ContextQualifier.REF] (NOERROR_KW)? state_end )
   ;
 
-viewstate:
+viewstate: // TRANSLATED
     #(v:VIEW (stream_name_or_handle)? (gwidget)* (#(IN_KW WINDOW expression))? state_end {action.viewState(#v);} )
   ;
 
-waitforstate:
+waitforstate: // TRANSLATED
     #(  WAITFOR
       (  widattr (#(SET fld[ContextQualifier.UPDATING]))? // .NET WAIT-FOR.
       |  eventlist OF widgetlist
@@ -1909,7 +1912,7 @@ waitforstate:
 // Begin SQL
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-altertablestate:
+altertablestate: // REMOVED
     #(  ALTER TABLE tbl[ContextQualifier.SCHEMATABLESYMBOL]
       (  ADD COLUMN sql_col_def
       |  DROP COLUMN fld[ContextQualifier.SYMBOL]
@@ -1924,37 +1927,37 @@ altertablestate:
     )
   ;
 
-createindexstate:
+createindexstate: // REMOVED
     #(CREATE (UNIQUE)? INDEX ID ON tbl[ContextQualifier.SCHEMATABLESYMBOL] #(Field_list LEFTPAREN fld[ContextQualifier.SYMBOL] (COMMA fld[ContextQualifier.SYMBOL])* RIGHTPAREN ) state_end )
   ;
 
-createviewstate:
+createviewstate: // REMOVED
     #(CREATE VIEW ID (#(Field_list LEFTPAREN fld[ContextQualifier.SYMBOL] (COMMA fld[ContextQualifier.SYMBOL])* RIGHTPAREN ))? AS selectstatea state_end )
   ;
 
-deletefromstate:
+deletefromstate: // REMOVED
     #(  DELETE_KW FROM tbl[ContextQualifier.SCHEMATABLESYMBOL]
       ( #(WHERE (sqlexpression | #(CURRENT OF ID))? ) )?
       state_end
     )
   ;
 
-droptablestate:
+droptablestate: // REMOVED
     #(DROP TABLE tbl[ContextQualifier.SCHEMATABLESYMBOL] state_end )
   ;
 
-fetchstate:
+fetchstate: // REMOVED
     #(FETCH ID INTO fld[ContextQualifier.UPDATING] (fetch_indicator)? (COMMA fld[ContextQualifier.UPDATING] (fetch_indicator)? )* state_end )
   ;
-fetch_indicator:
+fetch_indicator: // REMOVED
     #(INDICATOR fld[ContextQualifier.UPDATING] )
   |  fld[ContextQualifier.UPDATING]
   ;
 
-grantstate:
+grantstate: // REMOVED
      #(GRANT (grant_rev_opt) ON (tbl[ContextQualifier.SCHEMATABLESYMBOL]|ID) grant_rev_to (WITH GRANT OPTION)? state_end )
   ;
-grant_rev_opt:
+grant_rev_opt: // REMOVED
     #(ALL (PRIVILEGES)? )
   |  (  SELECT | INSERT | DELETE_KW
     |  #(UPDATE (#(Field_list LEFTPAREN fld[ContextQualifier.UPDATING] (COMMA fld[ContextQualifier.UPDATING])* RIGHTPAREN ))? )
@@ -1962,7 +1965,7 @@ grant_rev_opt:
     )+
   ;
 
-insertintostate:
+insertintostate: // REMOVED
     #(  INSERT INTO tbl[ContextQualifier.SCHEMATABLESYMBOL]
       (#(Field_list LEFTPAREN fld[ContextQualifier.UPDATING] (COMMA fld[ContextQualifier.UPDATING])* RIGHTPAREN ))?
       (  #(  VALUES LEFTPAREN sqlexpression (fetch_indicator)?
@@ -1974,20 +1977,20 @@ insertintostate:
     )
   ;
 
-revokestate:
+revokestate: // REMOVED
      #(REVOKE (grant_rev_opt) ON (tbl[ContextQualifier.SCHEMATABLESYMBOL]|ID) grant_rev_to state_end )
   ;
 
 // selectstate_AST_in is the name of the input node within the Antlr generated code.
 // Hopefully Antlr won't change how that works.  :-/  I don't know if there's a "proper" way
 // of getting the next or input token for Antlr generated tree parsers.
-selectstate:
+selectstate: // REMOVED
     { action.frameInitializingStatement(selectstate_AST_in); }
     selectstatea state_end
     { action.frameStatementEnd(); }
   ;
 
-selectstatea:
+selectstatea: // REMOVED
     #(  SELECT
       (ALL | DISTINCT)?
       (  STAR
@@ -2015,18 +2018,18 @@ selectstatea:
     )
   ;
 
-select_sqltableref:
+select_sqltableref: // REMOVED
     (tbl[ContextQualifier.SCHEMATABLESYMBOL] | ID) (ID)?
   ;
 
-sqlupdatestate:
+sqlupdatestate: // REMOVED
      #(  UPDATE tbl[ContextQualifier.SCHEMATABLESYMBOL] SET sqlupdate_equal (COMMA sqlupdate_equal)*
       ( #(WHERE (sqlexpression | CURRENT OF ID) ) )?
       state_end
     )
   ;
 
-sqlupdate_equal:
+sqlupdate_equal: // REMOVED
     #(EQUAL fld[ContextQualifier.REF] sqlexpression (fetch_indicator)? )
   ;
 
@@ -2035,13 +2038,13 @@ sqlupdate_equal:
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 // also see maximumfunc and minimumfunc
-sqlaggregatefunc:
+sqlaggregatefunc: // REMOVED
     #(AVG sqlaggregatefunc_arg )
   |  #(COUNT sqlaggregatefunc_arg )
   |  #(SUM sqlaggregatefunc_arg )
   ;
 
-sqlaggregatefunc_arg:
+sqlaggregatefunc_arg: // REMOVED
     LEFTPAREN
     (  DISTINCT
       (  LEFTPAREN fld[ContextQualifier.REF] RIGHTPAREN
@@ -2057,6 +2060,6 @@ sqlaggregatefunc_arg:
 // sqlexpression 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-sql_in_val:
+sql_in_val: // REMOVED
     fld[ContextQualifier.REF] (fetch_indicator)? | constant | USERID
   ;

@@ -9,13 +9,22 @@ import org.prorefactor.proparse.ParserSupport;
 import org.prorefactor.proparse.antlr4.Proparse.Block_forContext;
 import org.prorefactor.proparse.antlr4.Proparse.Block_opt_iteratorContext;
 import org.prorefactor.proparse.antlr4.Proparse.Block_preselectContext;
+import org.prorefactor.proparse.antlr4.Proparse.DeletestateContext;
+import org.prorefactor.proparse.antlr4.Proparse.DestructorstateContext;
+import org.prorefactor.proparse.antlr4.Proparse.DisablestateContext;
+import org.prorefactor.proparse.antlr4.Proparse.DisabletriggersstateContext;
+import org.prorefactor.proparse.antlr4.Proparse.DisplaystateContext;
+import org.prorefactor.proparse.antlr4.Proparse.DostateContext;
 import org.prorefactor.proparse.antlr4.Proparse.DownstateContext;
+import org.prorefactor.proparse.antlr4.Proparse.Dynamic_newContext;
+import org.prorefactor.proparse.antlr4.Proparse.DynamicnewstateContext;
 import org.prorefactor.proparse.antlr4.Proparse.EmptytemptablestateContext;
 import org.prorefactor.proparse.antlr4.Proparse.EnablestateContext;
 import org.prorefactor.proparse.antlr4.Proparse.ExportstateContext;
 import org.prorefactor.proparse.antlr4.Proparse.ExpressionContext;
 import org.prorefactor.proparse.antlr4.Proparse.ExtentphraseContext;
 import org.prorefactor.proparse.antlr4.Proparse.FieldContext;
+import org.prorefactor.proparse.antlr4.Proparse.Field_equal_dynamic_newContext;
 import org.prorefactor.proparse.antlr4.Proparse.Field_form_itemContext;
 import org.prorefactor.proparse.antlr4.Proparse.FieldoptionContext;
 import org.prorefactor.proparse.antlr4.Proparse.FindstateContext;
@@ -221,6 +230,93 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   // XXX
+
+  @Override
+  public void enterDeletestate(DeletestateContext ctx) {
+    contextQualifiers.put(ctx.record(), ContextQualifier.UPDATING);
+  }
+
+  @Override
+  public void enterDestructorstate(DestructorstateContext ctx) {
+    // TODO TP01Support.structorBegin(#d);
+  }
+
+  @Override
+  public void exitDestructorstate(DestructorstateContext ctx) {
+    // TODO TP01Support.structorEnd(#d);
+  }
+
+  @Override
+  public void enterDisablestate(DisablestateContext ctx) {
+    // TODO TP01Support.frameEnablingStatement(#head);
+    for (Form_itemContext form : ctx.form_item()) { // TODO Vérifier NPE
+      contextQualifiers.put(form, ContextQualifier.SYMBOL);
+    }
+    // TODO Vérifier
+    if ((ctx.all_except_fields() != null) && (ctx.all_except_fields().except_fields() != null)) {
+      for (FieldContext fld : ctx.all_except_fields().except_fields().field()) {
+        contextQualifiers.put(fld, ContextQualifier.SYMBOL);
+      }
+    }
+  }
+
+  @Override
+  public void exitDisablestate(DisablestateContext ctx) {
+    // TODO TP01Support.frameStatementEnd();
+  }
+
+  @Override
+  public void enterDisabletriggersstate(DisabletriggersstateContext ctx) {
+    contextQualifiers.put(ctx.record(), ContextQualifier.SYMBOL);
+  }
+
+  @Override
+  public void enterDisplaystate(DisplaystateContext ctx) {
+    // TODO TP01Support.frameInitializingStatement(#head);
+    if (ctx.except_fields() != null) {
+      for (FieldContext fld : ctx.except_fields().field()) {
+        contextQualifiers.put(fld, ContextQualifier.SYMBOL);
+      }
+    }
+  }
+
+  @Override
+  public void exitDisplaystate(DisplaystateContext ctx) {
+    // TODO TP01Support.frameStatementEnd();
+  }
+
+  @Override
+  public void enterField_equal_dynamic_new(Field_equal_dynamic_newContext ctx) {
+    if (ctx.widattr() != null) {
+      contextQualifiers.put(ctx.widattr(), ContextQualifier.UPDATING);
+    } else if (ctx.field() != null) {
+      contextQualifiers.put(ctx.field(), ContextQualifier.UPDATING);
+    }
+  }
+
+  @Override
+  public void enterDynamic_new(Dynamic_newContext ctx) {
+    // TODO TP01Support.callBegin();
+  }
+
+  @Override
+  public void exitDynamic_new(Dynamic_newContext ctx) {
+    // TODO TP01Support.callEnd();
+  }
+
+  @Override
+  public void enterDostate(DostateContext ctx) {
+    // TODO TP01Support.blockBegin(#r);
+    // TODO TP01Support.frameBlockCheck(#r);
+    
+    // TODO A revoir, il faut que ce soit fait avant d'entrer dans le code_block
+    // TODO TP01Support.frameStatementEnd();
+  }
+
+  @Override
+  public void exitDostate(DostateContext ctx) {
+    // TODO TP01Support.blockEnd();
+  }
 
   @Override
   public void enterDownstate(DownstateContext ctx) {

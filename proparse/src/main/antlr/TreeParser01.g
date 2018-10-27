@@ -1115,11 +1115,11 @@ definevariablestate:
     { action.addToSymbolScope(stack.pop()); }
   ;
 
-deletestate:
+deletestate: // TRANSLATED
     #(DELETE_KW tbl[ContextQualifier.UPDATING] (#(VALIDATE funargs))? (NOERROR_KW)? state_end )
   ;
 
-destructorstate:
+destructorstate: // TRANSLATED
     #(  d:DESTRUCTOR 
       {action.structorBegin(#d);}
       (PUBLIC)? TYPE_NAME LEFTPAREN RIGHTPAREN block_colon
@@ -1128,22 +1128,22 @@ destructorstate:
     )
   ;
 
-disablestate:
+disablestate: // TRANSLATED
     #(  head:DISABLE  { action.frameInitializingStatement(#head); }
       (UNLESSHIDDEN)? (#(ALL (#(EXCEPT (fld[ContextQualifier.SYMBOL])*))?) | (form_item2[ContextQualifier.SYMBOL])+)? (framephrase)?
       state_end  { action.frameStatementEnd(); }
     )
   ;
 
-disabletriggersstate:
+disabletriggersstate: // TRANSLATED
     #(DISABLE TRIGGERS FOR (DUMP|LOAD) OF tbl[ContextQualifier.SYMBOL] (ALLOWREPLICATION)? state_end )
   ;
 
-disconnectstate:
+disconnectstate: // TRANSLATED
     #(DISCONNECT filenameorvalue (NOERROR_KW)? state_end )
   ;
 
-displaystate:
+displaystate: // TRANSLATED
     #(  head:DISPLAY  { action.frameInitializingStatement(#head); }
       (stream_name_or_handle)? (UNLESSHIDDEN)? (displaystate_item)*
       (#(EXCEPT (fld1[ContextQualifier.SYMBOL])*))? (#(IN_KW WINDOW expression))?
@@ -1153,7 +1153,7 @@ displaystate:
     )
   ;
 
-displaystate_item:
+displaystate_item: // TODO
     #(  fi:Form_item
       (  skipphrase
       |  spacephrase
@@ -1165,7 +1165,7 @@ displaystate_item:
   ;
 
 // In TP01, this is used by lots of statements, but not actually by the DISPLAY statement. See displaystate_item above.
-display_item:
+display_item: // TODO 
     #(  fi:Form_item
       (  skipphrase
       |  spacephrase
@@ -1176,7 +1176,7 @@ display_item:
     )
   ;
 
-dynamicnewstate:
+dynamicnewstate: // TRANSLATED
     #(  Assign_dynamic_new
       #(  EQUAL
         (widattr2[ContextQualifier.UPDATING] | fld[ContextQualifier.UPDATING])
@@ -1187,7 +1187,7 @@ dynamicnewstate:
     )
   ;
 
-dostate:
+dostate: // TRANSLATED
     #(  d:DO
       {  action.blockBegin(#d);
         action.frameBlockCheck(#d);

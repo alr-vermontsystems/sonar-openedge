@@ -146,6 +146,195 @@ public class TreeParser extends ProparseBaseListener {
 
   // XXX
   @Override
+  public void enterAssign_equal(Assign_equalContext ctx) {
+    if (ctx.widattr() != null) {
+      contextQualifiers.put(ctx.widattr(), ContextQualifier.UPDATING);
+    } else if (ctx.field() != null) {
+      contextQualifiers.put(ctx.field(), ContextQualifier.UPDATING);
+    }
+  }
+
+  @Override
+  public void enterReferencepoint(ReferencepointContext ctx) {
+    contextQualifiers.put(ctx.field(), ContextQualifier.SYMBOL);
+  }
+
+  @Override
+  public void enterBuffercomparestate(BuffercomparestateContext ctx) {
+    contextQualifiers.put(ctx.record(0), ContextQualifier.REF);
+    
+    if ((ctx.except_using_fields() != null) && (ctx.except_using_fields().field() != null)) {
+      ContextQualifier qual = ctx.except_using_fields().USING() == null ? ContextQualifier.SYMBOL : ContextQualifier.REF;
+      for (FieldContext field : ctx.except_using_fields().field()) {
+        contextQualifiers.put(field, qual);
+      }
+    }
+
+    contextQualifiers.put(ctx.record(1), ContextQualifier.REF);
+  }
+
+  @Override
+  public void enterBuffercompare_save(Buffercompare_saveContext ctx) {
+    contextQualifiers.put(ctx.field(), ContextQualifier.UPDATING);
+  }
+
+  @Override
+  public void enterBuffercopystate(BuffercopystateContext ctx) {
+    contextQualifiers.put(ctx.record(0), ContextQualifier.REF);
+    
+    if ((ctx.except_using_fields() != null) && (ctx.except_using_fields().field() != null)) {
+      ContextQualifier qual = ctx.except_using_fields().USING() == null ? ContextQualifier.SYMBOL : ContextQualifier.REF;
+      for (FieldContext field : ctx.except_using_fields().field()) {
+        contextQualifiers.put(field, qual);
+      }
+    }
+
+    contextQualifiers.put(ctx.record(1), ContextQualifier.UPDATING);
+  }
+
+  @Override
+  public void enterChoosestate(ChoosestateContext ctx) {
+    // TODO action.frameInitializingStatement(#head);
+  }
+
+  @Override
+  public void enterChoose_field(Choose_fieldContext ctx) {
+    contextQualifiers.put(ctx.field(), ContextQualifier.UPDATING);
+    // TODO action.formItem(#fi);
+  }
+
+  @Override
+  public void enterChoose_opt(Choose_optContext ctx) {
+    contextQualifiers.put(ctx.field(), ContextQualifier.UPDATING);
+  }
+
+  @Override
+  public void exitChoosestate(ChoosestateContext ctx) {
+    // TODO action.frameStatementEnd();
+  }
+  
+  @Override
+  public void enterClassstate(ClassstateContext ctx) {
+    // TODO action.classState(#c, #abstractKw, #finalKw, #serializableKw);
+  }
+  
+  @Override
+  public void enterInterfacestate(InterfacestateContext ctx) {
+    // TODO action.interfaceState(#i);
+  }
+
+  @Override
+  public void exitClearstate(ClearstateContext ctx) {
+    // TODO action.clearState(#c);
+  }
+
+  @Override
+  public void enterCatchstate(CatchstateContext ctx) {
+    // TODO action.scopeAdd(#b);
+    // TODO action.addToSymbolScope(action.defineVariable(#id1, #id1));
+    // TODO action.defAs(#as);
+  }
+
+  @Override
+  public void exitCatchstate(CatchstateContext ctx) {
+    // TODO action.scopeClose(#b);
+  }
+  
+  @Override
+  public void enterClosestored_field(Closestored_fieldContext ctx) {
+    contextQualifiers.put(ctx.field(), ContextQualifier.REF);
+  }
+  
+  @Override
+  public void enterClosestored_where(Closestored_whereContext ctx) {
+    contextQualifiers.put(ctx.field(), ContextQualifier.REF);
+  }
+  
+  @Override
+  public void enterColorstate(ColorstateContext ctx) {
+    // TODO action.frameInitializingStatement(#head);
+    for (Field_form_itemContext item : ctx.field_form_item()) {
+      contextQualifiers.put(item, ContextQualifier.SYMBOL);
+    }
+    // TODO action.formItem(#fi);
+  }
+  
+  @Override
+  public void exitColorstate(ColorstateContext ctx) {
+    // TODO action.frameStatementEnd();
+  }
+  
+  @Override
+  public void enterColumnformat_opt(Columnformat_optContext ctx) {
+    if ((ctx.LEXAT() != null) && ( ctx.field() != null)) {
+      contextQualifiers.put(ctx.field(), ContextQualifier.SYMBOL);
+      // TODO action.lexat(#af);
+    }
+  }
+  
+  @Override
+  public void enterConstructorstate(ConstructorstateContext ctx) {
+    // TODO action.structorBegin(#c);
+  }
+
+  @Override
+  public void exitConstructorstate(ConstructorstateContext ctx) {
+    // TODO action.structorEnd(#c);
+  }
+
+  @Override
+  public void enterCopylobstate(CopylobstateContext ctx) {
+    // TODO Identify expression, then ...
+    // TODO action.noteReference(#ex, ContextQualifier.UPDATING);
+  }
+
+  @Override
+  public void enterCreatestate(CreatestateContext ctx) {
+    contextQualifiers.put(ctx.record(), ContextQualifier.UPDATING);
+  }
+
+  @Override
+  public void enterCreate_whatever_state(Create_whatever_stateContext ctx) {
+    contextQualifiers.put(ctx.exprt(), ContextQualifier.UPDATING);
+  }
+
+  @Override
+  public void enterCreatebrowsestate(CreatebrowsestateContext ctx) {
+    contextQualifiers.put(ctx.exprt(), ContextQualifier.UPDATING);
+  }
+  
+  @Override
+  public void enterCreatebufferstate(CreatebufferstateContext ctx) {
+    contextQualifiers.put(ctx.exprt(), ContextQualifier.UPDATING);
+  }
+
+  @Override
+  public void enterCreatequerystate(CreatequerystateContext ctx) {
+    contextQualifiers.put(ctx.exprt(), ContextQualifier.UPDATING);
+    }
+  
+  @Override
+  public void enterCreateserverstate(CreateserverstateContext ctx) {
+    contextQualifiers.put(ctx.exprt(), ContextQualifier.UPDATING);
+    }
+  
+  @Override
+  public void enterCreateserversocketstate(CreateserversocketstateContext ctx) {
+    contextQualifiers.put(ctx.exprt(), ContextQualifier.UPDATING);
+  }
+
+  @Override
+  public void enterCreatetemptablestate(CreatetemptablestateContext ctx) {
+    contextQualifiers.put(ctx.exprt(), ContextQualifier.UPDATING);
+  }
+
+  @Override
+  public void enterCreatewidgetstate(CreatewidgetstateContext ctx) {
+    // TODO  Verifier sur tous les createXX que ça fonctionne avec un exprt
+    contextQualifiers.put(ctx.field(), ContextQualifier.UPDATING);
+  }
+
+  @Override
   public void enterDdegetstate(DdegetstateContext ctx) {
     contextQualifiers.put(ctx.field(), ContextQualifier.UPDATING);
     }

@@ -440,9 +440,8 @@ assignment_list:
     )*
   ;
 
-assign_equal:
+assign_equal: // TRANSLATED
     #(EQUAL
-       
       (  options { generateAmbigWarnings=false; } : // Because widattr2[CQ] replaces widattr in pseudfn
          widattr2[ContextQualifier.UPDATING]
       |  pseudfn
@@ -452,15 +451,15 @@ assign_equal:
     )
   ;
 
-referencepoint:
+referencepoint: // TRANSLATED
     fld[ContextQualifier.SYMBOL] ((PLUS|MINUS) expression)?
   ;
 
-browse_ref:
+browse_ref: // TODO
     #(BROWSE i:ID) { action.browseRef(#i); }
   ;
 
-buffercomparestate:
+buffercomparestate: // TRANSLATED
     #(  BUFFERCOMPARE
       tbl[ContextQualifier.REF]
       (  #(EXCEPT (fld1[ContextQualifier.SYMBOL])*)
@@ -482,7 +481,7 @@ buffercomparestate:
     )
   ;
 
-buffercopystate:
+buffercopystate: // TRANSLATED
     #(  BUFFERCOPY tbl[ContextQualifier.REF]
       (  #(EXCEPT (fld1[ContextQualifier.SYMBOL])*)
       |  #(USING (fld1[ContextQualifier.REF])+)
@@ -495,7 +494,7 @@ buffercopystate:
     )
   ;
 
-canfindfunc:
+canfindfunc: // TODO
     #(  cf:CANFIND LEFTPAREN (findwhich)?
       #(  r:RECORD_NAME
         {  action.canFindBegin(#cf, #r);
@@ -509,7 +508,7 @@ canfindfunc:
   ;
  
 
-choosestate:
+choosestate: // TRANSLATED
     #(  head:CHOOSE (ROW|FIELD)  { action.frameInitializingStatement(#head); }
       ( #(fi:Form_item fld[ContextQualifier.UPDATING] {action.formItem(#fi);} (#(HELP constant))? ) )+
       (  AUTORETURN 
@@ -524,7 +523,7 @@ choosestate:
     )
   ;
 
-classstate:
+classstate: // TRANSLATED
     #(  c:CLASS
       TYPE_NAME
       (  #(INHERITS TYPE_NAME)
@@ -542,15 +541,15 @@ classstate:
     )
   ;
 
-interfacestate:
+interfacestate: // TRANSLATED
     #(i:INTERFACE {action.interfaceState(#i);} TYPE_NAME (interface_inherits)? block_colon code_block #(END (INTERFACE)?) state_end )
   ;
 
-clearstate:
+clearstate: // TRANSLATED
     #(c:CLEAR (frame_ref)? (ALL)? (NOPAUSE)? state_end {action.clearState(#c);} )
   ;
 
-catchstate:
+catchstate: // TRANSLATED
     #( b:CATCH { action.scopeAdd(#b); }
        id1:ID as:AS (CLASS)? TYPE_NAME
        { 
@@ -561,7 +560,7 @@ catchstate:
       )
   ;
 
-closestoredprocedurestate:
+closestoredprocedurestate: // TRANSLATED
     #(  CLOSE
       STOREDPROCEDURE ID
       ( #(EQUAL fld[ContextQualifier.REF] PROCSTATUS ) )?
@@ -570,7 +569,7 @@ closestoredprocedurestate:
     )
   ;
 
-colorstate:
+colorstate: // TRANSLATED
     #(  head:COLOR  { action.frameInitializingStatement(#head); }
       (  ( #(DISPLAY anyorvalue) | #(PROMPT anyorvalue) )
         ( #(DISPLAY anyorvalue) | #(PROMPT anyorvalue) )?
@@ -584,7 +583,7 @@ colorstate:
     )
   ;
 
-columnformat:
+columnformat: // TRANSLATED
     #(  Format_phrase
       (  #(FORMAT expression)
       |  label_constant
@@ -609,7 +608,7 @@ columnformat:
     )
   ;
 
-constructorstate:
+constructorstate: // TRANSLATED
     #(  c:CONSTRUCTOR
       {action.structorBegin(#c);}
       def_modifiers TYPE_NAME function_params
@@ -618,7 +617,7 @@ constructorstate:
     )
   ;
 
-copylobstate:
+copylobstate: // TRANSLATED
     #(  COPYLOB (FROM)?
       ( FILE expression | (OBJECT)? expression )
       ( #(STARTING AT expression) )?
@@ -633,19 +632,19 @@ copylobstate:
     )
   ;
 
-createstate:
+createstate: // TRANSLATED
     #(CREATE tbl[ContextQualifier.UPDATING] (#(FOR TENANT expression))? (#(USING (ROWID|RECID) expression))? (NOERROR_KW)? state_end )
   ;
 
-create_whatever_args:
+create_whatever_args: // TRANSLATED
     (fld[ContextQualifier.UPDATING] | widattr2[ContextQualifier.UPDATING]) (#(IN_KW WIDGETPOOL expression))? (NOERROR_KW)?
   ;
 
-createbrowsestate:
+createbrowsestate: // TRANSLATED
     #(CREATE BROWSE (fld[ContextQualifier.UPDATING] | widattr2[ContextQualifier.UPDATING]) (#(IN_KW WIDGETPOOL expression))? (NOERROR_KW)? (assign_opt)? (triggerphrase)? state_end )
   ;
 
-createbufferstate:
+createbufferstate: // TRANSLATED
     #(  CREATE BUFFER (fld[ContextQualifier.UPDATING] | widattr2[ContextQualifier.UPDATING]) FOR TABLE expression
       ( #(BUFFERNAME expression) )?
       (#(IN_KW WIDGETPOOL expression))?
@@ -653,27 +652,27 @@ createbufferstate:
     )
   ;
 
-createquerystate:
+createquerystate: // TRANSLATED
     #(CREATE QUERY (fld[ContextQualifier.UPDATING] | widattr2[ContextQualifier.UPDATING]) (#(IN_KW WIDGETPOOL expression))? (NOERROR_KW)? state_end )
   ;
 
-createserverstate:
+createserverstate: // TRANSLATED
     #(CREATE SERVER (fld[ContextQualifier.UPDATING] | widattr2[ContextQualifier.UPDATING]) (assign_opt)? state_end )
   ;
 
-createserversocketstate:
+createserversocketstate: // TRANSLATED
     #(CREATE SERVERSOCKET (fld[ContextQualifier.UPDATING] | widattr2[ContextQualifier.UPDATING]) (NOERROR_KW)? state_end )
   ;
 
-createsocketstate:
+createsocketstate: // TRANSLATED
     #(CREATE SOCKET (fld[ContextQualifier.UPDATING] | widattr2[ContextQualifier.UPDATING]) (NOERROR_KW)? state_end )
   ;
 
-createtemptablestate:
+createtemptablestate: // TRANSLATED
     #(CREATE TEMPTABLE (fld[ContextQualifier.UPDATING] | widattr2[ContextQualifier.UPDATING]) (#(IN_KW WIDGETPOOL expression))? (NOERROR_KW)? state_end )
   ;
 
-createwidgetstate:
+createwidgetstate: // TRANSLATED
     #(  CREATE
       (  qstringorvalue
       |  BUTTON | COMBOBOX | CONTROLFRAME | DIALOGBOX | EDITOR | FILLIN | FRAME | IMAGE

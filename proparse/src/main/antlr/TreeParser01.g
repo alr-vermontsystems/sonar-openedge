@@ -685,19 +685,19 @@ createwidgetstate:
     )
   ;
 
-ddegetstate:
+ddegetstate: // TRANSLATED
     #(DDE GET expression TARGET fld[ContextQualifier.UPDATING] ITEM expression (#(TIME expression))? (NOERROR_KW)? state_end )
   ;
 
-ddeinitiatestate:
+ddeinitiatestate: // TRANSLATED
     #(DDE INITIATE fld[ContextQualifier.UPDATING] FRAME expression APPLICATION expression TOPIC expression (NOERROR_KW)? state_end )
   ;
 
-dderequeststate:
+dderequeststate: // TRANSLATED
     #(DDE REQUEST expression TARGET fld[ContextQualifier.UPDATING] ITEM expression (#(TIME expression))? (NOERROR_KW)? state_end )
   ;
 
-definebrowsestate:
+definebrowsestate: // TRANSLATED
     #(  def:DEFINE (def_shared)? def_modifiers BROWSE
       id:ID { stack.push(action.defineBrowse(#def, #id)); }
       (#(QUERY ID))? (lockhow|NOWAIT)*
@@ -735,7 +735,7 @@ definebrowsestate:
     )
   ;
 
-definebufferstate:
+definebufferstate: // TODO
     #(  def:DEFINE (def_shared)? def_modifiers BUFFER id:ID FOR
         ( 
           TEMPTABLE rec:tbl[ContextQualifier.TEMPTABLESYMBOL] { action.defineBuffer(#def, #id, #rec, false); }
@@ -747,7 +747,7 @@ definebufferstate:
     )
   ;
 
-definebuttonstate:
+definebuttonstate: // TRANSLATED
     #(  def:DEFINE (def_shared)? def_modifiers BUTTON
       id:ID { stack.push(action.defineSymbol(ABLNodeType.BUTTON, #def, #id)); }
       (  AUTOGO
@@ -776,7 +776,7 @@ definebuttonstate:
     )
   ;
 
-definedatasetstate:
+definedatasetstate: // TRANSLATED
     #(  def:DEFINE (def_shared)? def_modifiers DATASET
       id:ID { stack.push(action.defineSymbol(ABLNodeType.DATASET, #def, #id)); }
       (namespace_uri)? (namespace_prefix)? (xml_node_name)?
@@ -793,7 +793,7 @@ definedatasetstate:
     )
   ;
 
-data_relation:
+data_relation: // TRANSLATED
     #(  DATARELATION (ID)?
       FOR tbl[ContextQualifier.INIT] COMMA tbl[ContextQualifier.INIT]
       (  field_mapping_phrase
@@ -805,7 +805,7 @@ data_relation:
     )
   ;
 
-parent_id_relation:
+parent_id_relation: // TRANSLATED
     #(  PARENTIDRELATION (ID)?
       FOR tbl[ContextQualifier.INIT] COMMA tbl[ContextQualifier.INIT] // TODO Verify context qualifier
       PARENTIDFIELD fld[ContextQualifier.SYMBOL]
@@ -815,12 +815,12 @@ parent_id_relation:
     )
   ;
 
-field_mapping_phrase:
+field_mapping_phrase: // TRANSLATED
     #(RELATIONFIELDS LEFTPAREN fld2[ContextQualifier.SYMBOL] COMMA fld1[ContextQualifier.SYMBOL]
     ( COMMA fld2[ContextQualifier.SYMBOL] COMMA fld1[ContextQualifier.SYMBOL] )* RIGHTPAREN )
   ;
 
-definedatasourcestate:
+definedatasourcestate: // TRANSLATED
     #(  def:DEFINE (def_shared)? def_modifiers DATASOURCE
       id:ID { stack.push(action.defineSymbol(ABLNodeType.DATASOURCE, #def, #id)); }
       FOR (#(QUERY ID))?
@@ -830,14 +830,13 @@ definedatasourcestate:
     )
   ;
 
-source_buffer_phrase:
+source_buffer_phrase: // TRANSLATED
     #(  r:RECORD_NAME {action.recordNameNode(#r, ContextQualifier.INIT);}
       ( KEYS LEFTPAREN ( ROWID | fld[ContextQualifier.SYMBOL] (COMMA fld[ContextQualifier.SYMBOL])* ) RIGHTPAREN )?
     )
   ;
 
-defineeventstate:
-  
+defineeventstate: // TRANSLATED
     #( def:DEFINE def_modifiers e:EVENT
       id:ID { action.eventBegin(#e, #id); stack.push(action.defineEvent(#def, #id)); }
       (  #(SIGNATURE VOID function_params)
@@ -848,7 +847,7 @@ defineeventstate:
     { action.eventEnd(#e); action.addToSymbolScope(stack.pop()); }
   ;
 
-defineframestate:
+defineframestate: // TRANSLATED
     #(  def:DEFINE (def_shared)?
       // Note that frames cannot be inherited. If that ever changes, then things will get tricky
       // when creating the symbol tables for inheritance caching. See Frame.copyBare(), and the
@@ -865,7 +864,7 @@ defineframestate:
     )
   ;
 
-defineimagestate:
+defineimagestate: // TRANSLATED
     #(  def:DEFINE (def_shared)? def_modifiers IMAGE
       id:ID { stack.push(action.defineSymbol(ABLNodeType.IMAGE, #def, #id)); }
       (  #(LIKE fld[ContextQualifier.SYMBOL] (VALIDATE)?)
@@ -883,7 +882,7 @@ defineimagestate:
     )
   ;
 
-definemenustate:
+definemenustate: // TODO
     #(  def:DEFINE (def_shared)? def_modifiers MENU
       id:ID { stack.push(action.defineSymbol(ABLNodeType.MENU, #def, #id)); }
       (menu_opt)* (menu_list_item)* state_end
@@ -891,7 +890,7 @@ definemenustate:
     )
   ;
 
-menu_opt:
+menu_opt: // TODO
     color_expr
   |  #(FONT expression)
   |  #(LIKE fld[ContextQualifier.SYMBOL] (VALIDATE)?)
@@ -901,7 +900,7 @@ menu_opt:
   |  SUBMENUHELP
   ;
 
-menu_list_item:
+menu_list_item: // TODO
     (  #(  MENUITEM
         id:ID { stack.push(action.defineSymbol(ABLNodeType.MENUITEM, #id, #id)); }
         (  #(ACCELERATOR expression )
@@ -927,7 +926,7 @@ menu_list_item:
     ((PERIOD (RULE|SKIP|SUBMENU|MENUITEM))=> PERIOD)?
   ;
 
-defineparameterstate:
+defineparameterstate: // TODO
     #(  def:DEFINE (def_shared)? def_modifiers
       (  PARAMETER buff:BUFFER bid:ID FOR (TEMPTABLE)? brec:tbl[ContextQualifier.SYMBOL]
         {  action.paramForRoutine(#buff);
@@ -968,11 +967,11 @@ defineparameterstate:
     {action.paramEnd();}
   ;
 
-defineparam_ab:
+defineparam_ab: // TODO
     ( APPEND | BYVALUE | BIND {action.paramBind();} )*
   ;
 
-defineparam_var:
+defineparam_var: // TODO
     (  #(  as:AS
         (  (HANDLE (TO)? datatype_dll)=> HANDLE (TO)? datatype_dll
         |  CLASS TYPE_NAME

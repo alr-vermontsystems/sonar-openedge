@@ -145,7 +145,189 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   // XXX
+  @Override
+  public void enterDdegetstate(DdegetstateContext ctx) {
+    contextQualifiers.put(ctx.field(), ContextQualifier.UPDATING);
+    }
   
+  @Override
+  public void enterDdeinitiatestate(DdeinitiatestateContext ctx) {
+    contextQualifiers.put(ctx.field(), ContextQualifier.UPDATING);
+  }
+  
+  @Override
+  public void enterDderequeststate(DderequeststateContext ctx) {
+    contextQualifiers.put(ctx.field(), ContextQualifier.UPDATING);
+  }
+
+  @Override
+  public void enterDefinebrowsestate(DefinebrowsestateContext ctx) {
+    // TODO stack.push(action.defineBrowse(#def, #id));
+  }
+
+  @Override
+  public void enterDef_browse_display(Def_browse_displayContext ctx) {
+    if (ctx.except_fields() != null) {
+      for (FieldContext fld : ctx.except_fields().field()) {
+        contextQualifiers.put(fld, ContextQualifier.SYMBOL);
+      }
+    }
+  }
+
+  @Override
+  public void enterDef_browse_display_items_or_record(Def_browse_display_items_or_recordContext ctx) {
+    if (ctx.recordAsFormItem() != null) {
+      contextQualifiers.put(ctx.recordAsFormItem(), ContextQualifier.INIT);
+      // TODO action.formItem(#fi1);
+    }
+  }
+
+  @Override
+  public void enterDef_browse_enable(Def_browse_enableContext ctx) {
+    // TODO Vérifier
+    if ((ctx.all_except_fields() != null) && (ctx.all_except_fields().except_fields() != null)) {
+      for (FieldContext fld : ctx.all_except_fields().except_fields().field()) {
+        contextQualifiers.put(fld, ContextQualifier.SYMBOL);
+      }
+    }
+  }
+
+  @Override
+  public void enterDef_browse_enable_item(Def_browse_enable_itemContext ctx) {
+    contextQualifiers.put(ctx.field(), ContextQualifier.SYMBOL);
+    // TODO action.formItem(#fi2); 
+  }
+
+  @Override
+  public void enterDefinebuttonstate(DefinebuttonstateContext ctx) {
+    // TODO stack.push(action.defineSymbol(ABLNodeType.BUTTON, #def, #id));
+  }
+
+  @Override
+  public void enterButton_opt(Button_optContext ctx) {
+    if (ctx.like_field() != null) {
+      contextQualifiers.put(ctx.like_field().field(), ContextQualifier.SYMBOL);
+    }
+  }
+
+  @Override
+  public void exitDefinebuttonstate(DefinebuttonstateContext ctx) {
+    // TODO action.addToSymbolScope(stack.pop());
+  }
+
+  @Override
+  public void enterDefinedatasetstate(DefinedatasetstateContext ctx) {
+    // TODO stack.push(action.defineSymbol(ABLNodeType.DATASET, #def, #id))
+    for (RecordContext record : ctx.record()) {
+      contextQualifiers.put(record, ContextQualifier.INIT);
+    }
+  }
+
+  @Override
+  public void exitDefinedatasetstate(DefinedatasetstateContext ctx) {
+    // TODO action.addToSymbolScope(stack.pop());
+  }
+  
+  @Override
+  public void enterData_relation(Data_relationContext ctx) {
+    for (RecordContext record : ctx.record()) {
+      contextQualifiers.put(record, ContextQualifier.INIT);
+    }
+  }
+
+  @Override
+  public void enterParent_id_relation(Parent_id_relationContext ctx) {
+    for (RecordContext record : ctx.record()) {
+      contextQualifiers.put(record, ContextQualifier.INIT);
+    }
+    for (FieldContext fld : ctx.field()) {
+      contextQualifiers.put(fld, ContextQualifier.SYMBOL);
+    }
+  }
+
+  @Override
+  public void enterField_mapping_phrase(Field_mapping_phraseContext ctx) {
+    for (int zz = 0; zz < ctx.field().size(); zz += 2) {
+      contextQualifiers.put(ctx.field().get(zz), ContextQualifier.SYMBOL);
+      // TODO fld1 and fld2
+      contextQualifiers.put(ctx.field().get(zz + 1), ContextQualifier.SYMBOL);
+    }
+  }
+
+  @Override
+  public void enterDefinedatasourcestate(DefinedatasourcestateContext ctx) {
+    // TODO stack.push(action.defineSymbol(ABLNodeType.DATASOURCE, #def, #id));
+  }
+
+  @Override
+  public void exitDefinedatasourcestate(DefinedatasourcestateContext ctx) {
+    // TODO action.addToSymbolScope(stack.pop());
+  }
+
+  @Override
+  public void enterSource_buffer_phrase(Source_buffer_phraseContext ctx) {
+    // TODO action.recordNameNode(ctx.record(), ContextQualifier.INIT);
+    if (ctx.field() != null) {
+      for (FieldContext fld : ctx.field()) {
+        contextQualifiers.put(fld, ContextQualifier.SYMBOL);
+      }
+    }
+  }
+
+  @Override
+  public void enterDefineeventstate(DefineeventstateContext ctx) {
+    // TODO action.eventBegin(#e, #id); stack.push(action.defineEvent(#def, #id));
+  }
+
+  @Override
+  public void exitDefineeventstate(DefineeventstateContext ctx) {
+    // TODO action.eventEnd(#e); action.addToSymbolScope(stack.pop());
+  }
+
+  @Override
+  public void enterDefineframestate(DefineframestateContext ctx) {
+    // TODO action.frameDef(#def, #id);
+    contextQualifiers.put(ctx.form_items_or_record(), ContextQualifier.SYMBOL);
+
+    if (ctx.except_fields() != null) {
+      for (FieldContext fld : ctx.except_fields().field()) {
+        contextQualifiers.put(fld, ContextQualifier.SYMBOL);
+      }
+    }
+  }
+
+  @Override
+  public void exitDefineframestate(DefineframestateContext ctx) {
+    // TODO action.frameStatementEnd();
+  }
+
+  @Override
+  public void enterDefineimagestate(DefineimagestateContext ctx) {
+    // TODO stack.push(action.defineSymbol(ABLNodeType.IMAGE, #def, #id));
+  }
+  
+  @Override
+  public void enterDefineimage_opt(Defineimage_optContext ctx) {
+    if (ctx.like_field() != null) {
+      contextQualifiers.put(ctx.like_field().field(), ContextQualifier.SYMBOL);
+    }
+  }
+
+  @Override
+  public void exitDefineimagestate(DefineimagestateContext ctx) {
+    // TODO action.addToSymbolScope(stack.pop());
+  }
+
+  @Override
+  public void enterDefinemenustate(DefinemenustateContext ctx) {
+    // TODO stack.push(action.defineSymbol(ABLNodeType.MENU, #def, #id));
+  }
+
+  @Override
+  public void exitDefinemenustate(DefinemenustateContext ctx) {
+    // TODO action.addToSymbolScope(stack.pop());
+  }
+
   @Override
   public void enterDefinepropertystate(DefinepropertystateContext ctx) {
     // TODO stack.push(action.defineVariable(#def, #id));

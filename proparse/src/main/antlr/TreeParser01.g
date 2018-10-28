@@ -988,7 +988,7 @@ defineparam_var:
     )*
   ;
 
-definepropertystate:
+definepropertystate: // TRANSLATED
     #(  def:DEFINE def_modifiers PROPERTY
       id:ID {stack.push(action.defineVariable(#def, #id));}
       as:AS datatype {action.defAs(#as);} (extentphrase_def_symbol|initial_constant|NOUNDO)*
@@ -997,7 +997,7 @@ definepropertystate:
     )
   ;
 
-defineproperty_accessor:
+defineproperty_accessor: // TRANSLATED
     #(  b1:Property_getter def_modifiers GET
       (  (PERIOD)=> PERIOD
       |  { action.propGetSetBegin(#b1); } (function_params)? block_colon  code_block END (GET)? { action.propGetSetEnd(#b1); } PERIOD
@@ -1010,7 +1010,7 @@ defineproperty_accessor:
     )
   ;
 
-definequerystate:
+definequerystate: // TRANSLATED
     #(  def:DEFINE (def_shared)? def_modifiers QUERY
       id:ID { stack.push(action.defineSymbol(ABLNodeType.QUERY, #def, #id)); }
       FOR tbl[ContextQualifier.INIT] (record_fields)?
@@ -1021,7 +1021,7 @@ definequerystate:
     { action.addToSymbolScope(stack.pop()); }
   ;
 
-definerectanglestate:
+definerectanglestate: // TRANSLATED
     #(  def:DEFINE (def_shared)? def_modifiers RECTANGLE
       id:ID { stack.push(action.defineSymbol(ABLNodeType.RECTANGLE, #def, #id)); }
       (  NOFILL
@@ -1041,12 +1041,12 @@ definerectanglestate:
     { action.addToSymbolScope(stack.pop()); }
   ;
 
-definestreamstate:
+definestreamstate: // TRANSLATED
     #(  def:DEFINE (def_shared)? def_modifiers STREAM id:ID state_end )
     { action.addToSymbolScope(action.defineSymbol(ABLNodeType.STREAM, #def, #id)); }
   ;
 
-definesubmenustate:
+definesubmenustate: // TRANSLATED
     #(  def:DEFINE (def_shared)? def_modifiers SUBMENU
       id:ID { stack.push(action.defineSymbol(ABLNodeType.SUBMENU, #def, #id)); }
       (menu_opt)* (menu_list_item)* state_end
@@ -1054,7 +1054,7 @@ definesubmenustate:
     { action.addToSymbolScope(stack.pop()); }
   ;
 
-definetemptablestate:
+definetemptablestate: // TRANSLATED
     #(  def:DEFINE (def_shared)? def_modifiers TEMPTABLE id:ID
       {  action.defineTempTable(#def, #id); }
       (UNDO|NOUNDO)?
@@ -1075,18 +1075,18 @@ definetemptablestate:
     )
   ;
 
-def_table_like:
+def_table_like: // TRANSLATED
     #(LIKE def_table_like_sub)
   | #(LIKESEQUENTIAL def_table_like_sub)
   ;
 
-def_table_like_sub:
+def_table_like_sub: // TRANSLATED
     rec:tbl[ContextQualifier.SYMBOL] { action.defineTableLike(#rec); }
     (VALIDATE)?
     ( #(USEINDEX id:ID ((AS|IS) PRIMARY)? ) { action.defineUseIndex(#rec, #id); } )*
   ;
 
-def_table_field:
+def_table_field: // TRANSLATED
     #(  FIELD id:ID
       { stack.push(action.defineTableFieldInitialize(#id)); }
       (fieldoption)*
@@ -1094,20 +1094,20 @@ def_table_field:
     )
   ;
 
-def_table_index:
+def_table_index: // TRANSLATED
     #(INDEX id:ID ( (AS|IS)? ( unq:UNIQUE | prim:PRIMARY | word:WORDINDEX ) )*
       { action.defineIndexInitialize(#id, #unq, #prim, #word); }
       ( fld:ID { action.defineIndexField(#fld); } ( ASCENDING | DESCENDING | CASESENSITIVE )* )+ )
   ;
 
-defineworktablestate:
+defineworktablestate: // TRANSLATED
     #(  def:DEFINE (def_shared)? def_modifiers WORKTABLE id:ID
       {  action.defineWorktable(#def, #id); }
       (NOUNDO)? (def_table_like)? (label_constant)? (def_table_field)* state_end
     )
   ;
 
-definevariablestate:
+definevariablestate: // TRANSLATED
     #(  def:DEFINE (def_shared)? def_modifiers VARIABLE
       id:ID { stack.push(action.defineVariable(#def, #id)); }
       (fieldoption)* (triggerphrase)? state_end

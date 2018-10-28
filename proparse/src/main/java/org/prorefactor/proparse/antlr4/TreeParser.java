@@ -6,92 +6,7 @@ import java.util.List;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import org.prorefactor.core.ABLNodeType;
 import org.prorefactor.proparse.ParserSupport;
-import org.prorefactor.proparse.antlr4.Proparse.Block_forContext;
-import org.prorefactor.proparse.antlr4.Proparse.Block_opt_iteratorContext;
-import org.prorefactor.proparse.antlr4.Proparse.Block_preselectContext;
-import org.prorefactor.proparse.antlr4.Proparse.DeletestateContext;
-import org.prorefactor.proparse.antlr4.Proparse.DestructorstateContext;
-import org.prorefactor.proparse.antlr4.Proparse.DisablestateContext;
-import org.prorefactor.proparse.antlr4.Proparse.DisabletriggersstateContext;
-import org.prorefactor.proparse.antlr4.Proparse.DisplaystateContext;
-import org.prorefactor.proparse.antlr4.Proparse.DostateContext;
-import org.prorefactor.proparse.antlr4.Proparse.DownstateContext;
-import org.prorefactor.proparse.antlr4.Proparse.Dynamic_newContext;
-import org.prorefactor.proparse.antlr4.Proparse.DynamicnewstateContext;
-import org.prorefactor.proparse.antlr4.Proparse.EmptytemptablestateContext;
-import org.prorefactor.proparse.antlr4.Proparse.EnablestateContext;
-import org.prorefactor.proparse.antlr4.Proparse.ExportstateContext;
-import org.prorefactor.proparse.antlr4.Proparse.ExpressionContext;
-import org.prorefactor.proparse.antlr4.Proparse.ExtentphraseContext;
-import org.prorefactor.proparse.antlr4.Proparse.FieldContext;
-import org.prorefactor.proparse.antlr4.Proparse.Field_equal_dynamic_newContext;
-import org.prorefactor.proparse.antlr4.Proparse.Field_form_itemContext;
-import org.prorefactor.proparse.antlr4.Proparse.FieldoptionContext;
-import org.prorefactor.proparse.antlr4.Proparse.FindstateContext;
-import org.prorefactor.proparse.antlr4.Proparse.For_record_specContext;
-import org.prorefactor.proparse.antlr4.Proparse.Form_itemContext;
-import org.prorefactor.proparse.antlr4.Proparse.Form_items_or_recordContext;
-import org.prorefactor.proparse.antlr4.Proparse.Format_optContext;
-import org.prorefactor.proparse.antlr4.Proparse.FormstateContext;
-import org.prorefactor.proparse.antlr4.Proparse.ForstateContext;
-import org.prorefactor.proparse.antlr4.Proparse.Frame_optContext;
-import org.prorefactor.proparse.antlr4.Proparse.Frame_widgetnameContext;
-import org.prorefactor.proparse.antlr4.Proparse.FramephraseContext;
-import org.prorefactor.proparse.antlr4.Proparse.FunargsContext;
-import org.prorefactor.proparse.antlr4.Proparse.FunctionstateContext;
-import org.prorefactor.proparse.antlr4.Proparse.GetkeyvaluestateContext;
-import org.prorefactor.proparse.antlr4.Proparse.ImportstateContext;
-import org.prorefactor.proparse.antlr4.Proparse.InsertstateContext;
-import org.prorefactor.proparse.antlr4.Proparse.Ldbname_opt1Context;
-import org.prorefactor.proparse.antlr4.Proparse.LdbnamefuncContext;
-import org.prorefactor.proparse.antlr4.Proparse.Message_optContext;
-import org.prorefactor.proparse.antlr4.Proparse.MessagestateContext;
-import org.prorefactor.proparse.antlr4.Proparse.MethodstateContext;
-import org.prorefactor.proparse.antlr4.Proparse.NextpromptstateContext;
-import org.prorefactor.proparse.antlr4.Proparse.OpenquerystateContext;
-import org.prorefactor.proparse.antlr4.Proparse.ParameterBufferForContext;
-import org.prorefactor.proparse.antlr4.Proparse.ParameterBufferRecordContext;
-import org.prorefactor.proparse.antlr4.Proparse.ParameterOtherContext;
-import org.prorefactor.proparse.antlr4.Proparse.ProcedurestateContext;
-import org.prorefactor.proparse.antlr4.Proparse.ProgramContext;
-import org.prorefactor.proparse.antlr4.Proparse.PromptforstateContext;
-import org.prorefactor.proparse.antlr4.Proparse.PseudfnContext;
-import org.prorefactor.proparse.antlr4.Proparse.PublishstateContext;
-import org.prorefactor.proparse.antlr4.Proparse.Rawtransfer_elemContext;
-import org.prorefactor.proparse.antlr4.Proparse.RawtransferstateContext;
-import org.prorefactor.proparse.antlr4.Proparse.RecordContext;
-import org.prorefactor.proparse.antlr4.Proparse.Record_fieldsContext;
-import org.prorefactor.proparse.antlr4.Proparse.Record_optContext;
-import org.prorefactor.proparse.antlr4.Proparse.RecordfuncContext;
-import org.prorefactor.proparse.antlr4.Proparse.RecordphraseContext;
-import org.prorefactor.proparse.antlr4.Proparse.ReleasestateContext;
-import org.prorefactor.proparse.antlr4.Proparse.RepeatstateContext;
-import org.prorefactor.proparse.antlr4.Proparse.RunOptInContext;
-import org.prorefactor.proparse.antlr4.Proparse.RunOptPersistentContext;
-import org.prorefactor.proparse.antlr4.Proparse.Run_setContext;
-import org.prorefactor.proparse.antlr4.Proparse.RunstateContext;
-import org.prorefactor.proparse.antlr4.Proparse.RunstoredprocedurestateContext;
-import org.prorefactor.proparse.antlr4.Proparse.RunsuperstateContext;
-import org.prorefactor.proparse.antlr4.Proparse.ScrollstateContext;
-import org.prorefactor.proparse.antlr4.Proparse.SetstateContext;
-import org.prorefactor.proparse.antlr4.Proparse.Sysdiafont_optContext;
-import org.prorefactor.proparse.antlr4.Proparse.Sysdiagetfile_optContext;
-import org.prorefactor.proparse.antlr4.Proparse.Sysdiapri_optContext;
-import org.prorefactor.proparse.antlr4.Proparse.SystemdialogcolorstateContext;
-import org.prorefactor.proparse.antlr4.Proparse.Systemdialoggetdir_optContext;
-import org.prorefactor.proparse.antlr4.Proparse.SystemdialoggetdirstateContext;
-import org.prorefactor.proparse.antlr4.Proparse.SystemdialoggetfilestateContext;
-import org.prorefactor.proparse.antlr4.Proparse.SystemdialogprintersetupstateContext;
-import org.prorefactor.proparse.antlr4.Proparse.ThisobjectstateContext;
-import org.prorefactor.proparse.antlr4.Proparse.Trigger_onContext;
-import org.prorefactor.proparse.antlr4.Proparse.UnderlinestateContext;
-import org.prorefactor.proparse.antlr4.Proparse.UpdatestateContext;
-import org.prorefactor.proparse.antlr4.Proparse.UpstateContext;
-import org.prorefactor.proparse.antlr4.Proparse.ValidatestateContext;
-import org.prorefactor.proparse.antlr4.Proparse.Var_rec_fieldContext;
-import org.prorefactor.proparse.antlr4.Proparse.ViewstateContext;
-import org.prorefactor.proparse.antlr4.Proparse.Waitfor_setContext;
-import org.prorefactor.proparse.antlr4.Proparse.WaitforstateContext;
+import org.prorefactor.proparse.antlr4.Proparse.*;
 import org.prorefactor.proparse.antlr4.nodetypes.BlockNode;
 import org.prorefactor.proparse.antlr4.treeparser.Block;
 import org.prorefactor.refactor.RefactorSession;
@@ -230,6 +145,125 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   // XXX
+  
+  @Override
+  public void enterDefinepropertystate(DefinepropertystateContext ctx) {
+    // TODO stack.push(action.defineVariable(#def, #id));
+    // TODO action.defAs(#as);
+    
+  }
+  
+  @Override
+  public void exitDefinepropertystate(DefinepropertystateContext ctx) {
+    // TODO Vérifier le moment où le pop est effectué, ce n'est pas exactement le exit
+    // TODO action.addToSymbolScope(stack.pop()); 
+  }
+
+  @Override
+  public void enterDefineproperty_accessor(Defineproperty_accessorContext ctx) {
+    // TODO Probably only if ctx.code_block != null
+    // TODO action.propGetSetBegin(#b1);
+  }
+
+  @Override
+  public void exitDefineproperty_accessor(Defineproperty_accessorContext ctx) {
+    // TODO Probably only if ctx.code_block != null
+    // TODO action.propGetSetEnd(#b1);
+  }
+
+  @Override
+  public void enterDefinequerystate(DefinequerystateContext ctx) {
+    // TODO stack.push(action.defineSymbol(ABLNodeType.QUERY, #def, #id));
+    for (RecordContext record : ctx.record()) {
+      contextQualifiers.put(record, ContextQualifier.INIT);
+    }
+  }
+  
+  @Override
+  public void exitDefinequerystate(DefinequerystateContext ctx) {
+    // TODO action.addToSymbolScope(stack.pop()); 
+  }
+  
+  @Override
+  public void enterDefinerectanglestate(DefinerectanglestateContext ctx) {
+    // TODO stack.push(action.defineSymbol(ABLNodeType.RECTANGLE, #def, #id));
+  }
+
+  @Override
+  public void enterRectangle_opt(Rectangle_optContext ctx) {
+    if (ctx.like_field() != null) {
+      contextQualifiers.put(ctx.like_field().field(), ContextQualifier.SYMBOL);
+    }
+  }
+
+  @Override
+  public void exitDefinerectanglestate(DefinerectanglestateContext ctx) {
+    // TODO action.addToSymbolScope(stack.pop());
+  }
+
+  @Override
+  public void exitDefinestreamstate(DefinestreamstateContext ctx) {
+    // TODO action.addToSymbolScope(action.defineSymbol(ABLNodeType.STREAM, #def, #id));
+  }
+
+  @Override
+  public void enterDefinesubmenustate(DefinesubmenustateContext ctx) {
+    // TODO stack.push(action.defineSymbol(ABLNodeType.SUBMENU, #def, #id));
+  }
+
+  @Override
+  public void exitDefinesubmenustate(DefinesubmenustateContext ctx) {
+    // TODO action.addToSymbolScope(stack.pop());
+  }
+
+  @Override
+  public void enterDefinetemptablestate(DefinetemptablestateContext ctx) {
+    // TODO action.defineTempTable(#def, #id);
+    // TODO action.defineBuffer(#bt, #bt, #id, false);
+  }
+
+  @Override
+  public void exitDefinetemptablestate(DefinetemptablestateContext ctx) {
+    // TODO action.postDefineTempTable(#def, #id);
+  }
+  
+  @Override
+  public void enterDef_table_like(Def_table_likeContext ctx) {
+    // TODO action.defineTableLike(#rec); 
+    // TODO action.defineUseIndex(#rec, #id);
+  }
+
+  @Override
+  public void enterDef_table_field(Def_table_fieldContext ctx) {
+    // TODO stack.push(action.defineTableFieldInitialize(#id));
+  }
+
+  @Override
+  public void exitDef_table_field(Def_table_fieldContext ctx) {
+    // TODO action.defineTableFieldFinalize(stack.pop());
+  }
+
+  @Override
+  public void enterDef_table_index(Def_table_indexContext ctx) {
+    // TODO TP01Support.defineIndexInitialize(#id, #unq, #prim, #word);
+    // TODO TP01Support.defineIndexField(#fld);
+  }
+
+  @Override
+  public void enterDefineworktablestate(DefineworktablestateContext ctx) {
+    // TODO TP01Support.defineWorktable(#def, #id);
+  }
+
+  @Override
+  public void enterDefinevariablestate(DefinevariablestateContext ctx) {
+    // TODO TP01Support.stack.push(action.defineVariable(#def, #id));
+    // TODO Vérifier que les modificateurs sont bien là
+  }
+
+  @Override
+  public void exitDefinevariablestate(DefinevariablestateContext ctx) {
+    // TODO TP01Support.addToSymbolScope(stack.pop()); 
+  }
 
   @Override
   public void enterDeletestate(DeletestateContext ctx) {

@@ -120,7 +120,7 @@ options {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-program:
+program: // TRANSLATED
     #(  p:Program_root {action.programRoot(#p);}
       (blockorstate)*
       Program_tail
@@ -419,7 +419,7 @@ fld[ContextQualifier contextQualifier]:
 // It appears that the compiler treats COUNT, MAX, TOTAL, etc as new variables.
 // TODO: To get an accurrate datatype for things like MAXIMUM, we would have to work out
 // the datatype of the expression being accumulated.
-aggregate_opt:
+aggregate_opt: // TRANSLATED
      #(id1:AVERAGE (label_constant)? {action.addToSymbolScope(action.defineVariable(#id1, #id1, DECIMAL));} )
   |  #(id2:COUNT (label_constant)? {action.addToSymbolScope(action.defineVariable(#id2, #id2, INTEGER));} )
   |  #(id3:MAXIMUM (label_constant)? {action.addToSymbolScope(action.defineVariable(#id3, #id3, DECIMAL));} )
@@ -432,7 +432,7 @@ aggregate_opt:
   |  #(id10:SUBTOTAL (label_constant)? {action.addToSymbolScope(action.defineVariable(#id10, #id10, DECIMAL));} )
   ;
 
-assignment_list:
+assignment_list: // TRANSLATED
     tbl[ContextQualifier.UPDATING] (#(EXCEPT (fld1[ContextQualifier.SYMBOL])*))?
   |  (  assign_equal (#(WHEN expression))?
     |  #(  Assign_from_buffer fld[ContextQualifier.UPDATING]  )

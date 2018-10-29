@@ -145,6 +145,26 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   // XXX
+
+  
+  @Override
+  public void enterAggregate_opt(Aggregate_optContext ctx) {
+    // TODO action.addToSymbolScope(action.defineVariable(#id1, #id1, DECIMAL));
+    // Ou integer depending on type
+  }
+
+  @Override
+  public void enterAssignment_list(Assignment_listContext ctx) {
+    if (ctx.record() != null) {
+      contextQualifiers.put(ctx.record(), ContextQualifier.UPDATING);
+    }
+    if (ctx.except_fields() != null) {
+      for (FieldContext fld : ctx.except_fields().field()) {
+        contextQualifiers.put(fld, ContextQualifier.SYMBOL);
+      }
+    }
+  }
+
   @Override
   public void enterAssign_equal(Assign_equalContext ctx) {
     if (ctx.widattr() != null) {

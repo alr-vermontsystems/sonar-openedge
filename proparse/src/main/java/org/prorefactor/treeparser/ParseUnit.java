@@ -70,7 +70,7 @@ public class ParseUnit {
   private IncludeRef macroGraph;
   private boolean appBuilderCode;
   private List<EditableCodeSection> sections;
-  private TreeParserRootSymbolScope rootScope;
+  private ITreeParserRootSymbolScope rootScope;
   private JPNodeMetrics metrics;
   private Document xref = null;
   private TypeInfo typeInfo = null;
@@ -96,11 +96,11 @@ public class ParseUnit {
     this.session = session;
   }
 
-  public TreeParserRootSymbolScope getRootScope() {
+  public ITreeParserRootSymbolScope getRootScope() {
     return rootScope;
   }
 
-  public void setRootScope(TreeParserRootSymbolScope rootScope) {
+  public void setRootScope(ITreeParserRootSymbolScope rootScope) {
     this.rootScope = rootScope;
   }
 

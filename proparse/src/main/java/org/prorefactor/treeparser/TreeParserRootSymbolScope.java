@@ -103,16 +103,11 @@ public class TreeParserRootSymbolScope extends TreeParserSymbolScope implements 
     return new FieldBuffer(this, buffer, field);
   }
 
-  /**
-   * Valid only if the parse unit is a CLASS. Returns null otherwise.
-   */
   public String getClassName() {
     return className;
   }
 
-  /**
-   * @return True is parse unit is a CLASS or INTERFACE
-   */
+  @Override
   public boolean isClass() {
     return className != null;
   }
@@ -121,6 +116,7 @@ public class TreeParserRootSymbolScope extends TreeParserSymbolScope implements 
     this.isInterface = isInterface;
   }
 
+  @Override
   public boolean isInterface() {
     return (className != null) && isInterface;
   }
@@ -129,6 +125,7 @@ public class TreeParserRootSymbolScope extends TreeParserSymbolScope implements 
     this.abstractClass = abstractClass;
   }
 
+  @Override
   public boolean isAbstractClass() {
     return abstractClass;
   }
@@ -137,6 +134,7 @@ public class TreeParserRootSymbolScope extends TreeParserSymbolScope implements 
     this.finalClass = finalClass;
   }
 
+  @Override
   public boolean isFinalClass() {
     return finalClass;
   }
@@ -145,6 +143,7 @@ public class TreeParserRootSymbolScope extends TreeParserSymbolScope implements 
     this.serializableClass = serializableClass;
   }
 
+  @Override
   public boolean isSerializableClass() {
     return serializableClass;
   }
@@ -248,9 +247,7 @@ public class TreeParserRootSymbolScope extends TreeParserSymbolScope implements 
     return null;
   }
 
-  /**
-   * @return a Collection containing all Routine objects defined in this RootSymbolScope.
-   */
+  @Override
   public Map<String, IRoutine> getRoutineMap() {
     return routineMap;
   }

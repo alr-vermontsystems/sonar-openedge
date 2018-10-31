@@ -15,13 +15,24 @@
  ********************************************************************************/
 package org.prorefactor.proparse.antlr4.nodetypes;
 
+import org.prorefactor.core.IConstants;
 import org.prorefactor.proparse.antlr4.JPNode;
 import org.prorefactor.proparse.antlr4.ProToken;
+import org.prorefactor.treeparser.BufferScope;
+import org.prorefactor.treeparser.symbols.ITableBuffer;
 
 public class RecordNameNode extends JPNode {
 
   public RecordNameNode(ProToken t) {
     super(t);
+  }
+
+  public void setBufferScope(BufferScope bufferScope) {
+    setLink(IConstants.BUFFERSCOPE, bufferScope);
+  }
+
+  public void setTableBuffer(ITableBuffer buffer) {
+    setLink(IConstants.SYMBOL, buffer);
   }
 
 }

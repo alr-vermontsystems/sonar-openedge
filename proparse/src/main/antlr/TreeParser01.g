@@ -128,13 +128,13 @@ program: // TRANSLATED
     )
   ;
 
-
-block_for:
+block_for: // TRANSLATED
     #(  FOR rn1:tbl[ContextQualifier.BUFFERSYMBOL] {action.strongScope(#rn1);}
       (COMMA rn2:tbl[ContextQualifier.BUFFERSYMBOL] {action.strongScope(#rn2);} )*
     )
   ;
-block_opt:
+
+block_opt: // TRANSLATED
     #(Block_iterator fld[ContextQualifier.REFUP] EQUAL expression TO expression (BY constant)? )
   |  querytuningphrase 
   |  #(WHILE expression )
@@ -147,11 +147,12 @@ block_opt:
   |  collatephrase
   |  #(GROUP ( #(BY expression (DESCENDING)? ) )+ )
   ;
-block_preselect:
+
+block_preselect: // TRANSLATED
     #(PRESELECT for_record_spec2[ContextQualifier.INITWEAK] )
   ;
 
-pseudfn:
+pseudfn: // TODO
      #(EXTENT funargs )
   |  #(FIXCODEPAGE funargs )
   |  #(OVERLAY funargs )
@@ -197,7 +198,7 @@ pseudfn:
   | AAPCONTROL | GETCODEPAGES | COMSELF
   ;
 
-functioncall:
+functioncall: // TODO
     #(ACCUMULATE accum_what (#(BY expression (DESCENDING)?))? expression )
   |  #(ADDINTERVAL LEFTPAREN expression COMMA expression COMMA expression RIGHTPAREN )
   |  #(AUDITENABLED LEFTPAREN (expression)? RIGHTPAREN )
@@ -255,7 +256,7 @@ functioncall:
   |  recordfunc
   ;
 
-recordfunargs:
+recordfunargs: // TODO
     (LEFTPAREN tbl[ContextQualifier.REF] RIGHTPAREN | tbl[ContextQualifier.REF])
   ;
 

@@ -15,9 +15,14 @@
  ********************************************************************************/
 package org.prorefactor.treeparser;
 
+import java.util.Map;
+
+import javax.annotation.Nullable;
+
 import org.prorefactor.core.schema.IField;
 import org.prorefactor.core.schema.ITable;
 import org.prorefactor.refactor.RefactorSession;
+import org.prorefactor.treeparser.symbols.IRoutine;
 import org.prorefactor.treeparser.symbols.ITableBuffer;
 
 public interface ITreeParserRootSymbolScope extends ITreeParserSymbolScope {
@@ -32,8 +37,28 @@ public interface ITreeParserRootSymbolScope extends ITreeParserSymbolScope {
    * Returns null if nothing found.
    */
   IField lookupUnqualifiedField(String name);
+
   /**
    * @return True is parse unit is a CLASS or INTERFACE
    */
   boolean isClass() ;
+
+  boolean isInterface();
+  
+  boolean isAbstractClass();
+  
+  boolean isSerializableClass();
+
+  boolean isFinalClass();
+
+  /**
+   * Valid only if the parse unit is a CLASS. Returns null otherwise.
+   */
+  @Nullable
+  String getClassName();
+  
+  /**
+   * @return a Collection containing all Routine objects defined in this RootSymbolScope.
+   */
+  Map<String, IRoutine> getRoutineMap();
 }

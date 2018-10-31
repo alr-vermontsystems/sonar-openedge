@@ -1,34 +1,48 @@
 package org.prorefactor.proparse.antlr4;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import org.prorefactor.core.ABLNodeType;
+import org.prorefactor.core.IConstants;
+import org.prorefactor.core.schema.ITable;
 import org.prorefactor.proparse.ParserSupport;
 import org.prorefactor.proparse.antlr4.Proparse.*;
 import org.prorefactor.proparse.antlr4.nodetypes.BlockNode;
+import org.prorefactor.proparse.antlr4.nodetypes.RecordNameNode;
 import org.prorefactor.proparse.antlr4.treeparser.Block;
 import org.prorefactor.refactor.RefactorSession;
 import org.prorefactor.treeparser.ContextQualifier;
 import org.prorefactor.treeparser.IBlock;
+import org.prorefactor.treeparser.ICall;
 import org.prorefactor.treeparser.ITreeParserRootSymbolScope;
 import org.prorefactor.treeparser.ITreeParserSymbolScope;
-import org.prorefactor.treeparser.ParseUnit;
+import org.prorefactor.treeparser.TreeParserException;
 import org.prorefactor.treeparser.TreeParserRootSymbolScope;
 import org.prorefactor.treeparser.symbols.IRoutine;
+import org.prorefactor.treeparser.symbols.ITableBuffer;
 import org.prorefactor.treeparser.symbols.Routine;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import antlr.SemanticException;
 
 public class TreeParser extends ProparseBaseListener {
+  private static final Logger LOG = LoggerFactory.getLogger(TreeParser.class);
 
   private final ParserSupport support;
   private final RefactorSession refSession;
-  private final ParseUnit unit;
   private final ITreeParserRootSymbolScope rootScope;
 
   private IBlock currentBlock;
   private ITreeParserSymbolScope currentScope;
   private IRoutine currentRoutine;
+  private IRoutine rootRoutine;
+
+  private ITableBuffer lastTableReferenced;
+  private ITableBuffer prevTableReferenced;
 
   /*
    * Note that blockStack is *only* valid for determining the current block - the stack itself cannot be used for
@@ -41,11 +55,10 @@ public class TreeParser extends ProparseBaseListener {
 
   private ParseTreeProperty<ContextQualifier> contextQualifiers = new ParseTreeProperty<>();
 
-  public TreeParser(ParserSupport support, RefactorSession session, ParseUnit unit) {
+  public TreeParser(ParserSupport support, RefactorSession session) {
     this.support = support;
     
     this.refSession = session;
-    this.unit = unit;
     this.rootScope = new TreeParserRootSymbolScope(refSession);
 
     currentScope = rootScope;
@@ -62,48 +75,138 @@ public class TreeParser extends ProparseBaseListener {
     return block;
   }
 
+  /** Action to take at various RECORD_NAME nodes. */
+  private void recordNameNode(JPNode anode, ContextQualifier contextQualifier) {
+    LOG.trace("Entering recordNameNode {} {}", anode, contextQualifier);
+
+    RecordNameNode recordNode = (RecordNameNode) anode;
+    recordNode.attrSet(IConstants.CONTEXT_QUALIFIER, contextQualifier.toString());
+    ITableBuffer buffer = null;
+    switch (contextQualifier) {
+      case INIT:
+      case INITWEAK:
+      case REF:
+      case REFUP:
+      case UPDATING:
+      case BUFFERSYMBOL:
+        buffer = currentScope.getBufferSymbol(recordNode.getText());
+        break;
+      case SYMBOL:
+        buffer = currentScope.lookupTableOrBufferSymbol(anode.getText());
+        break;
+      case TEMPTABLESYMBOL:
+        buffer = currentScope.lookupTempTable(anode.getText());
+        break;
+      case SCHEMATABLESYMBOL:
+        ITable table = refSession.getSchema().lookupTable(anode.getText());
+        if (table != null)
+          buffer = currentScope.getUnnamedBuffer(table);
+        break;
+      default:
+        assert false;
+    }
+    recordNodeSymbol(recordNode, buffer); // Does checks, sets attributes.
+    recordNode.setTableBuffer(buffer);
+    switch (contextQualifier) {
+      case INIT:
+      case REF:
+      case REFUP:
+      case UPDATING:
+        recordNode.setBufferScope(currentBlock.getBufferForReference(buffer));
+        break;
+      case INITWEAK:
+        recordNode.setBufferScope(currentBlock.addWeakBufferScope(buffer));
+        break;
+      default:
+        break;
+    }
+    buffer.noteReference(contextQualifier);
+  }
+
+  /** For a RECORD_NAME node, do checks and assignments for the TableBuffer. */
+  private void recordNodeSymbol(JPNode node, ITableBuffer buffer) {
+    String nodeText = node.getText();
+    if (buffer == null) {
+      throw new RuntimeException("Could not resolve table '" + nodeText + "'" + "" + node.getFileIndex() + node.getLine()+ node.getColumn());
+    }
+    ITable table = buffer.getTable();
+    prevTableReferenced = lastTableReferenced;
+    lastTableReferenced = buffer;
+
+    // For an unnamed buffer, determine if it's abbreviated.
+    // Note that named buffers, temp and work table names cannot be abbreviated.
+    if (buffer.isDefault() && table.getStoretype() == IConstants.ST_DBTABLE) {
+      String[] nameParts = nodeText.split("\\.");
+      int tableNameLen = nameParts[nameParts.length - 1].length();
+      if (table.getName().length() > tableNameLen)
+        node.attrSet(IConstants.ABBREVIATED, 1);
+    }
+  }
+
   @Override
   public void enterProgram(ProgramContext ctx) {
+    LOG.info("enterProgram");
+
     JPNode rootAST = support.getNode(ctx);
     BlockNode blockNode = (BlockNode) rootAST;
     
     currentBlock = pushBlock(new Block(rootScope, blockNode));
     rootScope.setRootBlock(currentBlock);
     blockNode.setBlock(currentBlock);
-    // unit.setRootScope(rootScope);
+    // FIXME unit.setRootScope(rootScope);
     
     Routine r = new Routine("", rootScope, rootScope);
     r.setProgressType(ABLNodeType.PROGRAM_ROOT);
-//    r.setDefOrIdNode(blockNode);
+    // TODO r.setDefOrIdNode(blockNode);
     blockNode.setSymbol(r);
+
     rootScope.add(r);
     currentRoutine = r;
-//    rootRoutine = r;
-
+    rootRoutine = r;
   }
 
   @Override
   public void exitProgram(ProgramContext ctx) {
-    // See TP01Support#programTail()
+    LOG.info("exitProgram");
+
+    // Now that we know what all the internal Routines are, wrap up the Calls.
+    List<ITreeParserSymbolScope> allScopes = new ArrayList<>();
+    allScopes.add(rootScope);
+    allScopes.addAll(rootScope.getChildScopesDeep());
+
+    LinkedList<ICall> calls = new LinkedList<>();
+    for (ITreeParserSymbolScope scope : allScopes) {
+      for (ICall call : scope.getCallList()) {
+        // Process IN HANDLE last to make sure PERSISTENT SET is processed first.
+        if (call.isInHandle()) {
+          calls.addLast(call);
+        } else {
+          calls.addFirst(call);
+        }
+      }
+    }
+    for (ICall call : calls) {
+      String routineId = call.getRunArgument();
+      call.wrapUp(rootScope.hasRoutine(routineId));
+    }
   }
 
   @Override
   public void enterBlock_for(Block_forContext ctx) {
     // Example
     for (RecordContext record : ctx.record()) {
-      // TP01Support.recordNameNode(support.getNode(record), ContextQualifier.BUFFERSYMBOL);
-      // currentBlock.addStrongBufferScope(support.getNode(record));
+      recordNameNode(support.getNode(record), ContextQualifier.BUFFERSYMBOL);
+      // TODO currentBlock.addStrongBufferScope(support.getNode(record));
     }
   }
 
   @Override
   public void enterBlock_opt_iterator(Block_opt_iteratorContext ctx) {
-    // TP01Support.field(support.getNode(ctx.field()), ctx.field().id, ContextQualifier.REFUP, TableNameResolution.ANY)
+    contextQualifiers.put(ctx.field(), ContextQualifier.REFUP);
   }
 
   @Override
   public void enterBlock_preselect(Block_preselectContext ctx) {
-    // Read (and removed ?) in for_record_spec
     contextQualifiers.put(ctx.for_record_spec(), ContextQualifier.INITWEAK);
   }
   
@@ -114,7 +217,7 @@ public class TreeParser extends ProparseBaseListener {
       // A compléter
     }
   }
-  
+
   @Override
   public void enterFunargs(FunargsContext ctx) {
     for (ExpressionContext exp : ctx.expression()) {
@@ -130,7 +233,7 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterParameterBufferRecord(ParameterBufferRecordContext ctx) {
     // action.paramForCall(parameter_AST_in);
-    
+
     // TP01Support.recordNameNode(support.getNode(ctx.record()), ContextQualifier.INIT);
     //  action.paramProgressType(BUFFER);
     // action.paramSymbol(#bt);

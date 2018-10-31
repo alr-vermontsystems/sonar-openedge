@@ -286,11 +286,11 @@ parameter_arg2[ContextQualifier contextQualifier]:
     ( BYPOINTER | BYVARIANTPOINTER )?
   ;
 
-parameter_dataset_options:
+parameter_dataset_options: // TRANSLATED
    (APPEND)? (BYVALUE|BYREFERENCE| BIND {action.paramBind();} )?
   ;
 
-filenameorvalue:
+filenameorvalue: // TRANSLATED
     #(VALUE LEFTPAREN exp:expression RIGHTPAREN ) { action.fnvExpression(#exp); }
   |  fn:FILENAME { action.fnvFilename(#fn); }
   ;

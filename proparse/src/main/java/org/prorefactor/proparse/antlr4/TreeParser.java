@@ -16,7 +16,6 @@ import org.prorefactor.proparse.antlr4.treeparser.Block;
 import org.prorefactor.refactor.RefactorSession;
 import org.prorefactor.treeparser.ContextQualifier;
 import org.prorefactor.treeparser.IBlock;
-import org.prorefactor.treeparser.ICall;
 import org.prorefactor.treeparser.ITreeParserRootSymbolScope;
 import org.prorefactor.treeparser.ITreeParserSymbolScope;
 import org.prorefactor.treeparser.TreeParserException;
@@ -173,22 +172,6 @@ public class TreeParser extends ProparseBaseListener {
     List<ITreeParserSymbolScope> allScopes = new ArrayList<>();
     allScopes.add(rootScope);
     allScopes.addAll(rootScope.getChildScopesDeep());
-
-    LinkedList<ICall> calls = new LinkedList<>();
-    for (ITreeParserSymbolScope scope : allScopes) {
-      for (ICall call : scope.getCallList()) {
-        // Process IN HANDLE last to make sure PERSISTENT SET is processed first.
-        if (call.isInHandle()) {
-          calls.addLast(call);
-        } else {
-          calls.addFirst(call);
-        }
-      }
-    }
-    for (ICall call : calls) {
-      String routineId = call.getRunArgument();
-      call.wrapUp(rootScope.hasRoutine(routineId));
-    }
   }
 
   @Override

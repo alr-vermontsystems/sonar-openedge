@@ -45,7 +45,6 @@ public class TreeParserSymbolScope implements ITreeParserSymbolScope {
   protected final List<ITreeParserSymbolScope> childScopes = new ArrayList<>();
 
   protected List<ISymbol> allSymbols = new ArrayList<>();
-  protected List<ICall> callList = new ArrayList<>();
   protected IBlock rootBlock;
   protected IRoutine routine;
   protected Map<String, ITableBuffer> bufferMap = new HashMap<>();
@@ -222,11 +221,6 @@ public class TreeParserSymbolScope implements ITreeParserSymbolScope {
     if (table == null)
       return null;
     return getUnnamedBuffer(table);
-  }
-
-  @Override
-  public List<ICall> getCallList() {
-    return callList;
   }
 
   @Override
@@ -430,11 +424,6 @@ public class TreeParserSymbolScope implements ITreeParserSymbolScope {
     if (ret == null && parentScope != null)
       return parentScope.lookupWidget(widgetType, name);
     return ret;
-  }
-
-  @Override
-  public void registerCall(ICall call) {
-    callList.add(call);
   }
 
   @Override

@@ -82,7 +82,6 @@ public interface ITreeParserSymbolScope {
   void setRoutine(IRoutine routine);
   IRoutine getRoutine();
 
-  List<ICall> getCallList();
   IBlock getRootBlock() ;
   // A supprimer, uniquement pour migration
   /** Get or create the unnamed buffer for a schema table. */
@@ -103,7 +102,6 @@ public interface ITreeParserSymbolScope {
    * the input scope?
    */
   boolean isActiveIn(ITreeParserSymbolScope theScope);
-  void registerCall(ICall call) ;
   void setRootBlock(IBlock block) ;
 
   /** Get a *copy* of the list of all symbols in this scope */

@@ -66,36 +66,6 @@ public interface ITreeParserAction {
   }
 
   /**
-   * Node where a call occurs, such as USER_FUNC or LOCAL_METHOD_REF
-   */
-  default void callBegin(JPNode callAST) throws SemanticException {
-  }
-
-  /**
-   * Triggered once the call's parameters have been processed
-   */
-  default void callEnd() throws SemanticException {
-  }
-
-  /**
-   * Node where a NEW call occurs
-   */
-  default void callConstructorBegin(JPNode ast) throws SemanticException {
-  }
-
-  default void callConstructorEnd() throws SemanticException {
-  }
-
-  /**
-   * Node where a method call occurs
-   */
-  default void callMethodBegin(JPNode ast) throws SemanticException {
-  }
-
-  default void callMethodEnd() throws SemanticException {
-  }
-
-  /**
    * The tree parser calls this at the start of a CAN-FIND, because it needs to have its own buffer and buffer scope.
    */
   default void canFindBegin(JPNode canfindAST, JPNode recordAST) throws SemanticException {
@@ -435,30 +405,6 @@ public interface ITreeParserAction {
 
   /** The datatype node or CLASS node for the return of a FUNCTION or METHOD. */
   default void routineReturnDatatype(JPNode datatypeAST) throws SemanticException {
-  }
-
-  /** Action to take at the start of RUNSTATE. */
-  default void runBegin(JPNode t) throws SemanticException {
-  }
-
-  /** Action to take at the end of RUNSTATE. */
-  default void runEnd(JPNode node) throws SemanticException {
-  }
-
-  /**
-   * Action to take in a RUNSTATE of the form run <pre>in &lt;handle expression&gt;</pre>.
-   * 
-   * @param hn - the node for &lt;handle expression&gt;.
-   */
-  default void runInHandle(JPNode hn) throws SemanticException {
-  }
-
-  /**
-   * Action to take in RUNSTATE of the form run &lt;p&gt; persistent set &lt;handle&gt;.
-   * 
-   * @param fld - the field node for &lt;handle&gt;.
-   */
-  default void runPersistentSet(JPNode fld) throws SemanticException {
   }
 
   /**

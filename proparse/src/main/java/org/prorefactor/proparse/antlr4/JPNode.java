@@ -30,7 +30,6 @@ import org.prorefactor.proparse.SymbolScope.FieldType;
 import org.prorefactor.proparse.antlr4.nodetypes.BlockNode;
 import org.prorefactor.proparse.antlr4.nodetypes.FieldRefNode;
 import org.prorefactor.proparse.antlr4.nodetypes.ProgramRootNode;
-import org.prorefactor.treeparser.Call;
 import org.prorefactor.treeparser.symbols.FieldContainer;
 import org.prorefactor.treeparser.symbols.ISymbol;
 
@@ -440,11 +439,6 @@ public class JPNode implements AST {
     return attrGet(IConstants.STATE2);
   }
 
-  /** Some nodes like RUN, USER_FUNC, LOCAL_METHOD_REF have a Call object linked to them by TreeParser01. */
-  public Call getCall() {
-    return (Call) getLink(IConstants.CALL);
-  }
-
   /** Mark a node as a "statement head" */
   public void setStatementHead() {
     attrSet(IConstants.STATEHEAD, IConstants.TRUE);
@@ -594,12 +588,6 @@ public class JPNode implements AST {
   /** Does this node have the Proparse STATEHEAD attribute? */
   public boolean isStateHead() {
     return attrGet(IConstants.STATEHEAD) == IConstants.TRUE;
-  }
-
-
-  /** Some nodes like RUN, USER_FUNC, LOCAL_METHOD_REF have a Call object linked to them by TreeParser01. */
-  public void setCall(Call call) {
-    setLink(IConstants.CALL, call);
   }
 
   /**

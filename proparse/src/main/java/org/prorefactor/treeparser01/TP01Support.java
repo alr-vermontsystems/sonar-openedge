@@ -36,13 +36,10 @@ import org.prorefactor.proparse.ProParserTokenTypes;
 import org.prorefactor.refactor.RefactorSession;
 import org.prorefactor.treeparser.Block;
 import org.prorefactor.treeparser.BufferScope;
-import org.prorefactor.treeparser.Call;
 import org.prorefactor.treeparser.ContextQualifier;
 import org.prorefactor.treeparser.DataType;
-import org.prorefactor.treeparser.Expression;
 import org.prorefactor.treeparser.FieldLookupResult;
 import org.prorefactor.treeparser.IBlock;
-import org.prorefactor.treeparser.ICall;
 import org.prorefactor.treeparser.ITreeParserRootSymbolScope;
 import org.prorefactor.treeparser.ITreeParserSymbolScope;
 import org.prorefactor.treeparser.Parameter;
@@ -84,11 +81,8 @@ public class TP01Support implements ITreeParserAction {
   private List<IBlock> blockStack = new ArrayList<>();
 
   private IBlock currentBlock;
-  private Expression wipExpression;
   private FrameStack frameStack = new FrameStack();
   private Map<String, ITreeParserSymbolScope> funcForwards = new HashMap<>();
-  /** There may be more than one WIP call, since a function call is a perfectly valid parameter. */
-  private Deque<ICall> wipCalls = new LinkedList<>();
   /** Since there can be more than one WIP Call, there can be more than one WIP Parameter. */
   private Deque<Parameter> wipParameters = new LinkedList<>();
 
@@ -168,54 +162,6 @@ public class TP01Support implements ITreeParserAction {
     if (tableBuffer != null) {
       tableBuffer.noteReference(ContextQualifier.SYMBOL);
     }
-  }
-
-  @Override
-  public void callBegin(JPNode callNode) {
-    LOG.trace("Entering callBegin {}", callNode);
-    Call call = new Call(callNode);
-    callNode.setCall(call);
-    wipCalls.addFirst(call);
-  }
-
-  @Override
-  public void callEnd() {
-    LOG.trace("Entering callEnd");
-    // Record the call in the current context.
-    currentScope.registerCall(wipCalls.getFirst());
-    wipCalls.removeFirst();
-  }
-
-  @Override
-  public void callConstructorBegin(JPNode callNode) {
-    LOG.trace("Entering callConstructorBegin {}", callNode);
-    Call call = new Call(callNode);
-    callNode.setCall(call);
-    wipCalls.addFirst(call);
-  }
-
-  @Override
-  public void callConstructorEnd() {
-    LOG.trace("Entering callConstructorEnd");
-    // Record the call in the current context.
-    currentScope.registerCall(wipCalls.getFirst());
-    wipCalls.removeFirst();
-  }
-
-  @Override
-  public void callMethodBegin(JPNode callNode) {
-    LOG.trace("Entering callMethodBegin {}", callNode);
-    Call call = new Call(callNode);
-    callNode.setCall(call);
-    wipCalls.addFirst(call);
-  }
-
-  @Override
-  public void callMethodEnd() {
-    LOG.trace("Entering callMethodEnd");
-    // Record the call in the current context.
-    currentScope.registerCall(wipCalls.getFirst());
-    wipCalls.removeFirst();
   }
 
   /**
@@ -720,32 +666,6 @@ public class TP01Support implements ITreeParserAction {
 
   } // field()
 
-  /**
-   * Called by the tree parser at filenameorvalue: VALUE(expression), passing in the expression node. Partly implemented
-   * for Calls and Routines.
-   * 
-   * @author pcd
-   */
-  @Override
-  public void fnvExpression(JPNode node) {
-    LOG.trace("fnvExpression  {}", node);
-    wipExpression = new Expression((JPNode) node);
-  }
-
-  /**
-   * Called by the tree parser for filenameorvalue: FILENAME production Partly implemented for Calls and Routines.
-   * 
-   * @author pcd
-   */
-  @Override
-  public void fnvFilename(JPNode node) {
-    LOG.trace("Entering fnvFilename {}", node);
-
-    Expression exp = new Expression((JPNode) node);
-    exp.setValue(node.getText());
-    wipExpression = exp;
-  }
-
   /** Called from Form_item node */
   @Override
   public void formItem(JPNode ast) {
@@ -937,7 +857,6 @@ public class TP01Support implements ITreeParserAction {
     Parameter param = new Parameter();
     param.setDirectionNode((JPNode) directionAST);
     wipParameters.addFirst(param);
-    wipCalls.getFirst().addParameter(param);
   }
 
   @Override
@@ -1022,25 +941,6 @@ public class TP01Support implements ITreeParserAction {
   @Override
   public void programTail() throws SemanticException {
     LOG.trace("Entering programTail");
-    // Now that we know what all the internal Routines are, wrap up the Calls.
-    List<ITreeParserSymbolScope> allScopes = new ArrayList<>();
-    allScopes.add(rootScope);
-    allScopes.addAll(rootScope.getChildScopesDeep());
-    LinkedList<ICall> calls = new LinkedList<>();
-    for (ITreeParserSymbolScope scope : allScopes) {
-      for (ICall call : scope.getCallList()) {
-        // Process IN HANDLE last to make sure PERSISTENT SET is processed first.
-        if (call.isInHandle()) {
-          calls.addLast(call);
-        } else {
-          calls.addFirst(call);
-        }
-      }
-    }
-    for (ICall call : calls) {
-      String routineId = call.getRunArgument();
-      call.wrapUp(rootScope.hasRoutine(routineId));
-    }
   }
 
   /** For a RECORD_NAME node, do checks and assignments for the TableBuffer. */
@@ -1115,62 +1015,6 @@ public class TP01Support implements ITreeParserAction {
     if (datatypeNode.getType() == ProParserTokenTypes.CLASS)
       datatypeNode = datatypeNode.nextNode();
     currentRoutine.setReturnDatatypeNode(datatypeNode);
-  }
-
-  /**
-   * Called by the tree parser at the beginning of a RUN statement.
-   * 
-   * @author pcd
-   */
-  @Override
-  public void runBegin(JPNode runNode) {
-    LOG.trace("Entering runBegin {}", runNode);
-    // Expect a FileName at the top of semantic stack
-    String fileName = (String) wipExpression.getValue();
-    Call call = new Call(runNode);
-    call.setRunArgument(fileName);
-    runNode.setCall(call);
-    wipCalls.addFirst(call);
-  }
-
-  /**
-   * Called by the tree parser in the RUN statement right before any parameters.
-   * 
-   * @author pcd
-   */
-  @Override
-  public void runEnd(JPNode node) {
-    // Record the call in the current context.
-    currentScope.registerCall(wipCalls.getFirst());
-    wipCalls.removeFirst();
-  }
-
-  /**
-   * Called by the tree parser for RUN IN HANDLE. Get the RunHandle value in "run &lt;proc&gt; in &lt;handle&gt;." Where
-   * &lt;handle&gt; is a handle valued Expression; then save the RunHandle value in the current call. Partly implemented
-   * for Calls and Routines.
-   * 
-   * @author pcd
-   */
-  @Override
-  public void runInHandle(JPNode exprNode) {
-    wipCalls.getFirst().setRunHandleNode(exprNode);
-  }
-
-  /**
-   * Called by the tree parser for RUN PERSISTENT SET. Update the &lt;handle&gt; in "run &lt;proc&gt; persistent set &lt;handle&gt;.":
-   * save a reference to the external procedure &lt;proc&gt; in &lt;handle&gt;. The AST structure for this form of the run is:
-   * runstate : #( RUN filenameorvalue (#(PERSISTENT ( #(SET (field)? ) &lt;A&gt; )? ) where &lt;A&gt; is this action. Thus, we
-   * expect a value in wipFieldNode with the name of the handle variable. This method gets the variable from the current
-   * scope and stores a reference to it in the current call (being built), so that the Call.finalize method can update
-   * its value. Partly implemented for Calls and Routines.
-   * 
-   * @author pcd
-   * @param fld is used for error reporting.
-   */
-  @Override
-  public void runPersistentSet(JPNode fld) {
-    wipCalls.getFirst().setPersistentHandleNode((JPNode) fld);
   }
 
   @Override

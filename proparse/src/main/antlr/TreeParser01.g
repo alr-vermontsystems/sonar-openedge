@@ -207,18 +207,14 @@ functioncall: // TODO
   |  currentvaluefunc // is also a pseudfn.
   |  dynamiccurrentvaluefunc // is also a pseudfn.
   |  #(  df:DYNAMICFUNCTION
-      {action.callBegin(#df);}
       LEFTPAREN expression (#(IN_KW expression))? (COMMA parameter)* RIGHTPAREN (NOERROR_KW)?
-      {action.callEnd();}
     )
   |  #(  di:DYNAMICINVOKE
-      {action.callBegin(#di);}
       LEFTPAREN
       (TYPE_NAME|exprt)
       COMMA expression
       (COMMA parameter)*
       RIGHTPAREN
-      {action.callEnd();}
     )
   // ENTERED and NOTENTERED are only dealt with as part of an expression term. See: exprt.
   |  entryfunc // is also a pseudfn.
@@ -242,7 +238,7 @@ functioncall: // TODO
   |  rawfunc // is also a pseudfn.
   |  #(SEEK LEFTPAREN (INPUT|OUTPUT|ID|STREAMHANDLE expression) RIGHTPAREN )
   |  substringfunc // is also a pseudfn.
-  |  #(sr:SUPER {action.callBegin(#sr);} (parameterlist)? {action.callEnd();} )
+  |  #(sr:SUPER (parameterlist)? )
   |  #(TENANTID LEFTPAREN (expression)? RIGHTPAREN )
   |  #(TENANTNAME LEFTPAREN (expression)? RIGHTPAREN )
   |  #(TIMEZONE (funargs)? )
@@ -300,9 +296,9 @@ exprt:
     #(LEFTPAREN expression RIGHTPAREN )
   |  constant
   |  widattr2[ContextQualifier.REF]
-  |  #(uf:USER_FUNC {action.callBegin(#uf);} parameterlist_noroot {action.callEnd();} )
-  |  #(lm:LOCAL_METHOD_REF {action.callMethodBegin(#lm);} parameterlist_noroot {action.callMethodEnd();} )
-  |  ( #(NEW TYPE_NAME) )=> #(NEW tn:TYPE_NAME {action.callConstructorBegin(#tn);} parameterlist {action.callConstructorEnd();} )
+  |  #(uf:USER_FUNC parameterlist_noroot )
+  |  #(lm:LOCAL_METHOD_REF parameterlist_noroot )
+  |  ( #(NEW TYPE_NAME) )=> #(NEW tn:TYPE_NAME parameterlist )
   |  // SUPER is amibiguous between functioncall and systemhandlename
     (  options{generateAmbigWarnings=false;}
     :  functioncall
@@ -320,9 +316,8 @@ widattr:
       |  exprt
       )
       (  (OBJCOLON|DOUBLECOLON) aname:. (array_subscript)?
-        (  {action.callBegin(#aname);}
+        ( 
           method_param_list
-          {action.callEnd();}
         )? 
       )+
       (#(IN_KW (MENU|FRAME|BROWSE|SUBMENU|BUFFER) ID ))? (AS .)?
@@ -336,9 +331,8 @@ widattr2[ContextQualifier cq]:
       |  id2:exprt
       )
       (  (OBJCOLON|DOUBLECOLON) aname:. (array_subscript)?
-        (  {action.callBegin(#aname);}
+        ( 
           method_param_list
-          {action.callEnd();}
         )? 
       )+
       (#(IN_KW (MENU|FRAME|BROWSE|SUBMENU|BUFFER) ID ))? (AS .)?
@@ -1179,7 +1173,7 @@ dynamicnewstate: // TRANSLATED
     #(  Assign_dynamic_new
       #(  EQUAL
         (widattr2[ContextQualifier.UPDATING] | fld[ContextQualifier.UPDATING])
-        #(dn:DYNAMICNEW expression {action.callBegin(#dn);} parameterlist {action.callEnd();})
+        #(dn:DYNAMICNEW expression parameterlist )
       )
       (NOERROR_KW)?
       state_end
@@ -1651,10 +1645,8 @@ promptforstate: // TRANSLATED
 
 publishstate: // TRANSLATED
     #(  pu:PUBLISH expression (#(FROM expression) )?
-      {action.callBegin(#pu);}
       (parameterlist)?
       state_end
-      {action.callEnd();}
     )
   ;
 
@@ -1698,14 +1690,14 @@ repeatstate: // TRANSLATED
   ;
 
 runstate: // TRANSLATED
-    #(  r:RUN filenameorvalue { action.runBegin(#r); } 
+    #(  r:RUN filenameorvalue 
       (LEFTANGLE LEFTANGLE filenameorvalue RIGHTANGLE RIGHTANGLE)?
-      (  #(PERSISTENT ( #(SET (hnd:fld[ContextQualifier.UPDATING] { action.runPersistentSet(#hnd); } )? ) )? )
+      (  #(PERSISTENT ( #(SET (hnd:fld[ContextQualifier.UPDATING] )? ) )? )
       |  #(SINGLERUN ( #(SET (fld[ContextQualifier.UPDATING])? ) )? )
       |  #(SINGLETON ( #(SET (fld[ContextQualifier.UPDATING])? ) )? )
       |  #(SET (fld[ContextQualifier.UPDATING])? )
       |  #(ON (SERVER)? expression (TRANSACTION (DISTINCT)?)? )
-      |  #(IN_KW hexp:expression) { action.runInHandle(#hexp); }
+      |  #(IN_KW hexp:expression)
       |  #(  ASYNCHRONOUS ( #(SET (fld[ContextQualifier.UPDATING])? ) )?
           (#(EVENTPROCEDURE expression ) )?
           (#(IN_KW expression))?
@@ -1714,21 +1706,18 @@ runstate: // TRANSLATED
       (parameterlist)?
       (NOERROR_KW|anyorvalue)*
       state_end
-      { action.runEnd(#r); }
     )
   ;
 
 runstoredprocedurestate: // TRANSLATED
     #(  r:RUN STOREDPROCEDURE ID (assign_equal)? (NOERROR_KW)?
-      {action.callBegin(#r);}
       (parameterlist)?
       state_end
-      {action.callEnd();}
     )
   ;
 
 runsuperstate: // TRANSLATED
-    #(r:RUN {action.callBegin(#r);} SUPER (parameterlist)? (NOERROR_KW)? state_end {action.callEnd();} )
+    #(r:RUN SUPER (parameterlist)? (NOERROR_KW)? state_end )
   ;
 
 scrollstate: // TRANSLATED
@@ -1805,7 +1794,7 @@ systemdialogprintersetupstate: // TRANSLATED
   ;
 
 thisobjectstate: // TRANSLATED
-    #(to:THISOBJECT {action.callBegin(#to);} parameterlist_noroot state_end {action.callEnd();} )
+    #(to:THISOBJECT parameterlist_noroot state_end )
   ;
 
 triggerphrase: // TRANSLATED

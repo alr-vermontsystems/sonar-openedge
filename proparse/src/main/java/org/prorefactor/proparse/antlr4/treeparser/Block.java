@@ -20,8 +20,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.prorefactor.core.nodetypes.RecordNameNode;
+import org.prorefactor.core.ABLNodeType;
 import org.prorefactor.proparse.antlr4.JPNode;
+import org.prorefactor.proparse.antlr4.nodetypes.RecordNameNode;
 import org.prorefactor.treeparser.BufferScope;
 import org.prorefactor.treeparser.BufferScope.Strength;
 import org.prorefactor.treeparser.FieldLookupResult;
@@ -94,26 +95,30 @@ public class Block implements IBlock {
     return null;
   }
 
-  @Override
   public void addStrongBufferScope(RecordNameNode node) {
-    // TODO Auto-generated method stub
-    
+    BufferScope buff = new BufferScope(this, node.getTableBuffer(), BufferScope.Strength.STRONG);
+    bufferScopes.add(buff);
+    addBufferScopeReferences(buff);
+    node.setBufferScope(buff);
   }
 
-  @Override
   public void addHiddenCursor(RecordNameNode node) {
     // TODO Auto-generated method stub
     
   }
 
   @Override
-  public void addBufferScopeReferences(org.prorefactor.treeparser.BufferScope bufferScope) {
-    // TODO Auto-generated method stub
-    
+  public void addBufferScopeReferences(BufferScope bufferScope) {
+    // References do not get added to DO blocks.
+    if (blockStatementNode.getNodeType() != ABLNodeType.DO)
+      bufferScopes.add(bufferScope);
+    if (parent != null && bufferScope.getSymbol().getScope().getRootBlock() != this) {
+      parent.addBufferScopeReferences(bufferScope);
+    }
   }
 
   @Override
-  public org.prorefactor.treeparser.BufferScope getBufferForReferenceSub(ITableBuffer symbol) {
+  public BufferScope getBufferForReferenceSub(ITableBuffer symbol) {
     // TODO Auto-generated method stub
     return null;
   }

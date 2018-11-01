@@ -27,6 +27,18 @@ public class RecordNameNode extends JPNode {
     super(t);
   }
 
+  public BufferScope getBufferScope() {
+    BufferScope bufferScope = (BufferScope) getLink(IConstants.BUFFERSCOPE);
+    assert bufferScope != null;
+    return bufferScope;
+  }
+
+  public ITableBuffer getTableBuffer() {
+    ITableBuffer buffer = (ITableBuffer) getLink(IConstants.SYMBOL);
+    assert buffer != null;
+    return buffer;
+  }
+
   public void setBufferScope(BufferScope bufferScope) {
     setLink(IConstants.BUFFERSCOPE, bufferScope);
   }

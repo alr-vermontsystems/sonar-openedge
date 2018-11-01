@@ -50,7 +50,7 @@ public interface IBlock {
    * 
    * @param node The RECORD_NAME node. It must already have the BufferSymbol linked to it.
    */
-  void addStrongBufferScope(RecordNameNode node);
+  // void addStrongBufferScope(Object node);
   
   /**
    * A "hidden cursor" is a BufferScope which has no side-effects on surrounding blocks like strong, weak, and reference
@@ -58,7 +58,7 @@ public interface IBlock {
    * 
    * @param node The RECORD_NAME node. Must have the BufferSymbol linked to it already.
    */
-  void addHiddenCursor(RecordNameNode node);
+  // void addHiddenCursor(RecordNameNode node);
 
   /**
    * Add a reference to a BufferScope to this and all outer blocks. These references are required for duplicating

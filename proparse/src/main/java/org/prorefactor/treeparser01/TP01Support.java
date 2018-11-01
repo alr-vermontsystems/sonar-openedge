@@ -80,7 +80,7 @@ public class TP01Support implements ITreeParserAction {
    */
   private List<IBlock> blockStack = new ArrayList<>();
 
-  private IBlock currentBlock;
+  private Block currentBlock;
   private FrameStack frameStack = new FrameStack();
   private Map<String, ITreeParserSymbolScope> funcForwards = new HashMap<>();
   /** Since there can be more than one WIP Call, there can be more than one WIP Parameter. */
@@ -137,7 +137,7 @@ public class TP01Support implements ITreeParserAction {
   public void blockBegin(JPNode blockAST) {
     LOG.trace("Entering blockBegin {}", blockAST);
     BlockNode blockNode = (BlockNode) blockAST;
-    currentBlock = pushBlock(new Block(currentBlock, blockNode));
+    currentBlock = (Block) pushBlock(new Block(currentBlock, blockNode));
     blockNode.setBlock(currentBlock);
   }
 
@@ -145,7 +145,7 @@ public class TP01Support implements ITreeParserAction {
   @Override
   public void blockEnd() {
     LOG.trace("Entering blockEnd");
-    currentBlock = popBlock();
+    currentBlock = (Block) popBlock();
   }
 
   /** The ID node in a BROWSE ID pair. */
@@ -925,7 +925,7 @@ public class TP01Support implements ITreeParserAction {
   public void programRoot(JPNode rootAST) {
     LOG.trace("Entering programRoot {}", rootAST);
     BlockNode blockNode = (BlockNode) rootAST;
-    currentBlock = pushBlock(new Block(rootScope, blockNode));
+    currentBlock = (Block) pushBlock(new Block(rootScope, blockNode));
     rootScope.setRootBlock(currentBlock);
     blockNode.setBlock(currentBlock);
     getParseUnit().setRootScope(rootScope);
@@ -1022,7 +1022,7 @@ public class TP01Support implements ITreeParserAction {
     LOG.trace("Entering scopeAdd {}", anode);
     BlockNode blockNode = (BlockNode) anode;
     currentScope = currentScope.addScope();
-    currentBlock = pushBlock(new Block(currentScope, blockNode));
+    currentBlock = (Block) pushBlock(new Block(currentScope, blockNode));
     currentScope.setRootBlock(currentBlock);
     blockNode.setBlock(currentBlock);
   }
@@ -1043,7 +1043,7 @@ public class TP01Support implements ITreeParserAction {
   private void scopeSwap(ITreeParserSymbolScope scope) {
     currentScope = scope;
     blockEnd(); // pop the unused block from the stack
-    currentBlock = pushBlock(scope.getRootBlock());
+    currentBlock = (Block) pushBlock(scope.getRootBlock());
   }
 
   @Override

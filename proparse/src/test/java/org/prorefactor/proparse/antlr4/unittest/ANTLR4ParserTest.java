@@ -36,6 +36,7 @@ import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.misc.Utils;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.antlr.v4.runtime.tree.RuleNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.antlr.v4.runtime.tree.Tree;
@@ -53,6 +54,8 @@ import org.prorefactor.proparse.antlr4.JPNodeVisitor;
 import org.prorefactor.proparse.antlr4.ProgressLexer;
 import org.prorefactor.proparse.antlr4.Proparse;
 import org.prorefactor.proparse.antlr4.ProparseErrorStrategy;
+import org.prorefactor.proparse.antlr4.ProparseListener;
+import org.prorefactor.proparse.antlr4.TreeParser;
 import org.prorefactor.refactor.RefactorSession;
 import org.prorefactor.refactor.settings.ProparseSettings;
 import org.prorefactor.treeparser.ParseUnit;
@@ -370,6 +373,9 @@ public class ANTLR4ParserTest {
           tree).build(parser.getParserSupport());
       displayParseInfo(parser.getParseInfo());
       displayRootNode4(root4, parser.getParserSupport(), "target/antlr4.txt");
+      ProparseListener listener = new TreeParser(parser.getParserSupport(), session);
+      ParseTreeWalker walker = new ParseTreeWalker();
+      walker.walk(listener, tree);
 
       ProgressLexer lexer2 = new ProgressLexer(session, new FileInputStream(file), file.getAbsolutePath(), false);
       ProParser parser2 = new ProParser(lexer2.getANTLR2TokenStream(true));

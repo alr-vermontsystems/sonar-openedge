@@ -91,7 +91,6 @@ public class Block implements IBlock {
       return parent.addFrame(frame);
   }
 
-  @Override
   public void addHiddenCursor(RecordNameNode node) {
     ITableBuffer symbol = node.getTableBuffer();
     BufferScope buff = new BufferScope(this, symbol, BufferScope.Strength.HIDDEN_CURSOR);
@@ -101,7 +100,6 @@ public class Block implements IBlock {
     node.setBufferScope(buff);
   }
 
-  @Override
   public void addStrongBufferScope(RecordNameNode node) {
     ITableBuffer symbol = node.getTableBuffer();
     BufferScope buff = new BufferScope(this, symbol, BufferScope.Strength.STRONG);

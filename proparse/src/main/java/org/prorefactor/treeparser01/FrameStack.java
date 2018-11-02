@@ -55,7 +55,7 @@ public class FrameStack {
   private FieldContainer containerForCurrentStatement = null;
   private JPNode currStatementWholeTableFormItemNode = null;
 
-  FrameStack() {
+  public FrameStack() {
   }
 
   /**
@@ -115,7 +115,7 @@ public class FrameStack {
    * form_item sometimes get used in statements that don't actually affect frames. In those cases,
    * containerForCurrentStatement==null, and this function is a no-op.
    */
-  void formItem(JPNode formItemNode) {
+  public void formItem(JPNode formItemNode) {
     if (containerForCurrentStatement == null)
       return;
     assert formItemNode.getType() == ProParserTokenTypes.Form_item;
@@ -142,7 +142,7 @@ public class FrameStack {
   /**
    * The ID node in a FRAME ID pair. For "WITH FRAME id", the ID was already set when we processed the statement head.
    */
-  void frameRefNode(JPNode idNode, TreeParserSymbolScope symbolScope) {
+  public void frameRefNode(JPNode idNode, TreeParserSymbolScope symbolScope) {
     if (idNode.getSymbol() == null)
       frameRefSet(idNode, symbolScope);
   }
@@ -237,13 +237,13 @@ public class FrameStack {
   }
 
   /** Receive the node (will be a Field_ref) that follows an @ in a frame phrase. */
-  void lexAt(JPNode fieldRefNode) {
+  public void lexAt(JPNode fieldRefNode) {
     if (containerForCurrentStatement != null)
       containerForCurrentStatement.addSymbol(fieldRefNode.getSymbol(), currStatementIsEnabler);
   }
 
   /** FOR|REPEAT|DO blocks need to be checked for explicit WITH FRAME phrase. */
-  void nodeOfBlock(JPNode blockNode, Block currentBlock) {
+  public void nodeOfBlock(JPNode blockNode, Block currentBlock) {
     JPNode containerTypeNode = getContainerTypeNode(blockNode);
     if (containerTypeNode == null)
       return;
@@ -285,7 +285,7 @@ public class FrameStack {
    * statement head node. This is not used from DEFINE FRAME, HIDE FRAME, or any other "frame" statements which would
    * not count as a "reference" for frame scoping purposes.
    */
-  void nodeOfInitializingStatement(JPNode stateNode, Block currentBlock) {
+  public void nodeOfInitializingStatement(JPNode stateNode, Block currentBlock) {
     JPNode containerTypeNode = getContainerTypeNode(stateNode);
     JPNode idNode = null;
     if (containerTypeNode != null) {
@@ -310,7 +310,7 @@ public class FrameStack {
    * For frame init statements like VIEW and CLEAR which have no frame phrase. Called at the end of the statement, after
    * all symbols (including FRAME ID) have been resolved.
    */
-  void simpleFrameInitStatement(JPNode headNode, JPNode frameIDNode, Block currentBlock) {
+  public void simpleFrameInitStatement(JPNode headNode, JPNode frameIDNode, Block currentBlock) {
     Frame frame = (Frame) frameIDNode.getSymbol();
     assert frame != null;
     initializeFrame(frame, currentBlock);
@@ -319,7 +319,7 @@ public class FrameStack {
   }
 
   /** Called at the end of a frame affecting statement. */
-  void statementEnd() {
+  public void statementEnd() {
     /*
      * For something like DISPLAY customer, we delay adding the fields to the frame until the end of the statement.
      * That's because any fields in an EXCEPT fields phrase need to have their symbols resolved first.

@@ -285,6 +285,10 @@ public class ParserSupport {
     nodes.put(ctx, node);
   }
 
+  public JPNode getNode(RuleNode ctx) {
+    return nodes.get(ctx);
+  }
+
   public void pushRecordExpression(RuleContext ctx, String recName) {
     recordExpressions.put(ctx, schemaTablePriority ? currentScope.isTableSchemaFirst(recName.toLowerCase())
         : currentScope.isTable(recName.toLowerCase()));

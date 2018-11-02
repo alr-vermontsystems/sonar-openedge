@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.antlr.v4.runtime.RuleContext;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
-import org.antlr.v4.runtime.tree.RuleNode;
 import org.prorefactor.core.ABLNodeType;
 import org.prorefactor.core.IConstants;
 import org.prorefactor.core.JPNode;
@@ -281,11 +281,11 @@ public class ParserSupport {
     return (schemaTablePriority ? isTableSchemaFirst(recname.toLowerCase()) : isTable(recname.toLowerCase())) != null;
   }
 
-  public void pushNode(RuleNode ctx, JPNode node) {
+  public void pushNode(ParseTree ctx, JPNode node) {
     nodes.put(ctx, node);
   }
 
-  public JPNode getNode(RuleNode ctx) {
+  public JPNode getNode(ParseTree ctx) {
     return nodes.get(ctx);
   }
 

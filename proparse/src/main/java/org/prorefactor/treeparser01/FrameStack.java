@@ -258,7 +258,7 @@ public class FrameStack {
   }
 
   /** Called at tree parser DEFINE BROWSE statement. */
-  void nodeOfDefineBrowse(Browse newBrowseSymbol, JPNode defNode) {
+  public void nodeOfDefineBrowse(Browse newBrowseSymbol, JPNode defNode) {
     containerForCurrentStatement = newBrowseSymbol;
     containerForCurrentStatement.addStatement(defNode);
   }
@@ -268,7 +268,7 @@ public class FrameStack {
    * symbol scope. A DEFINE FRAME statement is legal for a frame symbol already in use, sort of like how you can have
    * multiple FORM statements, I suppose. A DEFINE FRAME statement does not initialize the frame's scope.
    */
-  void nodeOfDefineFrame(JPNode defNode, JPNode idNode, TreeParserSymbolScope currentSymbolScope) {
+  public void nodeOfDefineFrame(JPNode defNode, JPNode idNode, TreeParserSymbolScope currentSymbolScope) {
     String frameName = idNode.getText();
     Frame frame = (Frame) currentSymbolScope.lookupSymbolLocally(ProParserTokenTypes.FRAME, frameName);
     if (frame == null)

@@ -265,7 +265,7 @@ public class FrameStack {
   /** Called at tree parser DEFINE BROWSE statement. */
   void nodeOfDefineBrowse(Browse newBrowseSymbol, JPNode defNode) {
     containerForCurrentStatement = newBrowseSymbol;
-    containerForCurrentStatement.addStatement(defNode);
+    // containerForCurrentStatement.addStatement(defNode);
   }
 
   /**
@@ -282,7 +282,7 @@ public class FrameStack {
     idNode.setLink(IConstants.SYMBOL, frame);
     defNode.setFieldContainer(frame);
     containerForCurrentStatement = frame;
-    containerForCurrentStatement.addStatement(defNode);
+    // containerForCurrentStatement.addStatement(defNode);
   }
 
   /**
@@ -308,7 +308,7 @@ public class FrameStack {
       containerForCurrentStatement = frame;
     }
     stateNode.setFieldContainer(containerForCurrentStatement);
-    containerForCurrentStatement.addStatement(stateNode);
+    // containerForCurrentStatement.addStatement(stateNode);
   }
 
   /**
@@ -320,7 +320,7 @@ public class FrameStack {
     assert frame != null;
     initializeFrame(frame, currentBlock);
     headNode.setFieldContainer(frame);
-    frame.addStatement(headNode);
+    // frame.addStatement(headNode);
   }
 
   /** Called at the end of a frame affecting statement. */

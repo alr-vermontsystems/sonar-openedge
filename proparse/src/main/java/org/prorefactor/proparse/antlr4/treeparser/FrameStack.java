@@ -218,7 +218,7 @@ public class FrameStack {
       }
     }
     if (fieldOrVariable == null) {
-      LOG.error("Could not find input field {} {}:{}", idNode.getText(), idNode.getFilename(), idNode.getLine());
+      LOG.error("Could not find input field {} {}:{}", idNode.getText(), idNode.getFileIndex(), idNode.getLine());
       return null;
     }
     fieldRefNode.setFieldContainer(fieldContainer);
@@ -262,7 +262,6 @@ public class FrameStack {
   /** Called at tree parser DEFINE BROWSE statement. */
   void nodeOfDefineBrowse(Browse newBrowseSymbol, JPNode defNode) {
     containerForCurrentStatement = newBrowseSymbol;
-    containerForCurrentStatement.addStatement(defNode);
   }
 
   /**
@@ -275,11 +274,10 @@ public class FrameStack {
     Frame frame = (Frame) currentSymbolScope.lookupSymbolLocally(ABLNodeType.FRAME, frameName);
     if (frame == null)
       frame = createFrame(frameName, currentSymbolScope);
-    frame.setDefOrIdNode(defNode);
+    // TODO frame.setDefOrIdNode(defNode);
     idNode.setLink(IConstants.SYMBOL, frame);
     defNode.setFieldContainer(frame);
     containerForCurrentStatement = frame;
-    containerForCurrentStatement.addStatement(defNode);
   }
 
   /**
@@ -305,7 +303,6 @@ public class FrameStack {
       containerForCurrentStatement = frame;
     }
     stateNode.setFieldContainer(containerForCurrentStatement);
-    containerForCurrentStatement.addStatement(stateNode);
   }
 
   /**
@@ -317,7 +314,6 @@ public class FrameStack {
     assert frame != null;
     initializeFrame(frame, currentBlock);
     headNode.setFieldContainer(frame);
-    frame.addStatement(headNode);
   }
 
   /** Called at the end of a frame affecting statement. */

@@ -20,13 +20,14 @@ import org.prorefactor.treeparser.ContextQualifier;
 import org.prorefactor.treeparser.IBlock;
 import org.prorefactor.treeparser.ITreeParserRootSymbolScope;
 import org.prorefactor.treeparser.ITreeParserSymbolScope;
+import org.prorefactor.treeparser.Primative;
 import org.prorefactor.treeparser.TreeParserRootSymbolScope;
 import org.prorefactor.treeparser.symbols.IRoutine;
+import org.prorefactor.treeparser.symbols.ISymbol;
 import org.prorefactor.treeparser.symbols.ITableBuffer;
 import org.prorefactor.treeparser.symbols.Routine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 public class TreeParser extends ProparseBaseListener {
   private static final Logger LOG = LoggerFactory.getLogger(TreeParser.class);
@@ -39,6 +40,11 @@ public class TreeParser extends ProparseBaseListener {
   private ITreeParserSymbolScope currentScope;
   private IRoutine currentRoutine;
   private IRoutine rootRoutine;
+  /**
+   * The symbol last, or currently being, defined. Needed when we have complex syntax like DEFINE id ... LIKE, where we
+   * want to track the LIKE but it's not in the same grammar production as the DEFINE.
+   */
+  private ISymbol currSymbol;
 
   private ITableBuffer lastTableReferenced;
   private ITableBuffer prevTableReferenced;
@@ -895,19 +901,21 @@ public class TreeParser extends ProparseBaseListener {
       // TODO TP01Support.defAs();
     } else if (ctx.LIKE() != null) {
       contextQualifiers.put(ctx.field(), ContextQualifier.SYMBOL);
+
       // TODO TP01Support.defLike();
     }
   }
 
   @Override
   public void enterFindstate(FindstateContext ctx) {
-    // TODO TP01Support.recordNameNode(ContextQualifier.INIT)
+    recordNameNode((RecordNameNode) support.getNode(ctx), ContextQualifier.INIT);
   }
   
   @Override
   public void enterForstate(ForstateContext ctx) {
-    // TODO TP01Support.blockBegin(#f); 
-    // TODO TP01Support.frameBlockCheck(#f);
+    blockBegin(support.getNode(ctx));
+    frameBlockCheck(support.getNode(ctx));
+
     contextQualifiers.put(ctx.for_record_spec(), ContextQualifier.INITWEAK);
     
     // TODO Compliqué, faire le TP01Support.frameStatementEnd() après le block_colon
@@ -916,15 +924,14 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void exitForstate(ForstateContext ctx) {
-    // TODO TP01Support.blockEnd();
+    blockEnd();
   }
 
-  // TODO Move method to top
   @Override
   public void enterFor_record_spec(For_record_specContext ctx) {
     ContextQualifier qual = contextQualifiers.removeFrom(ctx);
     for (RecordphraseContext rec : ctx.recordphrase()) {
-      // TP01Support.recordNameNode(support.getNode(rec), qual);
+      recordNameNode((RecordNameNode) support.getNode(rec), qual);
     }
   }
 
@@ -1452,5 +1459,18 @@ public class TreeParser extends ProparseBaseListener {
     currentBlock = (Block) pushBlock(scope.getRootBlock());
   }
 
+  public void defLike(JPNode likeNode) {
+    LOG.trace("Entering defLike {}", likeNode);
+    // currSymbol.setLikeNode(likeNode);
+    Primative likePrim = (Primative) likeNode.nextNode().getSymbol();
+    Primative newPrim = (Primative) currSymbol;
+    if (likePrim != null) {
+      newPrim.assignAttributesLike(likePrim);
+      assert newPrim.getDataType() != null : "Failed to set datatype at " + likeNode.getFileIndex() + " line "
+          + likeNode.getLine();
+    } else {
+      LOG.error("Failed to find LIKE datatype at {} line {}", likeNode.getFileIndex(), likeNode.getLine());
+    }
+  }
 
 }

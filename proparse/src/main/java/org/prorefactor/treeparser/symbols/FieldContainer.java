@@ -20,7 +20,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.prorefactor.core.JPNode;
 import org.prorefactor.core.schema.Field;
 import org.prorefactor.treeparser.ITreeParserSymbolScope;
 
@@ -30,7 +29,6 @@ import org.prorefactor.treeparser.ITreeParserSymbolScope;
  */
 public abstract class FieldContainer extends Widget {
 
-  private List<JPNode> statementList = new ArrayList<>();
   private Set<FieldBuffer> fieldSet = new HashSet<>();
   private Set<ISymbol> enabledFields = new HashSet<>();
   private Set<ISymbol> otherSymbols = new HashSet<>();
@@ -38,14 +36,6 @@ public abstract class FieldContainer extends Widget {
 
   public FieldContainer(String name, ITreeParserSymbolScope scope) {
     super(name, scope);
-  }
-
-  /**
-   * Add a statement node to the list of statements which operate on this FieldContainer. Intended to be used by the
-   * tree parser only.
-   */
-  public void addStatement(JPNode node) {
-    statementList.add(node);
   }
 
   /**
@@ -92,13 +82,6 @@ public abstract class FieldContainer extends Widget {
     List<ISymbol> ret = new ArrayList<>();
     ret.addAll(enabledFields);
     return ret;
-  }
-
-  /**
-   * Get the list of nodes for the statements which operate on this FieldContainer
-   */
-  public List<JPNode> getStatementList() {
-    return statementList;
   }
 
   /**

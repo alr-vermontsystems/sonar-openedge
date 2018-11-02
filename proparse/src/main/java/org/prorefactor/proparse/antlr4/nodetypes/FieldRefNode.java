@@ -14,13 +14,85 @@
  ********************************************************************************/
 package org.prorefactor.proparse.antlr4.nodetypes;
 
+import org.prorefactor.core.ABLNodeType;
+import org.prorefactor.core.IConstants;
 import org.prorefactor.proparse.antlr4.JPNode;
 import org.prorefactor.proparse.antlr4.ProToken;
+import org.prorefactor.treeparser.BufferScope;
+import org.prorefactor.treeparser.DataType;
+import org.prorefactor.treeparser.Primative;
+import org.prorefactor.treeparser.symbols.FieldBuffer;
+import org.prorefactor.treeparser.symbols.ISymbol;
+import org.prorefactor.treeparser.symbols.IVariable;
+import org.prorefactor.treeparser.symbols.widgets.IFieldLevelWidget;
 
 public class FieldRefNode extends JPNode {
 
   public FieldRefNode(ProToken t) {
     super(t);
+  }
+
+  public BufferScope getBufferScope() {
+    BufferScope bufferScope = (BufferScope) getLink(IConstants.BUFFERSCOPE);
+    assert bufferScope != null;
+    return bufferScope;
+  }
+
+  public String getClassName() {
+    return ((Primative) getSymbol()).getClassName();
+  }
+
+  /**
+   * Returns null if symbol is null or is a graphical component
+   */
+  public DataType getDataType() {
+    if (getSymbol() == null) {
+      // Just in order to avoid NPE
+      return null;
+    }
+    if (!(getSymbol() instanceof Primative)) {
+      return null;
+    }
+    return ((Primative) getSymbol()).getDataType();
+  }
+
+  /**
+   * We very often need to reference the ID node for a Field_ref node. The Field_ref node is a synthetic node - it
+   * doesn't have any text. If we want the field/variable name, or the file/line/column, then we probably want to get
+   * those from the ID node.
+   */
+  public JPNode getIdNode() {
+    JPNode idNode = findDirectChild(ABLNodeType.ID.getType());
+    assert idNode != null;
+    return idNode;
+  }
+
+  /**
+   * Get the Symbol for a Field_ref node.
+   * 
+   * @return Always returns one of two Symbol types: Variable or FieldBuffer.
+   */
+  @Override
+  public ISymbol getSymbol() {
+    // Can't assert symbol != null, because we aren't currently resolving
+    // references to METHODs (like in eventVar:Subscribe(MethodName).
+    return (ISymbol) getLink(IConstants.SYMBOL);
+  }
+
+  public void setBufferScope(BufferScope bufferScope) {
+    setLink(IConstants.BUFFERSCOPE, bufferScope);
+  }
+
+  public void setSymbol(FieldBuffer symbol) {
+    setLink(IConstants.SYMBOL, symbol);
+  }
+
+  public void setSymbol(IFieldLevelWidget symbol) {
+    setLink(IConstants.SYMBOL, symbol);
+  }
+
+  public void setSymbol(IVariable symbol) {
+    setLink(IConstants.SYMBOL, symbol);
   }
 
 }

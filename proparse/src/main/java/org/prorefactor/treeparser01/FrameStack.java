@@ -220,7 +220,7 @@ public class FrameStack {
       }
     }
     if (fieldOrVariable == null) {
-      LOG.error("Could not find input field {} {}:{}", idNode.getText(), idNode.getFilename(), idNode.getLine());
+      LOG.error("Could not find input field {} {}:{}", idNode.getText(), idNode.getFileIndex(), idNode.getLine());
       return null;
     }
     fieldRefNode.setFieldContainer(fieldContainer);

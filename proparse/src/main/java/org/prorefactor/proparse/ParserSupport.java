@@ -27,7 +27,6 @@ import org.antlr.v4.runtime.tree.RuleNode;
 import org.prorefactor.core.ABLNodeType;
 import org.prorefactor.core.IConstants;
 import org.prorefactor.core.JPNode;
-import org.prorefactor.core.ProToken;
 import org.prorefactor.proparse.SymbolScope.FieldType;
 import org.prorefactor.refactor.RefactorSession;
 import org.slf4j.Logger;
@@ -35,8 +34,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Strings;
-
-import antlr.Token;
 
 /**
  * Helper class when parsing procedure or class. One instance per ParseUnit.
@@ -69,7 +66,7 @@ public class ParserSupport {
   private String lastFieldIDStr;
 
   private ParseTreeProperty<FieldType> recordExpressions = new ParseTreeProperty<>();
-  private ParseTreeProperty<org.prorefactor.proparse.antlr4.JPNode> nodes = new ParseTreeProperty<>();
+  private ParseTreeProperty<JPNode> nodes = new ParseTreeProperty<>();
 
   // TEMP-ANTLR4
   private List<SymbolScope> innerScopes = new ArrayList<>();
@@ -239,24 +236,6 @@ public class ParserSupport {
     lastFieldIDStr = idNode;
   }
 
-  public void filenameMerge(JPNode node) {
-    JPNode currNode = node;
-    JPNode nextNode = node.getNextSibling();
-    while (nextNode != null) {
-      if (currNode.getNodeType() == ABLNodeType.FILENAME && nextNode.getNodeType() == ABLNodeType.FILENAME
-          && nextNode.getHiddenBefore() == null) {
-        currNode.setHiddenAfter(nextNode.getHiddenAfter());
-        currNode.setText(currNode.getText() + nextNode.getText());
-        currNode.setNextSibling(nextNode.getNextSibling());
-        currNode.updateEndPosition(nextNode.getEndFileIndex(), nextNode.getEndLine(), nextNode.getEndColumn());
-        nextNode = currNode.getNextSibling();
-        continue;
-      }
-      currNode = currNode.getNextSibling();
-      nextNode = currNode.getNextSibling();
-    }
-  }
-
   void funcBegin(JPNode idNode) {
     funcBegin(idNode.getText(), null);
   }
@@ -302,7 +281,7 @@ public class ParserSupport {
     return (schemaTablePriority ? isTableSchemaFirst(recname.toLowerCase()) : isTable(recname.toLowerCase())) != null;
   }
 
-  public void pushNode(RuleNode ctx, org.prorefactor.proparse.antlr4.JPNode node) {
+  public void pushNode(RuleNode ctx, JPNode node) {
     nodes.put(ctx, node);
   }
 
@@ -321,22 +300,6 @@ public class ParserSupport {
 
   public FieldType isTableSchemaFirst(String inName) {
     return currentScope.isTableSchemaFirst(inName);
-  }
-
-  /** Returns true if the lookahead is a table name, and not a var name. */
-  boolean isTableName(Token lt1, Token lt2, Token lt3, Token lt4) {
-    String name = lt1.getText();
-    if (lt2.getType() == ProParserTokenTypes.NAMEDOT) {
-      if (lt4.getType() == ProParserTokenTypes.NAMEDOT) {
-        // Can't be more than one dot (db.table) in a table reference.
-        // Maybe this is a field reference, but it sure isn't a table.
-        return false;
-      }
-      name = name + "." + lt3.getText();
-    }
-    if (isVar(name))
-      return false;
-    return null != isTable(name.toLowerCase());
   }
 
   /** Returns true if the lookahead is a table name, and not a var name. */
@@ -425,20 +388,6 @@ public class ParserSupport {
 
   public String getFilename(int fileIndex) {
     return fileNameList.getValue(fileIndex);
-  }
-
-  /**
-   * @see ProToken#getHiddenAfter()
-   */
-  static boolean hasHiddenAfter(Token token) {
-    return ((ProToken) token).getHiddenAfter() != null;
-  }
-
-  /**
-   * @see ProToken#getHiddenBefore()
-   */
-  public static boolean hasHiddenBefore(Token token) {
-    return ((ProToken) token).getHiddenBefore() != null;
   }
 
   // TEMP-ANTLR4

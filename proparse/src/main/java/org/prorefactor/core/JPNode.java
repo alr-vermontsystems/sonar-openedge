@@ -20,7 +20,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.antlr.v4.runtime.tree.RuleNode;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.prorefactor.core.nodetypes.BlockNode;
 import org.prorefactor.core.nodetypes.FieldRefNode;
 import org.prorefactor.core.nodetypes.ProgramRootNode;
@@ -794,7 +794,7 @@ public class JPNode implements AST {
 
   public static class Builder {
     private ProToken tok;
-    private RuleNode ctx;
+    private ParseTree ctx;
     private Builder right;
     private Builder down;
     private boolean stmt;
@@ -813,7 +813,7 @@ public class JPNode implements AST {
       tok.setSynthetic(true);
     }
 
-    public Builder setRuleNode(RuleNode ctx) {
+    public Builder setRuleNode(ParseTree ctx) {
       this.ctx = ctx;
       return this;
     }

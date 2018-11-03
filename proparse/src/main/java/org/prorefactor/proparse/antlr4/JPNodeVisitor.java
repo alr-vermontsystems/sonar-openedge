@@ -2830,6 +2830,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
     } else {
       down.getLast().setRight(new JPNode.Builder(tail));
     }
+    node.setRuleNode(ctx);
     return node;
   }
 

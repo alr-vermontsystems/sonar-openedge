@@ -113,6 +113,11 @@ public class ProToken implements WritableToken {
     return endCharPositionInLine;
   }
 
+  @Deprecated
+  public int getEndColumn() {
+    return endCharPositionInLine;
+  }
+
   public int getEndFileIndex() {
     return endFileIndex;
   }
@@ -241,6 +246,11 @@ public class ProToken implements WritableToken {
 
   @Override
   public int getCharPositionInLine() {
+    return charPositionInLine;
+  }
+
+  @Deprecated
+  public int getColumn() {
     return charPositionInLine;
   }
 

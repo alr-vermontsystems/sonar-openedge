@@ -14,8 +14,6 @@
  ********************************************************************************/
 package org.prorefactor.proparse.antlr4.unittest;
 
-import static org.testng.Assert.assertEquals;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
@@ -41,15 +39,14 @@ import org.antlr.v4.runtime.tree.RuleNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.antlr.v4.runtime.tree.Tree;
 import org.prorefactor.core.ABLNodeType;
+import org.prorefactor.core.JPNode;
 import org.prorefactor.core.ProparseRuntimeException;
 import org.prorefactor.core.TreeNodeLister;
 import org.prorefactor.core.nodetypes.ProgramRootNode;
 import org.prorefactor.core.schema.Schema;
 import org.prorefactor.core.unittest.util.UnitTestModule;
 import org.prorefactor.proparse.ParserSupport;
-import org.prorefactor.proparse.ProParser;
 import org.prorefactor.proparse.antlr4.DescriptiveErrorListener;
-import org.prorefactor.proparse.antlr4.JPNode;
 import org.prorefactor.proparse.antlr4.JPNodeVisitor;
 import org.prorefactor.proparse.antlr4.ProgressLexer;
 import org.prorefactor.proparse.antlr4.Proparse;
@@ -64,8 +61,6 @@ import com.google.common.io.ByteSource;
 import com.google.common.io.ByteStreams;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-
-import antlr.ANTLRException;
 
 /**
  * Test the tree parsers against problematic syntax. These tests just run the tree parsers against the data/bugsfixed
@@ -113,7 +108,7 @@ public class ANTLR4ParserTest {
     // Only in order to initialize Proparse class
     try {
       ParseUnit unit = new ParseUnit(new File(SRC_DIR, "data/bugsfixed/bug01.p"), session);
-      unit.lex4().nextToken();
+      unit.lex().nextToken();
     } catch (Throwable uncaught) {
       
     }
@@ -405,18 +400,7 @@ public class ANTLR4ParserTest {
       displayParseInfo(parser.getParseInfo());
       displayRootNode4(root4, parser.getParserSupport(), "target/antlr4.txt");
 
-      ProgressLexer lexer2 = new ProgressLexer(session, src, file.getAbsolutePath(), false);
-      ProParser parser2 = new ProParser(lexer2.getANTLR2TokenStream(true));
-      parser2.initAntlr4(session, lexer2.getFilenameList());
-      parser2.program();
-      ProgramRootNode root2 = (ProgramRootNode) parser2.getAST();
-      root2.backLinkAndFinalize();
-      lexer2.parseComplete();
-      displayRootNode(root2, parser2.support, "target/antlr2.txt");
-
-      assertEquals(root2.compareTo(root4, 0), 0);
-      assertEquals(parser2.support.compareTo(parser.getParserSupport()), 0);
-    } catch (ANTLRException | IOException | RuntimeException uncaught) {
+    } catch (IOException | RuntimeException uncaught) {
       System.err.println(uncaught);
     }
   }

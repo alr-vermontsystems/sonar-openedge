@@ -34,23 +34,22 @@ import antlr.ANTLRException;
 /**
  * This class simply runs the tree parser through various code, and as long as the tree parser does not throw any
  * errors, then the tests pass.
- */
 public class TreeParser03Test {
 	private RefactorSession session;
 
 	@BeforeTest
 	public void setUp(){
-		Injector injector = Guice.createInjector(new UnitTestModule());
+        Injector injector = Guice.createInjector(new UnitTestModule());
 		session = injector.getInstance(RefactorSession.class);
 	}
 
 	@Test
 	public void test01() throws ANTLRException {
 	  ParseUnit unit = new ParseUnit(new File("src/test/resources/treeparser03/test01.p"), session);
-		assertNull(unit.getTopNode());
-		unit.treeParser01();
-		assertNotNull(unit.getTopNode());
-    assertNotNull(unit.getRootScope());
+          assertNull(unit.getTopNode());
+          unit.treeParser01();
+          assertNotNull(unit.getTopNode());
+          assertNotNull(unit.getRootScope());
 	}
 
   @Test

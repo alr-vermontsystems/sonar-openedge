@@ -34,8 +34,6 @@ import org.testng.annotations.Test;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
-import antlr.ANTLRException;
-
 public class ClassesTest {
   private RefactorSession session;
 
@@ -46,7 +44,7 @@ public class ClassesTest {
   }
 
   @Test
-  public void test01() throws ANTLRException {
+  public void test01() {
     ParseUnit unit = new ParseUnit(new File("src/test/resources/data/rssw/pct/LoadLogger.cls"), session);
     assertNull(unit.getTopNode());
     assertNull(unit.getRootScope());
@@ -58,7 +56,7 @@ public class ClassesTest {
   }
 
   @Test
-  public void test03() throws ANTLRException {
+  public void test03() {
     ParseUnit unit = new ParseUnit(new File("src/test/resources/data/rssw/pct/ScopeTest.cls"), session);
     assertNull(unit.getTopNode());
     assertNull(unit.getRootScope());
@@ -85,7 +83,7 @@ public class ClassesTest {
   }
 
   @Test
-  public void testThisObject() throws ANTLRException {
+  public void testThisObject() {
     ParseUnit unit = new ParseUnit(new File("src/test/resources/data/rssw/pct/TestThisObject.cls"), session);
     assertNull(unit.getTopNode());
     assertNull(unit.getRootScope());

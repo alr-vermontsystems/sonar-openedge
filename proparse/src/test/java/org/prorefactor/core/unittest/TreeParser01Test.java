@@ -38,7 +38,7 @@ public class TreeParser01Test {
   File outFile = new File("target/test-temp/treeparser01/test01.p");
 
   @Test
-  public void test01() throws ANTLRException, IOException {
+  public void test01() throws IOException {
     Injector injector = Guice.createInjector(new UnitTestModule());
     RefactorSession session = injector.getInstance(RefactorSession.class);
     outFile.getParentFile().mkdirs();

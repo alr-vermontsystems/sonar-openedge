@@ -62,7 +62,7 @@ public class FrameStack {
    * The ID node in a BROWSE ID pair. The ID node might have already had the symbol assigned to it at the point where
    * the statement head was processed.
    */
-  void browseRefNode(JPNode idNode, TreeParserSymbolScope symbolScope) {
+  public void browseRefNode(JPNode idNode, TreeParserSymbolScope symbolScope) {
     if (idNode.getSymbol() == null)
       browseRefSet(idNode, symbolScope);
   }
@@ -194,7 +194,7 @@ public class FrameStack {
    * 
    * @see org.prorefactor.core.JPNode#getFieldContainer().
    */
-  FieldLookupResult inputFieldLookup(FieldRefNode fieldRefNode, TreeParserSymbolScope currentScope) {
+  public FieldLookupResult inputFieldLookup(FieldRefNode fieldRefNode, TreeParserSymbolScope currentScope) {
     JPNode idNode = fieldRefNode.getIdNode();
     Field.Name inputName = new Field.Name(idNode.getText().toLowerCase());
     FieldContainer fieldContainer = null;

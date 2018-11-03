@@ -25,8 +25,10 @@ import org.prorefactor.treeparser.Block;
 import org.prorefactor.treeparser.BufferScope;
 import org.prorefactor.treeparser.ContextQualifier;
 import org.prorefactor.treeparser.DataType;
+import org.prorefactor.treeparser.FieldLookupResult;
 import org.prorefactor.treeparser.Primative;
 import org.prorefactor.treeparser.SymbolFactory;
+import org.prorefactor.treeparser.TableNameResolution;
 import org.prorefactor.treeparser.TreeParserRootSymbolScope;
 import org.prorefactor.treeparser.TreeParserSymbolScope;
 import org.prorefactor.treeparser.symbols.Event;
@@ -85,6 +87,7 @@ public class TreeParser extends ProparseBaseListener {
   private List<Block> blockStack = new ArrayList<>();
   private Map<String, TreeParserSymbolScope> funcForwards = new HashMap<>();
   private ParseTreeProperty<ContextQualifier> contextQualifiers = new ParseTreeProperty<>();
+  private ParseTreeProperty<TableNameResolution> nameResolution = new ParseTreeProperty<>();
 
   // Temporary work-around
   private boolean inDefineEvent = false;
@@ -272,9 +275,53 @@ public class TreeParser extends ProparseBaseListener {
     }
   }
 
-  // XXX
+  @Override
+  public void enterExprt2Field(Exprt2FieldContext ctx) {
+    contextQualifiers.put(ctx.field(), ContextQualifier.REF);
+  }
 
-  
+  @Override
+  public void enterWidattrExprt2(WidattrExprt2Context ctx) {
+    widattr(support.getNode(ctx.exprt2()), contextQualifiers.removeFrom(ctx));
+  }
+
+  @Override
+  public void enterWidattrWidName(WidattrWidNameContext ctx) {
+    widattr(support.getNode(ctx.widname()), contextQualifiers.removeFrom(ctx));
+  }
+
+  @Override
+  public void enterGwidget(GwidgetContext ctx) {
+    if (ctx.inuic() != null) {
+      if (ctx.inuic().FRAME() != null) {
+        frameRef(support.getNode(ctx.inuic().widgetname()));
+      } else if (ctx.inuic().BROWSE() != null) {
+        browseRef(support.getNode(ctx.inuic().widgetname()));
+      }
+    }
+    super.enterGwidget(ctx);
+  }
+
+  @Override
+  public void enterS_widget(S_widgetContext ctx) {
+    if (ctx.field() != null) {
+      contextQualifiers.put(ctx.field(), ContextQualifier.REF);
+    }
+  }
+
+  @Override
+  public void enterWidname(WidnameContext ctx) {
+    if (ctx.FRAME() != null) {
+      frameRef(support.getNode(ctx.identifier()));
+    } else if (ctx.BROWSE() != null) {
+      browseRef(support.getNode(ctx.identifier()));
+    } else if (ctx.BUFFER() != null) {
+      bufferRef(support.getNode(ctx.identifier()));
+    } else if (ctx.FIELD() != null) {
+      contextQualifiers.put(ctx.field(), ContextQualifier.REF);
+    }
+  }
+
   @Override
   public void enterAggregate_opt(Aggregate_optContext ctx) {
     addToSymbolScope(defineVariable(support.getNode(ctx.accum_what()), support.getNode(ctx.accum_what()), DataType.DECIMAL));
@@ -1250,6 +1297,18 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   @Override
+  public void enterRecord(RecordContext ctx) {
+    recordNameNode((RecordNameNode) support.getNode(ctx.f), contextQualifiers.removeFrom(ctx));
+  }
+
+  @Override
+  public void enterField(FieldContext ctx) {
+    TableNameResolution tnr = nameResolution.removeFrom(ctx);
+    if (tnr == null) tnr = TableNameResolution.ANY;
+    // XXX Call field() method
+  }
+
+  @Override
   public void enterRecord_fields(Record_fieldsContext ctx) {
     if (ctx.field() != null) {
       for (FieldContext fld : ctx.field()) {
@@ -1794,4 +1853,164 @@ public class TreeParser extends ProparseBaseListener {
     scopeClose(propAST);
     currentRoutine = rootRoutine;
   }
+  
+  public void widattr(JPNode idNode, ContextQualifier cq) {
+    LOG.trace("Entering {} mode {}", idNode, cq);
+    if (idNode.getNodeType() == ABLNodeType.THISOBJECT) {
+      JPNode tok = idNode.getNextSibling();
+      if (tok.getNodeType() == ABLNodeType.OBJCOLON) {
+        JPNode fld = tok.getNextSibling();
+        String name = fld.getText();
+
+        FieldLookupResult result =  currentBlock.lookupField(name, true);
+        if (result == null)
+          return;
+
+        // Variable
+        if (result.variable != null) {
+          result.variable.noteReference(cq);
+        }
+      }
+    } else if (idNode.getNodeType() == ABLNodeType.FIELD_REF) {
+      // Reference to a static field
+      if ((idNode.getFirstChild().getNodeType()) == ABLNodeType.ID && (idNode.getNextSibling() != null) && (idNode.getNextSibling().getNodeType() == ABLNodeType.OBJCOLON)) {
+        String clsRef = idNode.getFirstChild().getText();
+        String clsName = rootScope.getClassName();
+        if ((clsRef != null) && (clsName != null) && (clsRef.indexOf('.') == -1) && (clsName.indexOf('.') != -1))
+          clsName = clsName.substring(clsName.indexOf('.') + 1);
+        
+        if ((clsRef != null) && (clsName != null) && clsRef.equalsIgnoreCase(clsName)) {
+          String right = idNode.getNextSibling().getNextSibling().getText();
+          
+          FieldLookupResult result =  currentBlock.lookupField(right, true);
+          if (result == null)
+            return;
+
+          // Variable
+          if (result.variable != null) {
+            result.variable.noteReference(cq);
+          }
+        }
+      }
+    }
+  }
+
+  public void frameRef(JPNode idAST) {
+    frameStack.frameRefNode((JPNode) idAST, currentScope);
+  }
+
+  public void browseRef(JPNode idAST) {
+    LOG.trace("Entering browseRef {}", idAST);
+    frameStack.browseRefNode((JPNode) idAST, currentScope);
+  }
+
+  public void bufferRef(JPNode idAST) {
+    LOG.trace("Entering bufferRef {}", idAST);
+    TableBuffer tableBuffer = currentScope.lookupBuffer(idAST.getText());
+    if (tableBuffer != null) {
+      tableBuffer.noteReference(ContextQualifier.SYMBOL);
+    }
+  }
+
+  public void field(JPNode refAST, JPNode idNode, ContextQualifier cq, TableNameResolution resolution) {
+    LOG.trace("Entering field {} {} {} {}", refAST, idNode, cq, resolution);
+    FieldRefNode refNode = (FieldRefNode) refAST;
+    String name = idNode.getText();
+    FieldLookupResult result = null;
+
+    refNode.attrSet(IConstants.CONTEXT_QUALIFIER, cq.toString());
+
+    // Check if this is a Field_ref being "inline defined"
+    // If so, we define it right now.
+    if (refNode.attrGet(IConstants.INLINE_VAR_DEF) == 1)
+      addToSymbolScope(defineVariable(idNode, idNode));
+
+    if ((refNode.getParent().getNodeType() == ABLNodeType.USING && refNode.getParent().getParent().getNodeType() == ABLNodeType.RECORD_NAME)
+        || (refNode.getFirstChild().getNodeType() == ABLNodeType.INPUT &&
+            (refNode.getNextSibling() == null || refNode.getNextSibling().getNodeType() != ABLNodeType.OBJCOLON))) {
+      // First condition : there seems to be an implicit INPUT in USING phrases in a record phrase.
+      // Second condition :I've seen at least one instance of "INPUT objHandle:attribute" in code,
+      // which for some reason compiled clean. As far as I'm aware, the INPUT was
+      // meaningless, and the compiler probably should have complained about it.
+      // At any rate, the handle:attribute isn't an input field, and we don't want
+      // to try to look up the handle using frame field rules.
+      // Searching the frames for an existing INPUT field is very different than
+      // the usual field/variable lookup rules. It is done based on what is in
+      // the referenced FRAME or BROWSE, or what is found in the frames most
+      // recently referenced list.
+      result = frameStack.inputFieldLookup(refNode, currentScope);
+    } else if (resolution == TableNameResolution.ANY) {
+      // Lookup the field, with special handling for FIELDS/USING/EXCEPT phrases
+      boolean getBufferScope = (cq != ContextQualifier.SYMBOL);
+      result = currentBlock.lookupField(name, getBufferScope);
+    } else {
+      // If we are in a FIELDS phrase, then we know which table the field is from.
+      // The field lookup in Table expects an unqualified name.
+      String[] parts = name.split("\\.");
+      String fieldPart = parts[parts.length - 1];
+      TableBuffer ourBuffer = resolution == TableNameResolution.PREVIOUS ? prevTableReferenced : lastTableReferenced;
+      IField field = ourBuffer.getTable().lookupField(fieldPart);
+      if (field == null) {
+        // The OpenEdge compiler seems to ignore invalid tokens in a FIELDS phrase.
+        // As a result, some questionable code will fail to parse here if we don't also ignore those here.
+        // Sigh. This would be a good lint rule.
+        ABLNodeType parentType = refNode.getParent().getNodeType();
+        if (parentType == ABLNodeType.FIELDS || parentType == ABLNodeType.EXCEPT)
+          return;
+        // TODO Throw exception
+      }
+      FieldBuffer fieldBuffer = ourBuffer.getFieldBuffer(field);
+      result = new FieldLookupResult();
+      result.field = fieldBuffer;
+    }
+
+    // TODO Once we've added static member resolution, we can re-add this test.
+    if (result == null)
+      return;
+    // if (result == null)
+    // throw new Error(
+    // idNode.getFilename()
+    // + ":"
+    // + idNode.getLine()
+    // + " Unknown field or variable name: " + name
+    // );
+
+    if (result.isUnqualified)
+      refNode.attrSet(IConstants.UNQUALIFIED_FIELD, IConstants.TRUE);
+    if (result.isAbbreviated)
+      refNode.attrSet(IConstants.ABBREVIATED, IConstants.TRUE);
+    // Variable
+    if (result.variable != null) {
+      refNode.setSymbol(result.variable);
+      refNode.attrSet(IConstants.STORETYPE, IConstants.ST_VAR);
+      result.variable.noteReference(cq);
+    }
+    // FieldLevelWidget
+    if (result.fieldLevelWidget != null) {
+      refNode.setSymbol(result.fieldLevelWidget);
+      refNode.attrSet(IConstants.STORETYPE, IConstants.ST_VAR);
+      result.fieldLevelWidget.noteReference(cq);
+    }
+    // Buffer attributes
+    if (result.bufferScope != null) {
+      refNode.setBufferScope(result.bufferScope);
+    }
+    // Table field
+    if (result.field != null) {
+      refNode.setSymbol(result.field);
+      refNode.attrSet(IConstants.STORETYPE, result.field.getField().getTable().getStoretype());
+      result.field.noteReference(cq);
+      if (result.field.getBuffer() != null) {
+        result.field.getBuffer().noteReference(cq);
+      }
+    }
+    // Event
+    if (result.event != null) {
+      refNode.setSymbol(result.event);
+      refNode.attrSet(IConstants.STORETYPE, IConstants.ST_VAR);
+      result.event.noteReference(cq);
+    }
+
+  } // field()
+
 }

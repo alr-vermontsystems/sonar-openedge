@@ -33,6 +33,7 @@ import org.antlr.v4.runtime.TokenSource;
 import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.prorefactor.core.JPNodeMetrics;
 import org.prorefactor.core.nodetypes.ProgramRootNode;
 import org.prorefactor.macrolevel.IncludeRef;
@@ -47,6 +48,7 @@ import org.prorefactor.proparse.antlr4.JPNodeVisitor;
 import org.prorefactor.proparse.antlr4.ProgressLexer;
 import org.prorefactor.proparse.antlr4.Proparse;
 import org.prorefactor.proparse.antlr4.ProparseErrorStrategy;
+import org.prorefactor.proparse.antlr4.TreeParser;
 import org.prorefactor.refactor.RefactorSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,6 +73,7 @@ public class ParseUnit {
   private final String relativeName;
 
   private IntegerIndex<String> fileNameList;
+  private ParseTree tree;
   private ProgramRootNode topNode;
   private IncludeRef macroGraph;
   private boolean appBuilderCode;
@@ -184,7 +187,6 @@ public class ParseUnit {
     parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
     parser.setErrorHandler(new BailErrorStrategy());
 
-    ParseTree tree;
     try {
       tree = parser.program();
     } catch (ParseCancellationException caught) {
@@ -211,6 +213,9 @@ public class ParseUnit {
   public void treeParser01() {
     if (topNode == null)
       parse();
+    ParseTreeWalker walker = new ParseTreeWalker();
+    TreeParser parser = new TreeParser(support, session);
+    walker.walk(parser, tree);
   }
 
   public void attachXref(Document xref) {

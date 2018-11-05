@@ -154,7 +154,7 @@ block_for: // TRANSLATED
   ;
 
 block_opt: // TRANSLATED
-    field EQUAL expression TO expression (BY constant)? # block_opt_iterator
+    field EQUAL expression TO expression ( BY constant )? # block_opt_iterator
   | querytuningphrase    # block_opt_querytuning
   | WHILE expression     # block_opt_while
   | TRANSACTION          # block_opt_transaction
@@ -707,18 +707,19 @@ parameter: // TRANSLATED
     { (_input.LA(3) != OBJCOLON) && (_input.LA(3) != DOUBLECOLON) }?
     BUFFER record  # parameterBufferRecord
   |  p=( OUTPUT | INPUTOUTPUT | INPUT )?
-    (
-       TABLEHANDLE field parameter_dataset_options
-    |  TABLE FOR? record parameter_dataset_options
-    |  { _input.LA(3) != OBJCOLON && _input.LA(3) != DOUBLECOLON }? DATASET identifier parameter_dataset_options
-    |  DATASETHANDLE field parameter_dataset_options
-    |  PARAMETER field EQUAL expression // for RUN STORED-PROCEDURE
-    |  n=identifier AS ( CLASS type_name | datatype_com_native | datatype_var )
-      { support.defVar($n.text); }
-    |  expression ( AS datatype_com )?
-    )
+    parameter_arg
     ( BYPOINTER | BYVARIANTPOINTER )?  
     # parameterOther
+  ;
+
+parameter_arg:
+    TABLEHANDLE field parameter_dataset_options  # parameterArgTableHandle
+  | TABLE FOR? record parameter_dataset_options  # parameterArgTable
+  | { _input.LA(3) != OBJCOLON && _input.LA(3) != DOUBLECOLON }? DATASET identifier parameter_dataset_options  # parameterArgDataset
+  | DATASETHANDLE field parameter_dataset_options # parameterArgDatasetHandle
+  | PARAMETER field EQUAL expression  # parameterArgStoredProcedure  // for RUN STORED-PROCEDURE 
+  | n=identifier AS ( CLASS type_name | datatype_com_native | datatype_var ) { support.defVar($n.text); } # parameterArgAs
+  | expression ( AS datatype_com )? # parameterArgComDatatype
   ;
 
 parameter_dataset_options: // TRANSLATED

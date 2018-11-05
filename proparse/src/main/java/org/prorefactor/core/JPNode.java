@@ -24,6 +24,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.prorefactor.core.nodetypes.BlockNode;
 import org.prorefactor.core.nodetypes.FieldRefNode;
 import org.prorefactor.core.nodetypes.ProgramRootNode;
+import org.prorefactor.core.nodetypes.RecordNameNode;
 import org.prorefactor.proparse.ParserSupport;
 import org.prorefactor.proparse.SymbolScope.FieldType;
 import org.prorefactor.proparse.antlr4.AST;
@@ -919,12 +920,26 @@ public class JPNode implements AST {
     public JPNode build(ParserSupport support) {
       JPNode node;
       switch (tok.getNodeType()) {
+        case RECORD_NAME:
+          node = new RecordNameNode(tok);
+          break;
         case FIELD_REF:
           node = new FieldRefNode(tok);
           break;
         case PROGRAM_ROOT:
           node = new ProgramRootNode(tok);
           break;
+        case DO:
+        case FOR:
+        case REPEAT:
+        case FUNCTION:
+        case PROCEDURE:
+        case CONSTRUCTOR:
+        case DESTRUCTOR:
+        case METHOD:
+        case CANFIND:
+        case CATCH:
+        case ON:
         case PROPERTY_GETTER:
         case PROPERTY_SETTER:
           node = new BlockNode(tok);
@@ -957,6 +972,8 @@ public class JPNode implements AST {
             break;
         }
       }
+      if (ctx != null)
+        support.pushNode(ctx, node);
       if (down != null) {
         node.down = down.build(support);
         node.down.up = node;
@@ -964,9 +981,8 @@ public class JPNode implements AST {
       if (right != null) {
         node.right = right.build(support);
         node.right.left = node;
+        node.right.up = node.up;
       }
-      if (ctx != null)
-        support.pushNode(ctx, node);
       return node;
     }
   }

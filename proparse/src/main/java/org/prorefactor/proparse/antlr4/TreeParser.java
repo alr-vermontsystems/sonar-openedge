@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import org.prorefactor.core.ABLNodeType;
 import org.prorefactor.core.IConstants;
@@ -102,130 +103,59 @@ public class TreeParser extends ProparseBaseListener {
 
   }
 
-  private Block popBlock() {
-    blockStack.remove(blockStack.size() - 1);
-    return blockStack.get(blockStack.size() - 1);
-  }
-
-  private Block pushBlock(Block block) {
-    blockStack.add(block);
-    return block;
-  }
-
-  /** Action to take at various RECORD_NAME nodes. */
-  private void recordNameNode(RecordNameNode recordNode, ContextQualifier contextQualifier) {
-    LOG.trace("Entering recordNameNode {} {}", recordNode, contextQualifier);
-
-    recordNode.attrSet(IConstants.CONTEXT_QUALIFIER, contextQualifier.toString());
-    TableBuffer buffer = null;
-    switch (contextQualifier) {
-      case INIT:
-      case INITWEAK:
-      case REF:
-      case REFUP:
-      case UPDATING:
-      case BUFFERSYMBOL:
-        buffer = currentScope.getBufferSymbol(recordNode.getText());
-        break;
-      case SYMBOL:
-        buffer = currentScope.lookupTableOrBufferSymbol(recordNode.getText());
-        break;
-      case TEMPTABLESYMBOL:
-        buffer = currentScope.lookupTempTable(recordNode.getText());
-        break;
-      case SCHEMATABLESYMBOL:
-        ITable table = refSession.getSchema().lookupTable(recordNode.getText());
-        if (table != null)
-          buffer = currentScope.getUnnamedBuffer(table);
-        break;
-      default:
-        assert false;
-    }
-    recordNodeSymbol(recordNode, buffer); // Does checks, sets attributes.
-    recordNode.setTableBuffer(buffer);
-    switch (contextQualifier) {
-      case INIT:
-      case REF:
-      case REFUP:
-      case UPDATING:
-        recordNode.setBufferScope(currentBlock.getBufferForReference(buffer));
-        break;
-      case INITWEAK:
-        recordNode.setBufferScope(currentBlock.addWeakBufferScope(buffer));
-        break;
-      default:
-        break;
-    }
-    buffer.noteReference(contextQualifier);
-  }
-
-  /** For a RECORD_NAME node, do checks and assignments for the TableBuffer. */
-  private void recordNodeSymbol(RecordNameNode node, TableBuffer buffer) {
-    String nodeText = node.getText();
-    if (buffer == null) {
-      throw new RuntimeException("Could not resolve table '" + nodeText + "'" + "" + node.getFileIndex() + node.getLine()+ node.getColumn());
-    }
-    ITable table = buffer.getTable();
-    prevTableReferenced = lastTableReferenced;
-    lastTableReferenced = buffer;
-
-    // For an unnamed buffer, determine if it's abbreviated.
-    // Note that named buffers, temp and work table names cannot be abbreviated.
-    if (buffer.isDefault() && table.getStoretype() == IConstants.ST_DBTABLE) {
-      String[] nameParts = nodeText.split("\\.");
-      int tableNameLen = nameParts[nameParts.length - 1].length();
-      if (table.getName().length() > tableNameLen)
-        node.attrSet(IConstants.ABBREVIATED, 1);
-    }
-  }
-
   @Override
   public void enterProgram(ProgramContext ctx) {
-    LOG.info("enterProgram");
+    LOG.debug("enterProgram");
 
-    JPNode rootAST = support.getNode(ctx);
-    BlockNode blockNode = (BlockNode) rootAST;
-    
-    currentBlock = (Block) pushBlock(new Block(rootScope, blockNode));
+    BlockNode blockNode = (BlockNode) support.getNode(ctx);
+    currentBlock = pushBlock(new Block(rootScope, blockNode));
     rootScope.setRootBlock(currentBlock);
     blockNode.setBlock(currentBlock);
-    // FIXME unit.setRootScope(rootScope);
-    
-    Routine r = new Routine("", rootScope, rootScope);
-    r.setProgressType(ABLNodeType.PROGRAM_ROOT);
-    r.setDefOrIdNode(blockNode);
-    blockNode.setSymbol(r);
 
-    rootScope.add(r);
-    currentRoutine = r;
-    rootRoutine = r;
+    Routine routine = new Routine("", rootScope, rootScope);
+    routine.setProgressType(ABLNodeType.PROGRAM_ROOT);
+    routine.setDefOrIdNode(blockNode);
+    blockNode.setSymbol(routine);
+
+    rootScope.add(routine);
+    currentRoutine = routine;
+    rootRoutine = routine;
   }
 
   @Override
   public void exitProgram(ProgramContext ctx) {
-    LOG.info("exitProgram");
+    LOG.debug("exitProgram");
   }
 
   @Override
   public void enterBlock_for(Block_forContext ctx) {
-    // TODO To be verified...
     for (RecordContext record : ctx.record()) {
-      RecordNameNode node = (RecordNameNode) support.getNode(record);
-      recordNameNode(node, ContextQualifier.BUFFERSYMBOL);
-      currentBlock.addStrongBufferScope(node);
+      RecordNameNode recNode = (RecordNameNode) support.getNode(record);
+      recordNameNode(recNode, ContextQualifier.BUFFERSYMBOL);
+      currentBlock.addStrongBufferScope(recNode);
     }
   }
 
   @Override
   public void enterBlock_opt_iterator(Block_opt_iteratorContext ctx) {
     contextQualifiers.put(ctx.field(), ContextQualifier.REFUP);
+    // TODO Verify how expressions can be handled
+    contextQualifiers.put(ctx.expression(0), ContextQualifier.REF);
+    contextQualifiers.put(ctx.expression(1), ContextQualifier.REF);
+  }
+
+  @Override
+  public void enterBlock_opt_while(Block_opt_whileContext ctx) {
+    // TODO Verify how expressions can be handled
+    contextQualifiers.put(ctx.expression(), ContextQualifier.REF);
   }
 
   @Override
   public void enterBlock_preselect(Block_preselectContext ctx) {
     contextQualifiers.put(ctx.for_record_spec(), ContextQualifier.INITWEAK);
   }
-  
+
+  // TODO Beginning of huge block to be reviewed
   @Override
   public void enterPseudfn(PseudfnContext ctx) {
     if ((ctx.PUTBITS() != null) || (ctx.PUTBYTE() != null) /* and so on */) {
@@ -240,6 +170,7 @@ public class TreeParser extends ProparseBaseListener {
       noteReference(support.getNode(ctx), contextQualifiers.get(exp));
     }
   }
+  // TODO End of huge block to be reviewed
 
   @Override
   public void enterRecordfunc(RecordfuncContext ctx) {
@@ -247,32 +178,125 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   @Override
+  public void enterParameterBufferFor(ParameterBufferForContext ctx) {
+    recordNameNode((RecordNameNode) support.getNode(ctx.record()), ContextQualifier.REF);
+  }
+
+  @Override
   public void enterParameterBufferRecord(ParameterBufferRecordContext ctx) {
     recordNameNode((RecordNameNode) support.getNode(ctx.record()), ContextQualifier.INIT);
-    // TODO Check that not used anymore
-    // paramProgressType(BUFFER);
-    // action.paramSymbol(#bt);
-    // action.paramEnd();
   }
 
   @Override
   public void enterParameterOther(ParameterOtherContext ctx) {
-    // TODO Auto-generated method stub
-    super.enterParameterOther(ctx);
-  }
-
-  @Override
-  public void enterParameter_dataset_options(Parameter_dataset_optionsContext ctx) {
-    // TODO Check that not used anymore
-  }
-
-  @Override
-  public void enterFilenameorvalue(FilenameorvalueContext ctx) {
-    if (ctx.valueexpression() != null) {
-      // TODO Check that not used anymore
-    } else if (ctx.filename() != null) {
-      // TODO Check that not used anymore
+    if (ctx.OUTPUT() != null) {
+      contextQualifiers.put(ctx.parameter_arg(), ContextQualifier.UPDATING);
+    } else if (ctx.INPUTOUTPUT() != null) {
+      contextQualifiers.put(ctx.parameter_arg(), ContextQualifier.REFUP);
+    } else {
+      contextQualifiers.put(ctx.parameter_arg(), ContextQualifier.REF);
     }
+  }
+
+  @Override
+  public void enterParameterArgTableHandle(ParameterArgTableHandleContext ctx) {
+    contextQualifiers.put(ctx.field(), ContextQualifier.INIT);
+    noteReference(support.getNode(ctx.field()), contextQualifiers.removeFrom(ctx));
+  }
+
+  @Override
+  public void enterParameterArgTable(ParameterArgTableContext ctx) {
+    recordNameNode((RecordNameNode) support.getNode(ctx.record()), ContextQualifier.TEMPTABLESYMBOL);
+  }
+
+  @Override
+  public void enterParameterArgDatasetHandle(ParameterArgDatasetHandleContext ctx) {
+    contextQualifiers.put(ctx.field(), ContextQualifier.INIT);
+    noteReference(support.getNode(ctx.field()), contextQualifiers.removeFrom(ctx));
+  }
+
+  private void enterExpression(ExpressionContext ctx) {
+    ContextQualifier qual = contextQualifiers.removeFrom(ctx);
+    if (qual != null) {
+      for (ExprtContext c : ctx.getRuleContexts(ExprtContext.class)) {
+        contextQualifiers.put(c, qual);
+      }
+      for (ExpressionContext c : ctx.getRuleContexts(ExpressionContext.class)) {
+        contextQualifiers.put(c, qual);
+      }
+    }
+  }
+
+  @Override
+  public void enterExpressionMinus(ExpressionMinusContext ctx) {
+    enterExpression(ctx);
+  }
+
+  @Override
+  public void enterExpressionPlus(ExpressionPlusContext ctx) {
+    enterExpression(ctx);
+  }
+
+  @Override
+  public void enterExpressionOp1(ExpressionOp1Context ctx) {
+    enterExpression(ctx);
+  }
+  
+  @Override
+  public void enterExpressionOp2(ExpressionOp2Context ctx) {
+    enterExpression(ctx);
+  }
+  
+  @Override
+  public void enterExpressionComparison(ExpressionComparisonContext ctx) {
+    enterExpression(ctx);
+  }
+  
+  @Override
+  public void enterExpressionStringComparison(ExpressionStringComparisonContext ctx) {
+    enterExpression(ctx);
+  }
+  
+  @Override
+  public void enterExpressionNot(ExpressionNotContext ctx) {
+    enterExpression(ctx);
+  }
+  
+  @Override
+  public void enterExpressionAnd(ExpressionAndContext ctx) {
+    enterExpression(ctx);
+  }
+  
+  @Override
+  public void enterExpressionOr(ExpressionOrContext ctx) {
+    enterExpression(ctx);
+  }
+  
+  @Override
+  public void enterExpressionExprt(ExpressionExprtContext ctx) {
+    enterExpression(ctx);
+  }
+
+  // Expression term
+  
+  @Override
+  public void enterExprtNoReturnValue(ExprtNoReturnValueContext ctx) {
+    contextQualifiers.put(ctx.s_widget(), contextQualifiers.removeFrom(ctx));
+  }
+
+  @Override
+  public void enterExprtWidName(ExprtWidNameContext ctx) {
+    contextQualifiers.put(ctx.widname(), contextQualifiers.removeFrom(ctx));
+  }
+
+  @Override
+  public void enterExprtExprt2(ExprtExprt2Context ctx) {
+    contextQualifiers.put(ctx.exprt2(), contextQualifiers.removeFrom(ctx));
+  }
+
+  @Override
+  public void enterExprt2ParenExpr(Exprt2ParenExprContext ctx) {
+    widattr(support.getNode(ctx.expression()), contextQualifiers.removeFrom(ctx));
   }
 
   @Override
@@ -1009,7 +1033,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterFindstate(FindstateContext ctx) {
-    recordNameNode((RecordNameNode) support.getNode(ctx), ContextQualifier.INIT);
+    recordNameNode((RecordNameNode) support.getNode(ctx.recordphrase()), ContextQualifier.INIT);
   }
   
   @Override
@@ -1297,11 +1321,6 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   @Override
-  public void enterRecord(RecordContext ctx) {
-    recordNameNode((RecordNameNode) support.getNode(ctx.f), contextQualifiers.removeFrom(ctx));
-  }
-
-  @Override
   public void enterField(FieldContext ctx) {
     TableNameResolution tnr = nameResolution.removeFrom(ctx);
     if (tnr == null) tnr = TableNameResolution.ANY;
@@ -1540,6 +1559,93 @@ public class TreeParser extends ProparseBaseListener {
     blockEnd();
   }
 
+  private Block popBlock() {
+    blockStack.remove(blockStack.size() - 1);
+    return blockStack.get(blockStack.size() - 1);
+  }
+
+  private Block pushBlock(Block block) {
+    blockStack.add(block);
+    return block;
+  }
+
+  /**
+   * In the case of a function definition that comes some time after a function forward declaration, we want to use the
+   * scope that was created with the forward declaration, because it is the scope that has all of the parameter
+   * definitions. We have to do this because the definition itself may have left out the parameter list - it's not
+   * required - it just uses the parameter list from the declaration.
+   */
+  private void scopeSwap(TreeParserSymbolScope scope) {
+    currentScope = scope;
+    blockEnd(); // pop the unused block from the stack
+    currentBlock = pushBlock(scope.getRootBlock());
+  }
+
+  private void recordNameNode(RecordNameNode recordNode, ContextQualifier contextQualifier) {
+    LOG.trace("Entering recordNameNode {} {}", recordNode, contextQualifier);
+
+    recordNode.attrSet(IConstants.CONTEXT_QUALIFIER, contextQualifier.toString());
+    TableBuffer buffer = null;
+    switch (contextQualifier) {
+      case INIT:
+      case INITWEAK:
+      case REF:
+      case REFUP:
+      case UPDATING:
+      case BUFFERSYMBOL:
+        buffer = currentScope.getBufferSymbol(recordNode.getText());
+        break;
+      case SYMBOL:
+        buffer = currentScope.lookupTableOrBufferSymbol(recordNode.getText());
+        break;
+      case TEMPTABLESYMBOL:
+        buffer = currentScope.lookupTempTable(recordNode.getText());
+        break;
+      case SCHEMATABLESYMBOL:
+        ITable table = refSession.getSchema().lookupTable(recordNode.getText());
+        if (table != null)
+          buffer = currentScope.getUnnamedBuffer(table);
+        break;
+    }
+    recordNodeSymbol(recordNode, buffer); // Does checks, sets attributes.
+    recordNode.setTableBuffer(buffer);
+    switch (contextQualifier) {
+      case INIT:
+      case REF:
+      case REFUP:
+      case UPDATING:
+        recordNode.setBufferScope(currentBlock.getBufferForReference(buffer));
+        break;
+      case INITWEAK:
+        recordNode.setBufferScope(currentBlock.addWeakBufferScope(buffer));
+        break;
+      default:
+        break;
+    }
+    buffer.noteReference(contextQualifier);
+  }
+
+  /** For a RECORD_NAME node, do checks and assignments for the TableBuffer. */
+  private void recordNodeSymbol(RecordNameNode node, TableBuffer buffer) {
+    String nodeText = node.getText();
+    if (buffer == null) {
+      throw new RuntimeException("Could not resolve table '" + nodeText + "'" + "" + node.getFileIndex() + node.getLine()+ node.getColumn());
+    }
+    ITable table = buffer.getTable();
+    prevTableReferenced = lastTableReferenced;
+    lastTableReferenced = buffer;
+
+    // For an unnamed buffer, determine if it's abbreviated.
+    // Note that named buffers, temp and work table names cannot be abbreviated.
+    if (buffer.isDefault() && table.getStoretype() == IConstants.ST_DBTABLE) {
+      String[] nameParts = nodeText.split("\\.");
+      int tableNameLen = nameParts[nameParts.length - 1].length();
+      if (table.getName().length() > tableNameLen)
+        node.attrSet(IConstants.ABBREVIATED, 1);
+    }
+  }
+
+
   public void blockEnd() {
     LOG.trace("Entering blockEnd");
     currentBlock = popBlock();
@@ -1647,18 +1753,6 @@ public class TreeParser extends ProparseBaseListener {
     } else {
       primative.setExtent(Integer.parseInt(exprNode.getText()));
     }
-  }
-
-  /**
-   * In the case of a function definition that comes some time after a function forward declaration, we want to use the
-   * scope that was created with the forward declaration, because it is the scope that has all of the parameter
-   * definitions. We have to do this because the definition itself may have left out the parameter list - it's not
-   * required - it just uses the parameter list from the declaration.
-   */
-  private void scopeSwap(TreeParserSymbolScope scope) {
-    currentScope = scope;
-    blockEnd(); // pop the unused block from the stack
-    currentBlock = pushBlock(scope.getRootBlock());
   }
 
   public void defLike(JPNode likeNode) {
@@ -1797,7 +1891,7 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   public void defineTempTable(JPNode defAST, JPNode idAST) {
-    defineTable((JPNode) defAST, (JPNode) idAST, IConstants.ST_TTABLE);
+    defineTable(defAST, idAST, IConstants.ST_TTABLE);
   }
   
   /** Get the Table symbol linked from a RECORD_NAME AST. */

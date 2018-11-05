@@ -36,8 +36,6 @@ public class ProToken implements WritableToken {
   private int channel = DEFAULT_CHANNEL;
   private String text;
   private int index = -1;
-  private int start;
-  private int stop;
 
   private int fileIndex;
   private int endFileIndex;
@@ -56,17 +54,6 @@ public class ProToken implements WritableToken {
     this.text = text;
     this.fileIndex = 0;
     this.charPositionInLine = 0;
-  }
-
-  public ProToken(int type, int channel, int start, int stop, int line, int col) {
-    this.type = ABLNodeType.getNodeType(type);
-    if (this.type == null)
-      throw new IllegalArgumentException(INVALID_TYPE + type);
-    this.channel = channel;
-    this.start = start;
-    this.stop = stop;
-    this.line = line;
-    this.charPositionInLine = col;
   }
 
   @Override
@@ -266,12 +253,12 @@ public class ProToken implements WritableToken {
 
   @Override
   public int getStartIndex() {
-    return start;
+    return -1;
   }
 
   @Override
   public int getStopIndex() {
-    return stop;
+    return -1;
   }
 
   @Override

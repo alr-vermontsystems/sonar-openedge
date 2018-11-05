@@ -77,7 +77,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
     start.setEndLine(last.getEndLine());
     start.setEndCharPositionInLine(last.getEndCharPositionInLine());
 
-    return new JPNode.Builder(start);
+    return new JPNode.Builder(start).setRuleNode(ctx);
   }
 
   @Override
@@ -428,7 +428,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
     start.setEndFileIndex(last.getEndFileIndex());
     start.setEndLine(last.getEndLine());
     start.setEndCharPositionInLine(last.getEndCharPositionInLine());
-    return new JPNode.Builder(start);
+    return new JPNode.Builder(start).setRuleNode(ctx);
   }
 
   @Override
@@ -1758,7 +1758,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
     start.setEndLine(last.getEndLine());
     start.setEndCharPositionInLine(last.getEndCharPositionInLine());
 
-    return new JPNode.Builder(start);
+    return new JPNode.Builder(start).setRuleNode(ctx);
   }
 
   @Override
@@ -2600,7 +2600,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
       typ.setEndLine(((ProToken) ctx.star).getEndLine());
       typ.setEndCharPositionInLine(((ProToken) ctx.star).getEndCharPositionInLine());
     }
-    JPNode.Builder child1 = new JPNode.Builder(typ);
+    JPNode.Builder child1 = new JPNode.Builder(typ).setRuleNode(ctx);
     using.setDown(child1);
 
     JPNode.Builder last = child1.getLast();
@@ -2721,7 +2721,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
     if (firstHiddenTok != null)
       tok.setHiddenBefore(firstHiddenTok);
 
-    return new JPNode.Builder(tok);
+    return new JPNode.Builder(tok).setRuleNode(node);
   }
 
   @Override
@@ -2815,7 +2815,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
    * ANTLR2 construct ruleName: rule | token ... {## = #([NodeType], ##);}
    */
   private JPNode.Builder createTree(RuleNode ctx, ABLNodeType parentType) {
-    return new JPNode.Builder(parentType).setDown(createNode(ctx));
+    return new JPNode.Builder(parentType).setRuleNode(ctx).setDown(createNode(ctx));
   }
 
   /**

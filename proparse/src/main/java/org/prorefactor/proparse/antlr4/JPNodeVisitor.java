@@ -24,12 +24,8 @@ import org.prorefactor.core.JPNode.Builder;
 import org.prorefactor.core.ProToken;
 import org.prorefactor.proparse.ParserSupport;
 import org.prorefactor.proparse.antlr4.Proparse.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
-  private static final Logger LOGGER = LoggerFactory.getLogger(JPNodeVisitor.class);
-
   private final ParserSupport support;
   private final BufferedTokenStream stream;
 
@@ -128,10 +124,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
 
   @Override
   public JPNode.Builder visitPseudfn(PseudfnContext ctx) {
-    if (ctx.funargs() == null)
-      return visitChildren(ctx);
-    else
-      return createTreeFromFirstNode(ctx);
+    return createTreeFromFirstNode(ctx);
   }
 
   @Override
@@ -359,7 +352,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
 
   @Override
   public JPNode.Builder visitField(FieldContext ctx) {
-    JPNode.Builder holder = createTree(ctx, ABLNodeType.FIELD_REF);
+    JPNode.Builder holder = createTree(ctx, ABLNodeType.FIELD_REF).setRuleNode(ctx);
     if ((ctx.getParent() instanceof Message_optContext) && support.isInlineVar(ctx.getText())) {
       holder.setInlineVar();
     }
@@ -394,7 +387,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
 
   @Override
   public JPNode.Builder visitRecord(RecordContext ctx) {
-    return visitChildren(ctx).changeType(ABLNodeType.RECORD_NAME).setStoreType(support.getRecordExpression(ctx));
+    return visitChildren(ctx).changeType(ABLNodeType.RECORD_NAME).setStoreType(support.getRecordExpression(ctx)).setRuleNode(ctx);
   }
 
   @Override
@@ -1252,9 +1245,9 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
   @Override
   public JPNode.Builder visitDefineproperty_accessor(Defineproperty_accessorContext ctx) {
     if (ctx.SET().isEmpty()) {
-      return createTree(ctx, ABLNodeType.PROPERTY_GETTER);
+      return createTree(ctx, ABLNodeType.PROPERTY_GETTER).setRuleNode(ctx);
     } else {
-      return createTree(ctx, ABLNodeType.PROPERTY_SETTER);
+      return createTree(ctx, ABLNodeType.PROPERTY_SETTER).setRuleNode(ctx);
     }
   }
 
@@ -2721,7 +2714,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
     if (firstHiddenTok != null)
       tok.setHiddenBefore(firstHiddenTok);
 
-    return new JPNode.Builder(tok).setRuleNode(node);
+    return new JPNode.Builder(tok);
   }
 
   @Override
@@ -2772,7 +2765,6 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
       }
     }
     node.setDown(firstChild);
-    node.setRuleNode(ctx);
     return node;
   }
 
@@ -2780,14 +2772,14 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
    * ANTLR2 construct ruleName: TOKEN^ (TOKEN | rule).... { ##.setStatementHead(); }
    */
   private JPNode.Builder createStatementTreeFromFirstNode(RuleNode ctx) {
-    return createTreeFromFirstNode(ctx).setStatement();
+    return createTreeFromFirstNode(ctx).setStatement().setRuleNode(ctx);
   }
 
   /**
    * ANTLR2 construct ruleName: TOKEN^ (TOKEN | rule).... { ##.setStatementHead(state2); }
    */
   private JPNode.Builder createStatementTreeFromFirstNode(RuleNode ctx, ABLNodeType state2) {
-    return createTreeFromFirstNode(ctx).setStatement(state2);
+    return createTreeFromFirstNode(ctx).setStatement(state2).setRuleNode(ctx);
   }
 
   /**
@@ -2815,7 +2807,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
    * ANTLR2 construct ruleName: rule | token ... {## = #([NodeType], ##);}
    */
   private JPNode.Builder createTree(RuleNode ctx, ABLNodeType parentType) {
-    return new JPNode.Builder(parentType).setRuleNode(ctx).setDown(createNode(ctx));
+    return new JPNode.Builder(parentType).setDown(createNode(ctx));
   }
 
   /**

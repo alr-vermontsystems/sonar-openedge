@@ -370,25 +370,7 @@ pseudfn: // TRANSLATED
 // Productions that are named *_pseudfn /must/ be l-values.
 // Widget attributes are ambiguous with pretty much anything, because
 // the first bit before the colon can be any expression.
-    (  EXTENT
-    |  FIXCODEPAGE
-    |  OVERLAY
-    |  PUTBITS
-    |  PUTBYTE
-    |  PUTBYTES
-    |  PUTDOUBLE
-    |  PUTFLOAT
-    |  PUTINT64
-    |  PUTLONG
-    |  PUTSHORT
-    |  PUTSTRING
-    |  PUTUNSIGNEDLONG
-    |  PUTUNSIGNEDSHORT
-    |  SETBYTEORDER
-    |  SETPOINTERVALUE
-    |  SETSIZE
-    )
-    funargs
+    memoryManagementFunc
   | AAMSG  // not the whole func - we don't want its arguments here
   | currentvaluefunc
   | CURRENTWINDOW
@@ -417,6 +399,10 @@ pseudfn: // TRANSLATED
   | AAPCONTROL | GETCODEPAGES | COMSELF | PROCESSARCHITECTURE
   ;
 
+memoryManagementFunc:
+    ( EXTENT | FIXCODEPAGE | OVERLAY | PUTBITS | PUTBYTE | PUTBYTES | PUTDOUBLE | PUTFLOAT | PUTINT64 | PUTLONG | PUTSHORT | PUTSTRING | PUTUNSIGNEDLONG | PUTUNSIGNEDSHORT | SETBYTEORDER | SETPOINTERVALUE | SETSIZE )
+    funargs
+  ;
 
 // Predicates not in alpha order because they give ambiguous warnings if they're below
 // maximumfunc or minimumfunc. Judy
@@ -843,7 +829,7 @@ widattr: // TRANSLATED
   ;
 
 attr_colon: // TRANSLATED
-    ( ( OBJCOLON | DOUBLECOLON ) . array_subscript? method_param_list? )+ inuic? ( AS . )?
+    ( ( OBJCOLON | DOUBLECOLON ) id=. array_subscript? method_param_list? )+ inuic? ( AS . )?
   ;
 
 gwidget: // TRANSLATED

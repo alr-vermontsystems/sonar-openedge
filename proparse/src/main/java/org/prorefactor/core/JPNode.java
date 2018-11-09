@@ -918,6 +918,10 @@ public class JPNode implements AST {
     }
 
     public JPNode build(ParserSupport support) {
+      return build(support, null, null);
+    }
+
+    private JPNode build(ParserSupport support, JPNode up, JPNode left) {
       JPNode node;
       switch (tok.getNodeType()) {
         case RECORD_NAME:
@@ -948,6 +952,9 @@ public class JPNode implements AST {
           node = new JPNode(tok);
           break;
       }
+      node.up = up;
+      node.left = left;
+
       if (className != null)
         node.attrSet(IConstants.QUALIFIED_CLASS_INT, className);
       if (stmt)
@@ -972,16 +979,14 @@ public class JPNode implements AST {
             break;
         }
       }
-      if (ctx != null)
+
+      if ((ctx != null) && (support != null))
         support.pushNode(ctx, node);
       if (down != null) {
-        node.down = down.build(support);
-        node.down.up = node;
+        node.down = down.build(support, node, null);
       }
       if (right != null) {
-        node.right = right.build(support);
-        node.right.left = node;
-        node.right.up = node.up;
+        node.right = right.build(support, up, node);
       }
       return node;
     }

@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.antlr.v4.runtime.RuleContext;
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import org.prorefactor.core.ABLNodeType;
@@ -271,8 +272,7 @@ public class ParserSupport {
 
   // End of functions triggered from proparse.g
 
-  public boolean recordSemanticPredicate(org.antlr.v4.runtime.Token lt1,
-      org.antlr.v4.runtime.Token lt2, org.antlr.v4.runtime.Token lt3) {
+  public boolean recordSemanticPredicate(Token lt1, Token lt2, Token lt3) {
     String recname = lt1.getText();
     if (lt2.getType() == ABLNodeType.NAMEDOT.getType()) {
       recname += ".";

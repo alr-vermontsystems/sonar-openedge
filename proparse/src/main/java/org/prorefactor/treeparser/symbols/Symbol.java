@@ -15,8 +15,7 @@
  ********************************************************************************/
 package org.prorefactor.treeparser.symbols;
 
-import org.prorefactor.core.JPNode;
-import org.prorefactor.proparse.ProParserTokenTypes;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.prorefactor.treeparser.ContextQualifier;
 import org.prorefactor.treeparser.TreeParserSymbolScope;
 
@@ -28,13 +27,11 @@ public abstract class Symbol implements ISymbol {
   private int numReads = 0;
   private int numWrites = 0;
   private int numRefd = 0;
-  private JPNode asNode;
   private boolean parameter = false;
 
   // We store the DEFINE node if available and sensible. If defined in a syntax where there is no DEFINE node briefly
   // preceeding the ID node, then we store the ID node. If this is a schema symbol, then this member is null.
-  private JPNode defNode;
-  private JPNode likeNode;
+  private ParseTree defNode;
 
   // What scope this symbol was defined in
   private TreeParserSymbolScope scope;
@@ -53,18 +50,8 @@ public abstract class Symbol implements ISymbol {
   }
 
   @Override
-  public void setAsNode(JPNode asNode) {
-    this.asNode = asNode;
-  }
-
-  @Override
-  public void setDefOrIdNode(JPNode node) {
+  public void setDefinitionNode(ParseTree node) {
     defNode = node;
-  }
-
-  @Override
-  public void setLikeNode(JPNode likeNode) {
-    this.likeNode = likeNode;
   }
 
   @Override
@@ -88,30 +75,10 @@ public abstract class Symbol implements ISymbol {
   }
 
   @Override
-  public JPNode getAsNode() {
-    return asNode;
+  public ParseTree getDefineNode() {
+    return defNode;
   }
 
-  @Override
-  public JPNode getDefineNode() {
-    if ((defNode != null) && (defNode.getType() != ProParserTokenTypes.ID))
-      return defNode;
-
-    return null;
-  }
-
-  @Override
-  public JPNode getIndirectDefineIdNode() {
-    if ((defNode != null) && (defNode.getType() == ProParserTokenTypes.ID))
-      return defNode;
-
-    return null;
-  }
-
-  @Override
-  public JPNode getLikeNode() {
-    return likeNode;
-  }
 
   @Override
   public String getName() {
@@ -125,6 +92,8 @@ public abstract class Symbol implements ISymbol {
 
   @Override
   public void noteReference(ContextQualifier contextQualifier) {
+    if (contextQualifier == null)
+      return;
     allRefsCount++;
     if (ContextQualifier.isRead(contextQualifier))
       numReads++;

@@ -215,7 +215,9 @@ public class ParseUnit {
       parse();
     ParseTreeWalker walker = new ParseTreeWalker();
     TreeParser parser = new TreeParser(support, session);
+    parser.setTrace(true);
     walker.walk(parser, tree);
+    rootScope = parser.getRootScope();
   }
 
   public void attachXref(Document xref) {

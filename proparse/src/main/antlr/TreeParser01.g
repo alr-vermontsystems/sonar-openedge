@@ -256,7 +256,7 @@ recordfunargs: // TODO
     (LEFTPAREN tbl[ContextQualifier.REF] RIGHTPAREN | tbl[ContextQualifier.REF])
   ;
 
-parameter { /* RULE_INIT */ action.paramForCall(parameter_AST_in); }:
+parameter { /* RULE_INIT */ action.paramForCall(parameter_AST_in); }: // TODO
     (  #(  BUFFER bt:tbl[ContextQualifier.INIT]
         {  action.paramProgressType(BUFFER);
           action.paramSymbol(#bt);
@@ -292,7 +292,7 @@ filenameorvalue: // TRANSLATED
   ;
 
 // Expression term
-exprt:
+exprt: // TRANSLATED
     #(LEFTPAREN expression RIGHTPAREN )
   |  constant
   |  widattr2[ContextQualifier.REF]
@@ -309,7 +309,7 @@ exprt:
   |  tbl[ContextQualifier.REF] // for DISPLAY buffername, etc.
   ;
 
-widattr:
+widattr: // TRANSLATED
     #(  Widget_ref
       (NORETURNVALUE)?
       (  (widname)=> widname
@@ -324,7 +324,7 @@ widattr:
     )
   ;
 
-widattr2[ContextQualifier cq]:
+widattr2[ContextQualifier cq]: // TRANSLATED
     #(  ref:Widget_ref
       (NORETURNVALUE)?
      (  (widname)=> id1:widname
@@ -340,7 +340,7 @@ widattr2[ContextQualifier cq]:
     { action.widattr (#ref, (#id1 == null ? #id2 : #id1), cq); }
   ;
 
-gwidget:
+gwidget: // TRANSLATED
     #(  Widget_ref s_widget
       (  #(  IN_KW
           (  MENU ID
@@ -354,11 +354,11 @@ gwidget:
     )
   ;
 
-s_widget:
+s_widget: // TRANSLATED
     widname  | fld[ContextQualifier.REF]
   ;
 
-widname:
+widname: // TRANSLATED
     systemhandlename
   |  DATASET ID
   |  DATASOURCE ID
@@ -377,7 +377,7 @@ widname:
   |  STREAM ID
   ;
 
-tbl[ContextQualifier contextQualifier]:
+tbl[ContextQualifier contextQualifier]: // TRANSLATED
     id:RECORD_NAME {action.recordNameNode(#id, contextQualifier);}
   ;
 

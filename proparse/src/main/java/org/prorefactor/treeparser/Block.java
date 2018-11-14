@@ -41,7 +41,7 @@ public class Block {
   private List<Frame> frames = new ArrayList<>();
   private Block parent;
   private Frame defaultFrame = null;
-  private ABLNodeType blockStatementNode;
+  private final ABLNodeType blockStatementNode;
   private Set<BufferScope> bufferScopes = new HashSet<>();
 
   /**

@@ -1982,11 +1982,15 @@ definepropertystate: // TRANSLATED
 
 defineproperty_accessor: // TRANSLATED
     ( PUBLIC | PROTECTED | PRIVATE )?
-    ( GET PERIOD
-    | SET PERIOD
-    | GET function_params? block_colon code_block END GET? PERIOD
-    | SET function_params block_colon code_block END SET? PERIOD
-    )
+    ( defineproperty_accessor_getblock | defineproperty_accessor_setblock )
+  ;
+
+defineproperty_accessor_getblock:
+    GET ( function_params? block_colon code_block END GET? )? PERIOD
+  ;
+
+defineproperty_accessor_setblock:
+    SET ( function_params? block_colon code_block END SET? )? PERIOD
   ;
 
 definequerystate: // TRANSLATED
@@ -2204,8 +2208,11 @@ display_with: // TRANSLATED
   ;
 
 dostate: // TRANSLATED
-    DO block_for? block_preselect? block_opt* block_colon code_block block_end
+    DO block_for? block_preselect? block_opt* dostatesub
   ;
+
+dostatesub:
+  block_colon code_block block_end;
 
 downstate: // TRANSLATED
     DOWN
@@ -2349,7 +2356,11 @@ font_expr: // TRANSLATED
   ;
 
 forstate: // TRANSLATED
-    FOR for_record_spec block_opt* block_colon code_block block_end
+    FOR for_record_spec block_opt* forstate_sub
+  ;
+
+forstate_sub:
+    block_colon code_block block_end
   ;
 
 for_record_spec: // TRANSLATED
@@ -2581,28 +2592,19 @@ function_param: // TRANSLATED
     { if ($bn.ctx != null) support.defBuffer($bn.text, $bf.text); }
     # functionParamBufferFor
   | qualif=( INPUT | OUTPUT | INPUTOUTPUT )?
-    ( { _input.LA(2) == AS }?
-      n=identifier AS ( CLASS type_name | datatype_var )
-      extentphrase?
-      { support.defVar($n.text); }
-    | { _input.LA(2) == LIKE }?
-      n2=identifier like_field
-      extentphrase?
-      { support.defVar($n2.text); }
-    | { _input.LA(2) != NAMEDOT }? TABLE FOR? record APPEND? BIND?
-    | { _input.LA(2) != NAMEDOT }? TABLEHANDLE FOR? hn=identifier APPEND? BIND?
-      { support.defVar($hn.text); }
-    | { _input.LA(2) != NAMEDOT}? DATASET FOR? identifier APPEND? BIND?
-    | { _input.LA(2) != NAMEDOT}? DATASETHANDLE FOR? hn2=identifier APPEND? BIND?
-      { support.defVar($hn2.text); }
-    | // When declaring a function, it's possible to just list the datatype without an identifier AS.
-      ( CLASS type_name | datatype_var )
-      extentphrase?
-    )
-    {  //if (p1==null && p2==null && p3==null)
-       // ## = #([INPUT], ##);
-    }
+    function_param_std
     # functionParamStandard
+  ;
+
+function_param_std:
+    n=identifier AS ( CLASS type_name | datatype_var ) extentphrase? { support.defVar($n.text); } # functionParamStandardAs
+  | n2=identifier like_field extentphrase? { support.defVar($n2.text); } # functionParamStandardLike
+  | { _input.LA(2) != NAMEDOT }? TABLE FOR? record APPEND? BIND? # functionParamStandardTable
+  | { _input.LA(2) != NAMEDOT }? TABLEHANDLE FOR? hn=identifier APPEND? BIND? { support.defVar($hn.text); } # functionParamStandardTableHandle
+  | { _input.LA(2) != NAMEDOT}? DATASET FOR? identifier APPEND? BIND?  # functionParamStandardDataset
+  | { _input.LA(2) != NAMEDOT}? DATASETHANDLE FOR? hn2=identifier APPEND? BIND? { support.defVar($hn2.text); }  # functionParamStandardDatasetHandle
+  | // When declaring a function, it's possible to just list the datatype without an identifier AS
+    ( CLASS type_name | datatype_var ) extentphrase? # functionParamStandardOther
   ;
 
 ext_functionstate:
@@ -3259,7 +3261,11 @@ readkeystate: // TRANSLATED
 
 repeatstate: // TRANSLATED
     REPEAT
-    block_for? block_preselect? block_opt* block_colon code_block block_end
+    block_for? block_preselect? block_opt* repeatstatesub
+  ;
+
+repeatstatesub:
+    block_colon code_block block_end
   ;
 
 record_fields: // TRANSLATED

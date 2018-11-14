@@ -25,7 +25,6 @@ import org.prorefactor.proparse.antlr4.Proparse.*;
 import org.prorefactor.refactor.RefactorSession;
 import org.prorefactor.treeparser.Block;
 import org.prorefactor.treeparser.BufferScope;
-import org.prorefactor.treeparser.ClassSupport;
 import org.prorefactor.treeparser.ContextQualifier;
 import org.prorefactor.treeparser.DataType;
 import org.prorefactor.treeparser.FieldLookupResult;
@@ -45,14 +44,17 @@ import org.prorefactor.treeparser.symbols.widgets.Browse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.primitives.Ints;
+
 public class TreeParser extends ProparseBaseListener {
   private static final Logger LOG = LoggerFactory.getLogger(TreeParser.class);
+
+  private static final String LOG_ADDING_QUAL_TO = "{}> Adding {} qualifier to '{}'";
 
   private final ParserSupport support;
   private final RefactorSession refSession;
   private final TreeParserRootSymbolScope rootScope;
 
-  private boolean trace;
   private int currentLevel;
 
   private Block currentBlock;
@@ -67,7 +69,7 @@ public class TreeParser extends ProparseBaseListener {
 
   private TableBuffer lastTableReferenced;
   private TableBuffer prevTableReferenced;
-  // private FrameStack frameStack = new FrameStack();
+  private FrameStack frameStack = new FrameStack();
 
   private TableBuffer currDefTable;
   private Index currDefIndex;
@@ -99,25 +101,33 @@ public class TreeParser extends ProparseBaseListener {
 
   public TreeParser(ParserSupport support, RefactorSession session) {
     this.support = support;
-    
     this.refSession = session;
     this.rootScope = new TreeParserRootSymbolScope(refSession);
-
-    currentScope = rootScope;
-  }
-
-  public void setTrace(boolean trace) {
-    this.trace = trace;
+    this.currentScope = rootScope;
   }
 
   public TreeParserRootSymbolScope getRootScope() {
     return rootScope;
   }
 
+  private void setContextQualifier(ParseTree ctx, ContextQualifier cq) {
+    if ((cq == null) || (ctx == null))
+      return;
+    if (LOG.isDebugEnabled()) {
+      LOG.debug(LOG_ADDING_QUAL_TO, indent(), cq, ctx.getText());
+    }
+    contextQualifiers.put(ctx, cq);
+  }
+
   @Override
   public void enterProgram(ProgramContext ctx) {
-    // TODO TreeParser should only be executed once on a ParseTree.
-    // We should double-check here that enterProgram has never been executed
+    if (LOG.isDebugEnabled())
+      LOG.debug("{}> Entering program", indent());
+
+    if (rootRoutine != null) {
+      // Executing TreeParser more than once on a ParseTree would just result in meaningless result
+      throw new IllegalStateException("TreeParser has already been executed...");
+    }
 
     BlockNode blockNode = (BlockNode) support.getNode(ctx);
     currentBlock = pushBlock(new Block(rootScope, ABLNodeType.PROGRAM_ROOT));
@@ -136,12 +146,16 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void exitProgram(ProgramContext ctx) {
-    LOG.debug("exitProgram");
+    if (LOG.isDebugEnabled())
+      LOG.debug("{}> Exiting program", indent());
   }
 
   @Override
   public void enterBlock_for(Block_forContext ctx) {
     for (RecordContext record : ctx.record()) {
+      if (LOG.isDebugEnabled())
+        LOG.debug("{}> Adding strong buffer scope for {} to current block", indent(), record.getText());
+
       RecordNameNode recNode = (RecordNameNode) support.getNode(record);
       recordNameNode(recNode, ContextQualifier.BUFFERSYMBOL);
       currentBlock.addStrongBufferScope(recNode);
@@ -150,39 +164,38 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterBlock_opt_iterator(Block_opt_iteratorContext ctx) {
-    contextQualifiers.put(ctx.field(), ContextQualifier.REFUP);
-    // TODO Verify how expressions can be handled
-    contextQualifiers.put(ctx.expression(0), ContextQualifier.REF);
-    contextQualifiers.put(ctx.expression(1), ContextQualifier.REF);
+    setContextQualifier(ctx.field(), ContextQualifier.REFUP);
+    setContextQualifier(ctx.expression(0), ContextQualifier.REF);
+    setContextQualifier(ctx.expression(1), ContextQualifier.REF);
   }
 
   @Override
   public void enterBlock_opt_while(Block_opt_whileContext ctx) {
-    // TODO Verify how expressions can be handled
-    contextQualifiers.put(ctx.expression(), ContextQualifier.REF);
+    setContextQualifier(ctx.expression(), ContextQualifier.REF);
   }
 
   @Override
   public void enterBlock_preselect(Block_preselectContext ctx) {
-    contextQualifiers.put(ctx.for_record_spec(), ContextQualifier.INITWEAK);
+    setContextQualifier(ctx.for_record_spec(), ContextQualifier.INITWEAK);
   }
 
   @Override
   public void enterMemoryManagementFunc(MemoryManagementFuncContext ctx) {
-    if ((ctx.PUTBITS() != null) || (ctx.PUTBYTE() != null) /* and so on */) {
-      contextQualifiers.put(ctx.funargs().expression(0), ContextQualifier.UPDATING);
-      // TODO A compléter
+    if ((ctx.PUTBITS() != null) || (ctx.PUTBYTE() != null) || (ctx.PUTBYTES() != null) || (ctx.PUTDOUBLE() != null)
+        || (ctx.PUTFLOAT() != null) || (ctx.PUTINT64() != null) || (ctx.PUTLONG() != null) || (ctx.PUTSHORT() != null)
+        || (ctx.PUTSTRING() != null) || (ctx.PUTUNSIGNEDLONG() != null) || (ctx.PUTUNSIGNEDSHORT() != null)
+        || (ctx.SETPOINTERVALUE() != null)) {
+      setContextQualifier(ctx.funargs().expression(0), ContextQualifier.UPDATING);
     }
   }
 
   @Override
   public void enterFunargs(FunargsContext ctx) {
+    // TODO Check conflict with previous function (memory mgmt function)
     for (ExpressionContext exp : ctx.expression()) {
-      if (support.getNode(ctx) != null)
-        noteReference(support.getNode(ctx), contextQualifiers.get(exp));
+      setContextQualifier(exp, ContextQualifier.REF);
     }
   }
-  // TODO End of huge block to be reviewed
 
   @Override
   public void enterRecordfunc(RecordfuncContext ctx) {
@@ -202,17 +215,17 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterParameterOther(ParameterOtherContext ctx) {
     if (ctx.OUTPUT() != null) {
-      contextQualifiers.put(ctx.parameter_arg(), ContextQualifier.UPDATING);
+      setContextQualifier(ctx.parameter_arg(), ContextQualifier.UPDATING);
     } else if (ctx.INPUTOUTPUT() != null) {
-      contextQualifiers.put(ctx.parameter_arg(), ContextQualifier.REFUP);
+      setContextQualifier(ctx.parameter_arg(), ContextQualifier.REFUP);
     } else {
-      contextQualifiers.put(ctx.parameter_arg(), ContextQualifier.REF);
+      setContextQualifier(ctx.parameter_arg(), ContextQualifier.REF);
     }
   }
 
   @Override
   public void enterParameterArgTableHandle(ParameterArgTableHandleContext ctx) {
-    contextQualifiers.put(ctx.field(), ContextQualifier.INIT);
+    setContextQualifier(ctx.field(), ContextQualifier.INIT);
     noteReference(support.getNode(ctx.field()), contextQualifiers.removeFrom(ctx));
   }
 
@@ -223,7 +236,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterParameterArgDatasetHandle(ParameterArgDatasetHandleContext ctx) {
-    contextQualifiers.put(ctx.field(), ContextQualifier.INIT);
+    setContextQualifier(ctx.field(), ContextQualifier.INIT);
     noteReference(support.getNode(ctx.field()), contextQualifiers.removeFrom(ctx));
   }
 
@@ -234,18 +247,52 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterParameterArgComDatatype(ParameterArgComDatatypeContext ctx) {
-    contextQualifiers.put(ctx.expression(), contextQualifiers.removeFrom(ctx));
+    setContextQualifier(ctx.expression(), contextQualifiers.removeFrom(ctx));
+  }
+
+  @Override
+  public void exitFunctionParamBufferFor(FunctionParamBufferForContext ctx) {
+    if (ctx.bn != null) {
+      defineBuffer(ctx, support.getNode(ctx), null, support.getNode(ctx.record()), true);
+    }
+  }
+
+  @Override
+  public void enterFunctionParamStandardAs(FunctionParamStandardAsContext ctx) {
+    addToSymbolScope(defineVariable(ctx, support.getNode(ctx), null, ctx.n.getText(), true));
+    defAs(ctx, null);
+  }
+
+  @Override
+  public void enterFunctionParamStandardLike(FunctionParamStandardLikeContext ctx) {
+    stack.push(defineVariable(ctx, support.getNode(ctx), null, ctx.n2.getText(), true));
+    defLike(ctx, null);
+    addToSymbolScope(stack.pop());
+  }
+
+  @Override
+  public void enterFunctionParamStandardTable(FunctionParamStandardTableContext ctx) {
+    setContextQualifier(ctx.record(), ContextQualifier.TEMPTABLESYMBOL);
+  }
+
+  @Override
+  public void enterFunctionParamStandardTableHandle(FunctionParamStandardTableHandleContext ctx) {
+    addToSymbolScope(defineVariable(ctx, support.getNode(ctx), null, ctx.hn.getText(), DataType.HANDLE, true));
+  }
+
+  @Override
+  public void enterFunctionParamStandardDatasetHandle(FunctionParamStandardDatasetHandleContext ctx) {
+    addToSymbolScope(defineVariable(ctx, support.getNode(ctx), null, ctx.hn2.getText(), DataType.HANDLE, true));
   }
 
   private void enterExpression(ExpressionContext ctx) {
     ContextQualifier qual = contextQualifiers.removeFrom(ctx);
-    if (qual != null) {
-      for (ExprtContext c : ctx.getRuleContexts(ExprtContext.class)) {
-        contextQualifiers.put(c, qual);
-      }
-      for (ExpressionContext c : ctx.getRuleContexts(ExpressionContext.class)) {
-        contextQualifiers.put(c, qual);
-      }
+    if (qual == null) qual = ContextQualifier.REF;
+    for (ExprtContext c : ctx.getRuleContexts(ExprtContext.class)) {
+      setContextQualifier(c, qual);
+    }
+    for (ExpressionContext c : ctx.getRuleContexts(ExpressionContext.class)) {
+      setContextQualifier(c, qual);
     }
   }
 
@@ -303,27 +350,28 @@ public class TreeParser extends ProparseBaseListener {
   
   @Override
   public void enterExprtNoReturnValue(ExprtNoReturnValueContext ctx) {
-    contextQualifiers.put(ctx.s_widget(), contextQualifiers.removeFrom(ctx));
+    setContextQualifier(ctx.s_widget(), contextQualifiers.removeFrom(ctx));
   }
 
   @Override
   public void enterExprtWidName(ExprtWidNameContext ctx) {
-    contextQualifiers.put(ctx.widname(), contextQualifiers.removeFrom(ctx));
+    widattr(ctx, support.getNode(ctx.widname()), contextQualifiers.removeFrom(ctx));
+    // setContextQualifier(ctx.widname(), contextQualifiers.removeFrom(ctx));
   }
 
   @Override
   public void enterExprtExprt2(ExprtExprt2Context ctx) {
-    contextQualifiers.put(ctx.exprt2(), contextQualifiers.removeFrom(ctx));
+    setContextQualifier(ctx.exprt2(), contextQualifiers.removeFrom(ctx));
   }
 
   @Override
   public void enterExprt2ParenExpr(Exprt2ParenExprContext ctx) {
-    contextQualifiers.put(ctx.expression(), contextQualifiers.removeFrom(ctx));
+    setContextQualifier(ctx.expression(), contextQualifiers.removeFrom(ctx));
   }
 
   @Override
   public void enterExprt2Field(Exprt2FieldContext ctx) {
-    contextQualifiers.put(ctx.field(), ContextQualifier.REF);
+    setContextQualifier(ctx.field(), ContextQualifier.REF);
   }
 
   @Override
@@ -345,18 +393,18 @@ public class TreeParser extends ProparseBaseListener {
         browseRef(support.getNode(ctx.inuic().widgetname()));
       }
     }
-    super.enterGwidget(ctx);
   }
 
   @Override
   public void enterS_widget(S_widgetContext ctx) {
     if (ctx.field() != null) {
-      contextQualifiers.put(ctx.field(), ContextQualifier.REF);
+      setContextQualifier(ctx.field(), ContextQualifier.REF);
     }
   }
 
   @Override
   public void enterWidname(WidnameContext ctx) {
+    LOG.info("ici " + ctx.getText());
     if (ctx.FRAME() != null) {
       frameRef(support.getNode(ctx.identifier()));
     } else if (ctx.BROWSE() != null) {
@@ -364,7 +412,7 @@ public class TreeParser extends ProparseBaseListener {
     } else if (ctx.BUFFER() != null) {
       bufferRef(ctx.filn().getText());
     } else if (ctx.FIELD() != null) {
-      contextQualifiers.put(ctx.field(), ContextQualifier.REF);
+      setContextQualifier(ctx.field(), ContextQualifier.REF);
     }
   }
 
@@ -378,11 +426,11 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterAssignment_list(Assignment_listContext ctx) {
     if (ctx.record() != null) {
-      contextQualifiers.put(ctx.record(), ContextQualifier.UPDATING);
+      setContextQualifier(ctx.record(), ContextQualifier.UPDATING);
     }
     if (ctx.except_fields() != null) {
       for (FieldContext fld : ctx.except_fields().field()) {
-        contextQualifiers.put(fld, ContextQualifier.SYMBOL);
+        setContextQualifier(fld, ContextQualifier.SYMBOL);
       }
     }
   }
@@ -390,79 +438,79 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterAssignstate2(Assignstate2Context ctx) {
     if (ctx.widattr() != null) {
-      contextQualifiers.put(ctx.widattr(), ContextQualifier.UPDATING);
+      setContextQualifier(ctx.widattr(), ContextQualifier.UPDATING);
     } else if (ctx.field() != null) {
-      contextQualifiers.put(ctx.field(), ContextQualifier.UPDATING);
+      setContextQualifier(ctx.field(), ContextQualifier.UPDATING);
     }
-    contextQualifiers.put(ctx.expression(), ContextQualifier.REF);
+    setContextQualifier(ctx.expression(), ContextQualifier.REF);
   }
 
   @Override
   public void enterAssign_equal(Assign_equalContext ctx) {
     if (ctx.widattr() != null) {
-      contextQualifiers.put(ctx.widattr(), ContextQualifier.UPDATING);
+      setContextQualifier(ctx.widattr(), ContextQualifier.UPDATING);
     } else if (ctx.field() != null) {
-      contextQualifiers.put(ctx.field(), ContextQualifier.UPDATING);
+      setContextQualifier(ctx.field(), ContextQualifier.UPDATING);
     }
   }
 
   @Override
   public void enterReferencepoint(ReferencepointContext ctx) {
-    contextQualifiers.put(ctx.field(), ContextQualifier.SYMBOL);
+    setContextQualifier(ctx.field(), ContextQualifier.SYMBOL);
   }
 
   @Override
   public void enterBuffercomparestate(BuffercomparestateContext ctx) {
-    contextQualifiers.put(ctx.record(0), ContextQualifier.REF);
+    setContextQualifier(ctx.record(0), ContextQualifier.REF);
     
     if ((ctx.except_using_fields() != null) && (ctx.except_using_fields().field() != null)) {
       ContextQualifier qual = ctx.except_using_fields().USING() == null ? ContextQualifier.SYMBOL : ContextQualifier.REF;
       for (FieldContext field : ctx.except_using_fields().field()) {
-        contextQualifiers.put(field, qual);
+        setContextQualifier(field, qual);
       }
     }
 
-    contextQualifiers.put(ctx.record(1), ContextQualifier.REF);
+    setContextQualifier(ctx.record(1), ContextQualifier.REF);
   }
 
   @Override
   public void enterBuffercompare_save(Buffercompare_saveContext ctx) {
-    contextQualifiers.put(ctx.field(), ContextQualifier.UPDATING);
+    setContextQualifier(ctx.field(), ContextQualifier.UPDATING);
   }
 
   @Override
   public void enterBuffercopystate(BuffercopystateContext ctx) {
-    contextQualifiers.put(ctx.record(0), ContextQualifier.REF);
+    setContextQualifier(ctx.record(0), ContextQualifier.REF);
     
     if ((ctx.except_using_fields() != null) && (ctx.except_using_fields().field() != null)) {
       ContextQualifier qual = ctx.except_using_fields().USING() == null ? ContextQualifier.SYMBOL : ContextQualifier.REF;
       for (FieldContext field : ctx.except_using_fields().field()) {
-        contextQualifiers.put(field, qual);
+        setContextQualifier(field, qual);
       }
     }
 
-    contextQualifiers.put(ctx.record(1), ContextQualifier.UPDATING);
+    setContextQualifier(ctx.record(1), ContextQualifier.UPDATING);
   }
 
   @Override
   public void enterChoosestate(ChoosestateContext ctx) {
-    frameInitializingStatement(support.getNode(ctx));
+    frameInitializingStatement(ctx);
   }
 
   @Override
   public void enterChoose_field(Choose_fieldContext ctx) {
-    contextQualifiers.put(ctx.field(), ContextQualifier.UPDATING);
-    // XXX frameStack.formItem(support.getNode(ctx.field()));
+    setContextQualifier(ctx.field(), ContextQualifier.UPDATING);
+    frameStack.formItem(support.getNode(ctx.field()));
   }
 
   @Override
   public void enterChoose_opt(Choose_optContext ctx) {
-    contextQualifiers.put(ctx.field(), ContextQualifier.UPDATING);
+    setContextQualifier(ctx.field(), ContextQualifier.UPDATING);
   }
 
   @Override
   public void exitChoosestate(ChoosestateContext ctx) {
-    // XXX frameStack.statementEnd();
+    frameStack.statementEnd();
   }
   
   @Override
@@ -482,51 +530,51 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterClearstate(ClearstateContext ctx) {
     if (ctx.frame_widgetname() != null) {
-      // XXX frameStack.simpleFrameInitStatement(support.getNode(ctx), support.getNode(ctx.frame_widgetname().widgetname()), currentBlock);
+      frameStack.simpleFrameInitStatement(ctx, support.getNode(ctx), support.getNode(ctx.frame_widgetname().widgetname()), currentBlock);
     }
   }
 
   @Override
   public void enterCatchstate(CatchstateContext ctx) {
     scopeAdd(support.getNode(ctx));
-    addToSymbolScope(defineVariable(ctx, support.getNode(ctx.ID()), support.getNode(ctx.ID()), ctx.n.getText()));
+    addToSymbolScope(defineVariable(ctx, support.getNode(ctx).getFirstChild(), support.getNode(ctx.ID()), ctx.n.getText()));
     defAs(ctx.class_type_name(), support.getNode(ctx.AS()));
   }
 
   @Override
   public void exitCatchstate(CatchstateContext ctx) {
-    scopeClose(support.getNode(ctx.CATCH()));
+    scopeClose(support.getNode(ctx));
   }
   
   @Override
   public void enterClosestored_field(Closestored_fieldContext ctx) {
-    contextQualifiers.put(ctx.field(), ContextQualifier.REF);
+    setContextQualifier(ctx.field(), ContextQualifier.REF);
   }
   
   @Override
   public void enterClosestored_where(Closestored_whereContext ctx) {
-    contextQualifiers.put(ctx.field(), ContextQualifier.REF);
+    setContextQualifier(ctx.field(), ContextQualifier.REF);
   }
   
   @Override
   public void enterColorstate(ColorstateContext ctx) {
-    frameInitializingStatement(support.getNode(ctx));
+    frameInitializingStatement(ctx);
     for (Field_form_itemContext item : ctx.field_form_item()) {
-      contextQualifiers.put(item, ContextQualifier.SYMBOL);
-      // XXX frameStack.formItem(support.getNode(item));
+      setContextQualifier(item, ContextQualifier.SYMBOL);
+      frameStack.formItem(support.getNode(item));
     }
   }
   
   @Override
   public void exitColorstate(ColorstateContext ctx) {
-    // XXX frameStack.statementEnd();
+    frameStack.statementEnd();
   }
   
   @Override
   public void enterColumnformat_opt(Columnformat_optContext ctx) {
     if ((ctx.LEXAT() != null) && ( ctx.field() != null)) {
-      contextQualifiers.put(ctx.field(), ContextQualifier.SYMBOL);
-      // XXX frameStack.lexAt(support.getNode(ctx.field()));
+      setContextQualifier(ctx.field(), ContextQualifier.SYMBOL);
+      frameStack.lexAt(support.getNode(ctx.field()));
     }
   }
   
@@ -555,69 +603,68 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterCopylobstate(CopylobstateContext ctx) {
-    // TODO Identify expression, then ...
-    // TODO noteReference(#ex, ContextQualifier.UPDATING);
+    setContextQualifier(ctx.expression(0), ContextQualifier.REF);
+    setContextQualifier(ctx.expression(1), ContextQualifier.UPDATING);
   }
 
   @Override
   public void enterCreatestate(CreatestateContext ctx) {
-    contextQualifiers.put(ctx.record(), ContextQualifier.UPDATING);
+    setContextQualifier(ctx.record(), ContextQualifier.UPDATING);
   }
 
   @Override
   public void enterCreate_whatever_state(Create_whatever_stateContext ctx) {
-    contextQualifiers.put(ctx.exprt(), ContextQualifier.UPDATING);
+    setContextQualifier(ctx.exprt(), ContextQualifier.UPDATING);
   }
 
   @Override
   public void enterCreatebrowsestate(CreatebrowsestateContext ctx) {
-    contextQualifiers.put(ctx.exprt(), ContextQualifier.UPDATING);
+    setContextQualifier(ctx.exprt(), ContextQualifier.UPDATING);
   }
   
   @Override
   public void enterCreatebufferstate(CreatebufferstateContext ctx) {
-    contextQualifiers.put(ctx.exprt(), ContextQualifier.UPDATING);
+    setContextQualifier(ctx.exprt(), ContextQualifier.UPDATING);
   }
 
   @Override
   public void enterCreatequerystate(CreatequerystateContext ctx) {
-    contextQualifiers.put(ctx.exprt(), ContextQualifier.UPDATING);
+    setContextQualifier(ctx.exprt(), ContextQualifier.UPDATING);
     }
   
   @Override
   public void enterCreateserverstate(CreateserverstateContext ctx) {
-    contextQualifiers.put(ctx.exprt(), ContextQualifier.UPDATING);
+    setContextQualifier(ctx.exprt(), ContextQualifier.UPDATING);
     }
   
   @Override
   public void enterCreateserversocketstate(CreateserversocketstateContext ctx) {
-    contextQualifiers.put(ctx.exprt(), ContextQualifier.UPDATING);
+    setContextQualifier(ctx.exprt(), ContextQualifier.UPDATING);
   }
 
   @Override
   public void enterCreatetemptablestate(CreatetemptablestateContext ctx) {
-    contextQualifiers.put(ctx.exprt(), ContextQualifier.UPDATING);
+    setContextQualifier(ctx.exprt(), ContextQualifier.UPDATING);
   }
 
   @Override
   public void enterCreatewidgetstate(CreatewidgetstateContext ctx) {
-    // TODO Verifier sur tous les createXX que ça fonctionne avec un exprt
-    contextQualifiers.put(ctx.field(), ContextQualifier.UPDATING);
+    setContextQualifier(ctx.field(), ContextQualifier.UPDATING);
   }
 
   @Override
   public void enterDdegetstate(DdegetstateContext ctx) {
-    contextQualifiers.put(ctx.field(), ContextQualifier.UPDATING);
+    setContextQualifier(ctx.field(), ContextQualifier.UPDATING);
     }
   
   @Override
   public void enterDdeinitiatestate(DdeinitiatestateContext ctx) {
-    contextQualifiers.put(ctx.field(), ContextQualifier.UPDATING);
+    setContextQualifier(ctx.field(), ContextQualifier.UPDATING);
   }
   
   @Override
   public void enterDderequeststate(DderequeststateContext ctx) {
-    contextQualifiers.put(ctx.field(), ContextQualifier.UPDATING);
+    setContextQualifier(ctx.field(), ContextQualifier.UPDATING);
   }
 
   @Override
@@ -629,7 +676,7 @@ public class TreeParser extends ProparseBaseListener {
   public void enterDef_browse_display(Def_browse_displayContext ctx) {
     if (ctx.except_fields() != null) {
       for (FieldContext fld : ctx.except_fields().field()) {
-        contextQualifiers.put(fld, ContextQualifier.SYMBOL);
+        setContextQualifier(fld, ContextQualifier.SYMBOL);
       }
     }
   }
@@ -637,25 +684,24 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterDef_browse_display_items_or_record(Def_browse_display_items_or_recordContext ctx) {
     if (ctx.recordAsFormItem() != null) {
-      contextQualifiers.put(ctx.recordAsFormItem(), ContextQualifier.INIT);
-      // XXX frameStack.formItem(support.getNode(ctx.recordAsFormItem()));
+      setContextQualifier(ctx.recordAsFormItem(), ContextQualifier.INIT);
+      frameStack.formItem(support.getNode(ctx.recordAsFormItem()));
     }
   }
 
   @Override
   public void enterDef_browse_enable(Def_browse_enableContext ctx) {
-    // TODO Vérifier
     if ((ctx.all_except_fields() != null) && (ctx.all_except_fields().except_fields() != null)) {
       for (FieldContext fld : ctx.all_except_fields().except_fields().field()) {
-        contextQualifiers.put(fld, ContextQualifier.SYMBOL);
+        setContextQualifier(fld, ContextQualifier.SYMBOL);
       }
     }
   }
 
   @Override
   public void enterDef_browse_enable_item(Def_browse_enable_itemContext ctx) {
-    contextQualifiers.put(ctx.field(), ContextQualifier.SYMBOL);
-    // XXX frameStack.formItem(support.getNode(ctx.field()));
+    setContextQualifier(ctx.field(), ContextQualifier.SYMBOL);
+    frameStack.formItem(support.getNode(ctx));
   }
 
   @Override
@@ -666,7 +712,7 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterButton_opt(Button_optContext ctx) {
     if (ctx.like_field() != null) {
-      contextQualifiers.put(ctx.like_field().field(), ContextQualifier.SYMBOL);
+      setContextQualifier(ctx.like_field().field(), ContextQualifier.SYMBOL);
     }
   }
 
@@ -679,7 +725,7 @@ public class TreeParser extends ProparseBaseListener {
   public void enterDefinedatasetstate(DefinedatasetstateContext ctx) {
     stack.push(defineSymbol(ABLNodeType.DATASET, ctx, support.getNode(ctx), support.getNode(ctx.identifier()), ctx.identifier().getText()));
     for (RecordContext record : ctx.record()) {
-      contextQualifiers.put(record, ContextQualifier.INIT);
+      setContextQualifier(record, ContextQualifier.INIT);
     }
   }
 
@@ -691,26 +737,26 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterData_relation(Data_relationContext ctx) {
     for (RecordContext record : ctx.record()) {
-      contextQualifiers.put(record, ContextQualifier.INIT);
+      setContextQualifier(record, ContextQualifier.INIT);
     }
   }
 
   @Override
   public void enterParent_id_relation(Parent_id_relationContext ctx) {
     for (RecordContext record : ctx.record()) {
-      contextQualifiers.put(record, ContextQualifier.INIT);
+      setContextQualifier(record, ContextQualifier.INIT);
     }
     for (FieldContext fld : ctx.field()) {
-      contextQualifiers.put(fld, ContextQualifier.SYMBOL);
+      setContextQualifier(fld, ContextQualifier.SYMBOL);
     }
   }
 
   @Override
   public void enterField_mapping_phrase(Field_mapping_phraseContext ctx) {
     for (int zz = 0; zz < ctx.field().size(); zz += 2) {
-      contextQualifiers.put(ctx.field().get(zz), ContextQualifier.SYMBOL);
+      setContextQualifier(ctx.field().get(zz), ContextQualifier.SYMBOL);
       // TODO fld1 and fld2
-      contextQualifiers.put(ctx.field().get(zz + 1), ContextQualifier.SYMBOL);
+      setContextQualifier(ctx.field().get(zz + 1), ContextQualifier.SYMBOL);
     }
   }
 
@@ -729,7 +775,7 @@ public class TreeParser extends ProparseBaseListener {
     recordNameNode((RecordNameNode) support.getNode(ctx.record()), ContextQualifier.INIT);
     if (ctx.field() != null) {
       for (FieldContext fld : ctx.field()) {
-        contextQualifiers.put(fld, ContextQualifier.SYMBOL);
+        setContextQualifier(fld, ContextQualifier.SYMBOL);
       }
     }
   }
@@ -748,19 +794,19 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterDefineframestate(DefineframestateContext ctx) {
-    // XXX frameStack.nodeOfDefineFrame(support.getNode(ctx.DEFINE()), support.getNode(ctx.identifier()), currentScope);
-    contextQualifiers.put(ctx.form_items_or_record(), ContextQualifier.SYMBOL);
+    frameStack.nodeOfDefineFrame(ctx, support.getNode(ctx), null, ctx.identifier().getText(), currentScope);
+    setContextQualifier(ctx.form_items_or_record(), ContextQualifier.SYMBOL);
 
     if (ctx.except_fields() != null) {
       for (FieldContext fld : ctx.except_fields().field()) {
-        contextQualifiers.put(fld, ContextQualifier.SYMBOL);
+        setContextQualifier(fld, ContextQualifier.SYMBOL);
       }
     }
   }
 
   @Override
   public void exitDefineframestate(DefineframestateContext ctx) {
-    // XXX frameStack.statementEnd();
+    frameStack.statementEnd();
   }
 
   @Override
@@ -771,7 +817,7 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterDefineimage_opt(Defineimage_optContext ctx) {
     if (ctx.like_field() != null) {
-      contextQualifiers.put(ctx.like_field().field(), ContextQualifier.SYMBOL);
+      setContextQualifier(ctx.like_field().field(), ContextQualifier.SYMBOL);
     }
   }
 
@@ -804,22 +850,34 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   @Override
-  public void enterDefineproperty_accessor(Defineproperty_accessorContext ctx) {
-    // TODO Probably only if ctx.code_block != null
-    propGetSetBegin(ctx, support.getNode(ctx));
+  public void enterDefineproperty_accessor_getblock(Defineproperty_accessor_getblockContext ctx) {
+    if (ctx.code_block() != null)
+      propGetSetBegin(ctx, support.getNode(ctx));
   }
 
   @Override
-  public void exitDefineproperty_accessor(Defineproperty_accessorContext ctx) {
-    // TODO Probably only if ctx.code_block != null
-    propGetSetEnd(support.getNode(ctx));
+  public void enterDefineproperty_accessor_setblock(Defineproperty_accessor_setblockContext ctx) {
+    if (ctx.code_block() != null)
+      propGetSetBegin(ctx, support.getNode(ctx));
+  }
+
+  @Override
+  public void exitDefineproperty_accessor_getblock(Defineproperty_accessor_getblockContext ctx) {
+    if (ctx.code_block() != null)
+      propGetSetEnd(support.getNode(ctx));
+  }
+
+  @Override
+  public void exitDefineproperty_accessor_setblock(Defineproperty_accessor_setblockContext ctx) {
+    if (ctx.code_block() != null)
+      propGetSetEnd(support.getNode(ctx));
   }
 
   @Override
   public void enterDefinequerystate(DefinequerystateContext ctx) {
     stack.push(defineSymbol(ABLNodeType.QUERY, ctx, support.getNode(ctx), support.getNode(ctx.identifier()), ctx.identifier().getText()));
     for (RecordContext record : ctx.record()) {
-      contextQualifiers.put(record, ContextQualifier.INIT);
+      setContextQualifier(record, ContextQualifier.INIT);
     }
   }
   
@@ -836,7 +894,7 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterRectangle_opt(Rectangle_optContext ctx) {
     if (ctx.like_field() != null) {
-      contextQualifiers.put(ctx.like_field().field(), ContextQualifier.SYMBOL);
+      setContextQualifier(ctx.like_field().field(), ContextQualifier.SYMBOL);
     }
   }
 
@@ -863,25 +921,29 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterDefinetemptablestate(DefinetemptablestateContext ctx) {
     defineTempTable(ctx, support.getNode(ctx), support.getNode(ctx.identifier()), ctx.identifier().getText());
-    // TODO Only in case of before-table
-    // defineBuffer(support.getNode(ctx.DEFINE()), support.getNode(ctx.identifier()), support.getNode(ctx.identifier()), false);
+  }
+
+  @Override
+  public void enterDef_table_beforetable(Def_table_beforetableContext ctx) {
+    defineBuffer(ctx, support.getNode(ctx), support.getNode(ctx.identifier()), support.getNode(ctx.identifier()), false);
   }
 
   @Override
   public void exitDefinetemptablestate(DefinetemptablestateContext ctx) {
     postDefineTempTable();
   }
-  
+
   @Override
   public void enterDef_table_like(Def_table_likeContext ctx) {
     recordNameNode((RecordNameNode) support.getNode(ctx.record()), ContextQualifier.SYMBOL);
-    defineTableLike(ctx.record());
   }
 
   @Override
-  public void enterDef_table_useindex(Def_table_useindexContext ctx) {
-    // Change method...
-    // TODO action.defineUseIndex(#rec, #id);
+  public void exitDef_table_like(Def_table_likeContext ctx) {
+    defineTableLike(ctx.record());
+    for (Def_table_useindexContext useIndex : ctx.def_table_useindex()) {
+      defineUseIndex(support.getNode(ctx.record()), useIndex.identifier().getText());
+    }
   }
 
   @Override
@@ -920,7 +982,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterDeletestate(DeletestateContext ctx) {
-    contextQualifiers.put(ctx.record(), ContextQualifier.UPDATING);
+    setContextQualifier(ctx.record(), ContextQualifier.UPDATING);
   }
 
   @Override
@@ -948,49 +1010,48 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterDisablestate(DisablestateContext ctx) {
-    frameEnablingStatement(support.getNode(ctx));
-    for (Form_itemContext form : ctx.form_item()) { // TODO Vérifier NPE
-      contextQualifiers.put(form, ContextQualifier.SYMBOL);
+    frameEnablingStatement(ctx);
+    for (Form_itemContext form : ctx.form_item()) {
+      setContextQualifier(form, ContextQualifier.SYMBOL);
     }
-    // TODO Vérifier
     if ((ctx.all_except_fields() != null) && (ctx.all_except_fields().except_fields() != null)) {
       for (FieldContext fld : ctx.all_except_fields().except_fields().field()) {
-        contextQualifiers.put(fld, ContextQualifier.SYMBOL);
+        setContextQualifier(fld, ContextQualifier.SYMBOL);
       }
     }
   }
 
   @Override
   public void exitDisablestate(DisablestateContext ctx) {
-    // XXX frameStack.statementEnd();
+    frameStack.statementEnd();
   }
 
   @Override
   public void enterDisabletriggersstate(DisabletriggersstateContext ctx) {
-    contextQualifiers.put(ctx.record(), ContextQualifier.SYMBOL);
+    setContextQualifier(ctx.record(), ContextQualifier.SYMBOL);
   }
 
   @Override
   public void enterDisplaystate(DisplaystateContext ctx) {
-    frameInitializingStatement(support.getNode(ctx));
+    frameInitializingStatement(ctx);
     if (ctx.except_fields() != null) {
       for (FieldContext fld : ctx.except_fields().field()) {
-        contextQualifiers.put(fld, ContextQualifier.SYMBOL);
+        setContextQualifier(fld, ContextQualifier.SYMBOL);
       }
     }
   }
 
   @Override
   public void exitDisplaystate(DisplaystateContext ctx) {
-    // XXX frameStack.statementEnd();
+    frameStack.statementEnd();
   }
 
   @Override
   public void enterField_equal_dynamic_new(Field_equal_dynamic_newContext ctx) {
     if (ctx.widattr() != null) {
-      contextQualifiers.put(ctx.widattr(), ContextQualifier.UPDATING);
+      setContextQualifier(ctx.widattr(), ContextQualifier.UPDATING);
     } else if (ctx.field() != null) {
-      contextQualifiers.put(ctx.field(), ContextQualifier.UPDATING);
+      setContextQualifier(ctx.field(), ContextQualifier.UPDATING);
     }
   }
 
@@ -998,9 +1059,11 @@ public class TreeParser extends ProparseBaseListener {
   public void enterDostate(DostateContext ctx) {
     blockBegin(ctx);
     frameBlockCheck(support.getNode(ctx));
-    
-    // TODO A revoir, il faut que ce soit fait avant d'entrer dans le code_block
-    // XXX frameStack.statementEnd();
+  }
+
+  @Override
+  public void enterDostatesub(DostatesubContext ctx) {
+    frameStack.statementEnd();
   }
 
   @Override
@@ -1010,44 +1073,43 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterDownstate(DownstateContext ctx) {
-    frameEnablingStatement(support.getNode(ctx));
+    frameEnablingStatement(ctx);
   }
 
   @Override
   public void exitDownstate(DownstateContext ctx) {
-    // XXX frameStack.statementEnd();
+    frameStack.statementEnd();
   }
 
   @Override
   public void enterEmptytemptablestate(EmptytemptablestateContext ctx) {
-    contextQualifiers.put(ctx.record(), ContextQualifier.TEMPTABLESYMBOL);
+    setContextQualifier(ctx.record(), ContextQualifier.TEMPTABLESYMBOL);
   }
 
   @Override
   public void enterEnablestate(EnablestateContext ctx) {
-    frameEnablingStatement(support.getNode(ctx));
+    frameEnablingStatement(ctx);
 
-    for (Form_itemContext form : ctx.form_item()) { // TODO Vérifier NPE
-      contextQualifiers.put(form, ContextQualifier.SYMBOL);
+    for (Form_itemContext form : ctx.form_item()) {
+      setContextQualifier(form, ContextQualifier.SYMBOL);
     }
-    // TODO Vérifier
     if ((ctx.all_except_fields() != null) && (ctx.all_except_fields().except_fields() != null)) {
       for (FieldContext fld : ctx.all_except_fields().except_fields().field()) {
-        contextQualifiers.put(fld, ContextQualifier.SYMBOL);
+        setContextQualifier(fld, ContextQualifier.SYMBOL);
       }
     }
   }
 
   @Override
   public void exitEnablestate(EnablestateContext ctx) {
-    // XXX frameStack.statementEnd();
+    frameStack.statementEnd();
   }
 
   @Override
   public void enterExportstate(ExportstateContext ctx) {
     if (ctx.except_fields() != null) {
       for (FieldContext fld : ctx.except_fields().field()) {
-        contextQualifiers.put(fld, ContextQualifier.SYMBOL);
+        setContextQualifier(fld, ContextQualifier.SYMBOL);
       }
     }
   }
@@ -1055,7 +1117,8 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterExtentphrase(ExtentphraseContext ctx) {
     // TODO Warning: action only has to be applied in limited number of cases i.e. rule extentphrase_def_symbol
-    defExtent(support.getNode(ctx.EXTENT()));
+    if (ctx.constant() != null)
+      defExtent(ctx.constant().getText());
   }
 
   @Override
@@ -1063,7 +1126,7 @@ public class TreeParser extends ProparseBaseListener {
     if (ctx.AS() != null) {
         defAs(ctx.type_name() == null ? ctx.datatype_field() : ctx.type_name(), support.getNode(ctx.AS()));
     } else if (ctx.LIKE() != null) {
-      contextQualifiers.put(ctx.field(), ContextQualifier.SYMBOL);
+      setContextQualifier(ctx.field(), ContextQualifier.SYMBOL);
     }
   }
 
@@ -1084,10 +1147,12 @@ public class TreeParser extends ProparseBaseListener {
     blockBegin(ctx);
     frameBlockCheck(support.getNode(ctx));
 
-    contextQualifiers.put(ctx.for_record_spec(), ContextQualifier.INITWEAK);
-    
-    // TODO Compliqué, faire le TP01Support.frameStatementEnd() après le block_colon
-    // C'est fait également dans un autre cas, je ne sais plus lequel
+    setContextQualifier(ctx.for_record_spec(), ContextQualifier.INITWEAK);
+  }
+
+  @Override
+  public void enterForstate_sub(Forstate_subContext ctx) {
+    frameStack.statementEnd();
   }
 
   @Override
@@ -1103,68 +1168,61 @@ public class TreeParser extends ProparseBaseListener {
     }
   }
 
-  // TODO Move method to top
   @Override
   public void enterForm_item(Form_itemContext ctx) {
     if (ctx.field() != null) {
-      contextQualifiers.put(ctx.field(), contextQualifiers.removeFrom(ctx));
-      // XXX frameStack.formItem(support.getNode(ctx.field()));
+      setContextQualifier(ctx.field(), contextQualifiers.removeFrom(ctx));
+      frameStack.formItem(support.getNode(ctx));
     } else if (ctx.recordAsFormItem() != null) {
-      contextQualifiers.put(ctx.recordAsFormItem(), contextQualifiers.removeFrom(ctx));
-      // XXX frameStack.formItem(support.getNode(ctx.recordAsFormItem()));
+      setContextQualifier(ctx.recordAsFormItem(), contextQualifiers.removeFrom(ctx));
+      frameStack.formItem(support.getNode(ctx));
     }
     // TODO Il reste le cas text_opt (line 1306 de TreeParser01.g)
   }
 
-  // TODO Move method to top
   @Override
   public void enterForm_items_or_record(Form_items_or_recordContext ctx) {
-    // FIXME Verifier le cas disablestate et enablestate qui utilise en fait form_items+
-    // En fait ça ne doit pas géner
     ContextQualifier qual = contextQualifiers.removeFrom(ctx);
     for (int kk = 0; kk < ctx.getChildCount(); kk++) {
-      contextQualifiers.put(ctx.getChild(kk), qual);
+      setContextQualifier(ctx.getChild(kk), qual);
     }
   }
 
   @Override
   public void enterFormstate(FormstateContext ctx) {
-    frameInitializingStatement(support.getNode(ctx));
-    contextQualifiers.put(ctx.form_items_or_record(), ContextQualifier.SYMBOL);
+    frameInitializingStatement(ctx);
+    setContextQualifier(ctx.form_items_or_record(), ContextQualifier.SYMBOL);
     if (ctx.except_fields() != null) {
       for (FieldContext fld : ctx.except_fields().field()) {
-        contextQualifiers.put(fld, ContextQualifier.SYMBOL);
+        setContextQualifier(fld, ContextQualifier.SYMBOL);
       }
     }
   }
 
   @Override
   public void exitFormstate(FormstateContext ctx) {
-    // XXX frameStack.statementEnd();
+    frameStack.statementEnd();
   }
 
   @Override
   public void enterFormat_opt(Format_optContext ctx) {
     if ((ctx.LEXAT() != null) && (ctx.field() != null)) {
-      contextQualifiers.put(ctx.field(), ContextQualifier.SYMBOL);
-      // XXX frameStack.lexAt(support.getNode(ctx.field()));
+      setContextQualifier(ctx.field(), ContextQualifier.SYMBOL);
+      frameStack.lexAt(support.getNode(ctx.field()));
     } else if ((ctx.LIKE() != null) && (ctx.field() != null)) {
-      contextQualifiers.put(ctx.field(), ContextQualifier.SYMBOL);
+      setContextQualifier(ctx.field(), ContextQualifier.SYMBOL);
     }
   }
 
   @Override
   public void enterFrame_widgetname(Frame_widgetnameContext ctx) {
-    // TODO Double check support.getNode
-    // XXX frameStack.frameRefNode(support.getNode(ctx.widgetname().identifier()), currentScope);
+    frameStack.frameRefNode(support.getNode(ctx).getFirstChild(), currentScope);
   }
 
   @Override
   public void enterFrame_opt(Frame_optContext ctx) {
-    if ((ctx.CANCELBUTTON() != null) && (ctx.field() != null)) {
-      contextQualifiers.put(ctx.field(), ContextQualifier.SYMBOL);
-    } else if ((ctx.DEFAULTBUTTON() != null) && (ctx.field() != null)) {
-      contextQualifiers.put(ctx.field(), ContextQualifier.SYMBOL);
+    if (((ctx.CANCELBUTTON() != null) || (ctx.DEFAULTBUTTON() != null)) && (ctx.field() != null)) {
+      setContextQualifier(ctx.field(), ContextQualifier.SYMBOL);
     } 
   }
 
@@ -1226,52 +1284,52 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterGetkeyvaluestate(GetkeyvaluestateContext ctx) {
-    contextQualifiers.put(ctx.field(), ContextQualifier.UPDATING);
+    setContextQualifier(ctx.field(), ContextQualifier.UPDATING);
   }
 
   @Override
   public void enterImportstate(ImportstateContext ctx) {
     for (FieldContext fld : ctx.field()) {
-      contextQualifiers.put(fld, ContextQualifier.UPDATING);
+      setContextQualifier(fld, ContextQualifier.UPDATING);
     }
     if (ctx.var_rec_field() != null) {
-      contextQualifiers.put(ctx.var_rec_field(), ContextQualifier.UPDATING);
+      setContextQualifier(ctx.var_rec_field(), ContextQualifier.UPDATING);
     }
     if (ctx.except_fields() != null) {
       for (FieldContext fld : ctx.except_fields().field()) {
-        contextQualifiers.put(fld, ContextQualifier.SYMBOL);
+        setContextQualifier(fld, ContextQualifier.SYMBOL);
       }
     }
   }
 
   @Override
   public void enterInsertstate(InsertstateContext ctx) {
-    frameInitializingStatement(support.getNode(ctx));
+    frameInitializingStatement(ctx);
 
-    contextQualifiers.put(ctx.record(), ContextQualifier.UPDATING);
+    setContextQualifier(ctx.record(), ContextQualifier.UPDATING);
     if (ctx.except_fields() != null) {
       for (FieldContext fld : ctx.except_fields().field()) {
-        contextQualifiers.put(fld, ContextQualifier.SYMBOL);
+        setContextQualifier(fld, ContextQualifier.SYMBOL);
       }
     }
   }
 
   @Override
   public void exitInsertstate(InsertstateContext ctx) {
-    // XXX frameStack.statementEnd();
+    frameStack.statementEnd();
   }
 
   @Override
   public void enterLdbname_opt1(Ldbname_opt1Context ctx) {
-    contextQualifiers.put(ctx.record(), ContextQualifier.BUFFERSYMBOL);
+    setContextQualifier(ctx.record(), ContextQualifier.BUFFERSYMBOL);
   }
 
   @Override
   public void enterMessage_opt(Message_optContext ctx) {
     if ((ctx.SET() != null) && (ctx.field() != null)) {
-      contextQualifiers.put(ctx.field(), ContextQualifier.UPDATING);
+      setContextQualifier(ctx.field(), ContextQualifier.UPDATING);
     } else if ((ctx.UPDATE() != null) && (ctx.field() != null)) {
-      contextQualifiers.put(ctx.field(), ContextQualifier.REFUP);
+      setContextQualifier(ctx.field(), ContextQualifier.REFUP);
     } 
   }
 
@@ -1299,12 +1357,12 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterNextpromptstate(NextpromptstateContext ctx) {
-    contextQualifiers.put(ctx.field(), ContextQualifier.SYMBOL);
+    setContextQualifier(ctx.field(), ContextQualifier.SYMBOL);
   }
 
   @Override
   public void enterOpenquerystate(OpenquerystateContext ctx) {
-    contextQualifiers.put(ctx.for_record_spec(), ContextQualifier.INIT);
+    setContextQualifier(ctx.for_record_spec(), ContextQualifier.INIT);
   }
 
   @Override
@@ -1329,36 +1387,35 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterPromptforstate(PromptforstateContext ctx) {
-    // TODO Check node
-    frameEnablingStatement(support.getNode(ctx));
+    frameEnablingStatement(ctx);
 
-    contextQualifiers.put(ctx.form_items_or_record(), ContextQualifier.SYMBOL);
+    setContextQualifier(ctx.form_items_or_record(), ContextQualifier.SYMBOL);
     if (ctx.except_fields() != null) {
       for (FieldContext fld : ctx.except_fields().field()) {
-        contextQualifiers.put(fld, ContextQualifier.SYMBOL);
+        setContextQualifier(fld, ContextQualifier.SYMBOL);
       }
     }
   }
 
   @Override
   public void exitPromptforstate(PromptforstateContext ctx) {
-    // XXX frameStack.statementEnd();
+    frameStack.statementEnd();
   }
 
   @Override
   public void enterRawtransferstate(RawtransferstateContext ctx) {
-    contextQualifiers.put(ctx.rawtransfer_elem(0), ContextQualifier.REF);
-    contextQualifiers.put(ctx.rawtransfer_elem(1), ContextQualifier.UPDATING);
+    setContextQualifier(ctx.rawtransfer_elem(0), ContextQualifier.REF);
+    setContextQualifier(ctx.rawtransfer_elem(1), ContextQualifier.UPDATING);
   }
 
   @Override
   public void enterRawtransfer_elem(Rawtransfer_elemContext ctx) {
     if (ctx.record() != null) {
-      contextQualifiers.put(ctx.record(), contextQualifiers.removeFrom(ctx));
+      setContextQualifier(ctx.record(), contextQualifiers.removeFrom(ctx));
     } else if (ctx.field() != null) {
-      contextQualifiers.put(ctx.field(), contextQualifiers.removeFrom(ctx));
+      setContextQualifier(ctx.field(), contextQualifiers.removeFrom(ctx));
     } else {
-      contextQualifiers.put(ctx.var_rec_field(), contextQualifiers.removeFrom(ctx));
+      setContextQualifier(ctx.var_rec_field(), contextQualifiers.removeFrom(ctx));
       // TODO Il faut que ce soit traité par enterVarRecField
     }
   }
@@ -1376,7 +1433,7 @@ public class TreeParser extends ProparseBaseListener {
   public void enterRecord_fields(Record_fieldsContext ctx) {
     if (ctx.field() != null) {
       for (FieldContext fld : ctx.field()) {
-        contextQualifiers.put(fld, ContextQualifier.SYMBOL);
+        setContextQualifier(fld, ContextQualifier.SYMBOL);
       }
     }
   }
@@ -1384,18 +1441,18 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterRecord_opt(Record_optContext ctx) {
     if ((ctx.OF() != null) && (ctx.record() != null)) {
-      contextQualifiers.put(ctx.record(), ContextQualifier.REF);
+      setContextQualifier(ctx.record(), ContextQualifier.REF);
     }
     if ((ctx.USING() != null) && (ctx.field() != null)) {
       for (FieldContext field : ctx.field()) {
-        contextQualifiers.put(field, ContextQualifier.SYMBOL);
+        setContextQualifier(field, ContextQualifier.SYMBOL);
       }
     }
   }
 
   @Override
   public void enterReleasestate(ReleasestateContext ctx) {
-    contextQualifiers.put(ctx.record(), ContextQualifier.REF);
+    setContextQualifier(ctx.record(), ContextQualifier.REF);
   }
 
   @Override
@@ -1403,9 +1460,11 @@ public class TreeParser extends ProparseBaseListener {
     blockBegin(ctx);
     // TODO I think it should be support.getNode().getFirstChild()
     frameBlockCheck(support.getNode(ctx));
+  }
 
-    // TODO A revoir, il faut que ce soit fait avant d'entrer dans le code_block
-    // XXX frameStack.statementEnd();
+  @Override
+  public void enterRepeatstatesub(RepeatstatesubContext ctx) {
+    frameStack.statementEnd();
   }
 
   @Override
@@ -1416,82 +1475,80 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterRun_set(Run_setContext ctx) {
     if (ctx.field() != null) {
-      contextQualifiers.put(ctx.field(), ContextQualifier.UPDATING);
+      setContextQualifier(ctx.field(), ContextQualifier.UPDATING);
     }
   }
 
   @Override
   public void enterScrollstate(ScrollstateContext ctx) {
-    // TODO Check support.getNode
-    frameInitializingStatement(support.getNode(ctx));
+    frameInitializingStatement(ctx);
   }
 
   @Override
   public void exitScrollstate(ScrollstateContext ctx) {
-    // XXX frameStack.statementEnd();
+    frameStack.statementEnd();
   }
 
   @Override
   public void enterSetstate(SetstateContext ctx) {
-    // TODO Check support.getNode
-    frameInitializingStatement(support.getNode(ctx));
+    frameInitializingStatement(ctx);
 
-    contextQualifiers.put(ctx.form_items_or_record(), ContextQualifier.REFUP);
+    setContextQualifier(ctx.form_items_or_record(), ContextQualifier.REFUP);
     if (ctx.except_fields() != null) {
       for (FieldContext fld : ctx.except_fields().field()) {
-        contextQualifiers.put(fld, ContextQualifier.SYMBOL);
+        setContextQualifier(fld, ContextQualifier.SYMBOL);
       }
     }
   }
 
   @Override
   public void exitSetstate(SetstateContext ctx) {
-    // XXX frameStack.statementEnd();
+     frameStack.statementEnd();
   }
 
   @Override
   public void enterSystemdialogcolorstate(SystemdialogcolorstateContext ctx) {
     if (ctx.update_field() != null) {
-      contextQualifiers.put(ctx.update_field().field(), ContextQualifier.UPDATING);
+      setContextQualifier(ctx.update_field().field(), ContextQualifier.UPDATING);
     }
   }
 
   @Override
   public void enterSysdiafont_opt(Sysdiafont_optContext ctx) {
     if (ctx.update_field() != null) {
-      contextQualifiers.put(ctx.update_field().field(), ContextQualifier.UPDATING);
+      setContextQualifier(ctx.update_field().field(), ContextQualifier.UPDATING);
     }
   }
 
   @Override
   public void enterSystemdialoggetdirstate(SystemdialoggetdirstateContext ctx) {
-    contextQualifiers.put(ctx.field(), ContextQualifier.REFUP);
+    setContextQualifier(ctx.field(), ContextQualifier.REFUP);
   }
  
   @Override
   public void enterSystemdialoggetdir_opt(Systemdialoggetdir_optContext ctx) {
     if (ctx.field() != null) {
       // TODO Check consistency with sys diag get file
-      contextQualifiers.put(ctx.field(), ContextQualifier.REFUP);
+      setContextQualifier(ctx.field(), ContextQualifier.REFUP);
     }
   }
 
   @Override
   public void enterSystemdialoggetfilestate(SystemdialoggetfilestateContext ctx) {
-    contextQualifiers.put(ctx.field(), ContextQualifier.REFUP);
+    setContextQualifier(ctx.field(), ContextQualifier.REFUP);
   }
 
   @Override
   public void enterSysdiagetfile_opt(Sysdiagetfile_optContext ctx) {
     if (ctx.field() != null) {
-      contextQualifiers.put(ctx.field(), ContextQualifier.UPDATING);
+      setContextQualifier(ctx.field(), ContextQualifier.UPDATING);
     }
   }
 
   @Override
   public void enterSysdiapri_opt(Sysdiapri_optContext ctx) {
     if (ctx.update_field() != null) {
-      contextQualifiers.put(ctx.update_field().field(), ContextQualifier.UPDATING);
+      setContextQualifier(ctx.update_field().field(), ContextQualifier.UPDATING);
     }
   }
 
@@ -1507,64 +1564,59 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterUnderlinestate(UnderlinestateContext ctx) {
-    // TODO Check support.getNode()
-    frameInitializingStatement(support.getNode(ctx));
+    frameInitializingStatement(ctx);
 
     for (Field_form_itemContext field : ctx.field_form_item()) {
-      contextQualifiers.put(field, ContextQualifier.SYMBOL);
-      // TODO Check support.getNode()
-      // XXX frameStack.formItem(support.getNode(field));
+      setContextQualifier(field, ContextQualifier.SYMBOL);
+       frameStack.formItem(support.getNode(field));
     }
   }
 
   @Override
   public void exitUnderlinestate(UnderlinestateContext ctx) {
-    // XXX frameStack.statementEnd();
+    frameStack.statementEnd();
   }
 
   @Override
   public void enterUpstate(UpstateContext ctx) {
-    // TODO Check support.getNode()
-    frameInitializingStatement(support.getNode(ctx));
+    frameInitializingStatement(ctx);
   }
 
   @Override
   public void exitUpstate(UpstateContext ctx) {
-    // XXX frameStack.statementEnd();
+    frameStack.statementEnd();
   }
 
   @Override
   public void enterUpdatestate(UpdatestateContext ctx) {
-    // TODO Check support.getNode
-    frameEnablingStatement(support.getNode(ctx));
-    contextQualifiers.put(ctx.form_items_or_record(), ContextQualifier.REFUP);
+    frameEnablingStatement(ctx);
+    setContextQualifier(ctx.form_items_or_record(), ContextQualifier.REFUP);
     if (ctx.except_fields() != null) {
       for (FieldContext fld : ctx.except_fields().field()) {
-        contextQualifiers.put(fld, ContextQualifier.SYMBOL);
+        setContextQualifier(fld, ContextQualifier.SYMBOL);
       }
     }
   }
 
   @Override
   public void exitUpdatestate(UpdatestateContext ctx) {
-    // XXX frameStack.statementEnd();
+    frameStack.statementEnd();
   }
 
   @Override
   public void enterValidatestate(ValidatestateContext ctx) {
-    contextQualifiers.put(ctx.record(), ContextQualifier.REF);
+    setContextQualifier(ctx.record(), ContextQualifier.REF);
   }
 
   @Override
   public void exitViewstate(ViewstateContext ctx) {
     // The VIEW statement grammar uses gwidget, so we have to do some
     // special searching for FRAME to initialize.
-    // TODO Check support.getNode
     JPNode headNode = support.getNode(ctx);
     for (JPNode frameNode : headNode.query(ABLNodeType.FRAME)) {
       ABLNodeType parentType = frameNode.getParent().getNodeType();
       if (parentType == ABLNodeType.WIDGET_REF || parentType == ABLNodeType.IN) {
-        // XXX frameStack.simpleFrameInitStatement(headNode, frameNode.nextNode(), currentBlock);
+        frameStack.simpleFrameInitStatement(ctx, headNode, frameNode.nextNode(), currentBlock);
         return;
       }
     }
@@ -1572,44 +1624,39 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterWaitfor_set(Waitfor_setContext ctx) {
-    contextQualifiers.put(ctx.field(), ContextQualifier.UPDATING);
+    setContextQualifier(ctx.field(), ContextQualifier.UPDATING);
   }
 
+  // ******************
+  //  INTERNAL METHODS
+  // ******************
 
-  
   /** Called at the *end* of the statement that defines the symbol. */
-  private void addToSymbolScope(Symbol o) {
-    LOG.trace("addToSymbolScope - Adding {} to {}", o, currentScope);
+  private void addToSymbolScope(Symbol symbol) {
+    if (LOG.isDebugEnabled())
+      LOG.debug("{}> Adding symbol '{}' to current scope", indent(), symbol);
     if (inDefineEvent) return;
-    currentScope.add(o);
-  }
-
-
-  /** This is a specialization of frameInitializingStatement, called for ENABLE|UPDATE|PROMPT-FOR. */
-  private void frameEnablingStatement(JPNode ast) {
-    LOG.trace("Entering frameEnablingStatement {}", ast);
-
-    // Flip this flag before calling nodeOfInitializingStatement.
-    // XXX frameStack.statementIsEnabler();
-    // XXX frameStack.nodeOfInitializingStatement(ast, currentBlock);
-  }
-
-  public void frameInitializingStatement(JPNode ast) {
-    // XXX frameStack.nodeOfInitializingStatement(ast, currentBlock);
-  }
-
-  private Block popBlock() {
-    blockStack.remove(blockStack.size() - 1);
-    return blockStack.get(blockStack.size() - 1);
+    currentScope.add(symbol);
   }
 
   private Block pushBlock(Block block) {
+    if (LOG.isDebugEnabled())
+      LOG.debug("{}> Pushing block '{}' to stack", indent(), block);
     blockStack.add(block);
     return block;
   }
 
+  private Block popBlock() {
+    if (LOG.isDebugEnabled())
+      LOG.debug("{}> Popping block from stack", indent());
+    blockStack.remove(blockStack.size() - 1);
+    return blockStack.get(blockStack.size() - 1);
+  }
+
+
   private void recordNameNode(RecordNameNode recordNode, ContextQualifier contextQualifier) {
-    LOG.trace("Entering recordNameNode {} {}", recordNode, contextQualifier);
+    if (LOG.isDebugEnabled())
+      LOG.debug("Entering recordNameNode {} {}", recordNode, contextQualifier);
 
     recordNode.attrSet(IConstants.CONTEXT_QUALIFIER, contextQualifier.toString());
     TableBuffer buffer = null;
@@ -1654,10 +1701,15 @@ public class TreeParser extends ProparseBaseListener {
 
   /** For a RECORD_NAME node, do checks and assignments for the TableBuffer. */
   private void recordNodeSymbol(RecordNameNode node, TableBuffer buffer) {
+    if (LOG.isDebugEnabled())
+      LOG.debug("Entering recordNodeSymbol {} {}", node, buffer);
+
     String nodeText = node.getText();
     if (buffer == null) {
-      throw new RuntimeException("Could not resolve table '" + nodeText + "'" + "" + node.getFileIndex() + node.getLine()+ node.getColumn());
+      LOG.error("Could not resolve table '{}' in file #{}:{}:{}", nodeText ,node.getFileIndex() , node.getLine(), node.getColumn());
+      return;
     }
+
     ITable table = buffer.getTable();
     prevTableReferenced = lastTableReferenced;
     lastTableReferenced = buffer;
@@ -1673,16 +1725,23 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   private void blockBegin(ParseTree ctx) {
+    if (LOG.isDebugEnabled())
+      LOG.debug("{}> Creating new block", indent());
     BlockNode blockNode = (BlockNode) support.getNode(ctx);
     currentBlock = pushBlock(new Block(currentBlock, blockNode.getNodeType()));
     blockNode.setBlock(currentBlock);
   }
 
   private void blockEnd() {
+    if (LOG.isDebugEnabled())
+      LOG.debug("{}> End of block", indent());
     currentBlock = popBlock();
   }
 
   private void scopeAdd(JPNode anode) {
+    if (LOG.isDebugEnabled())
+      LOG.debug("{}> Creating new scope for block {}", indent(), anode.getNodeType());
+
     BlockNode blockNode = (BlockNode) anode;
     currentScope = currentScope.addScope();
     currentBlock = pushBlock(new Block(currentScope, blockNode.getNodeType()));
@@ -1691,7 +1750,9 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   private void scopeClose(JPNode scopeRootNode) {
-    LOG.trace("Entering scopeClose {}", scopeRootNode);
+    if (LOG.isDebugEnabled())
+      LOG.debug("{}> End of scope", indent());
+
     currentScope = currentScope.getParentScope();
     blockEnd();
   }
@@ -1703,14 +1764,30 @@ public class TreeParser extends ProparseBaseListener {
    * required - it just uses the parameter list from the declaration.
    */
   private void scopeSwap(TreeParserSymbolScope scope) {
+    if (LOG.isDebugEnabled())
+      LOG.debug("{}> Swapping scope...", indent());
+
     currentScope = scope;
     blockEnd(); // pop the unused block from the stack
     currentBlock = pushBlock(scope.getRootBlock());
   }
 
+  /** This is a specialization of frameInitializingStatement, called for ENABLE|UPDATE|PROMPT-FOR. */
+  private void frameEnablingStatement(ParseTree ctx) {
+    LOG.trace("Entering frameEnablingStatement");
+
+    // Flip this flag before calling nodeOfInitializingStatement.
+    frameStack.statementIsEnabler();
+    frameStack.nodeOfInitializingStatement(ctx, support.getNode(ctx), currentBlock);
+  }
+
+  public void frameInitializingStatement(ParseTree ctx) {
+    frameStack.nodeOfInitializingStatement(ctx, support.getNode(ctx), currentBlock);
+  }
+
   private void frameBlockCheck(JPNode ast) {
     LOG.trace("Entering frameBlockCheck {}", ast);
-    // XXX frameStack.nodeOfBlock(ast, currentBlock);
+    frameStack.nodeOfBlock(ast, currentBlock);
   }
 
   private Variable defineVariable(ParseTree ctx, JPNode defAST, JPNode idAST, String name) {
@@ -1718,7 +1795,8 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   private Variable defineVariable(ParseTree ctx, JPNode defNode, JPNode idNode, String name, boolean parameter) {
-    LOG.trace("Entering defineVariable {} {} {}", defNode, idNode, parameter);
+    if (LOG.isDebugEnabled())
+      LOG.debug("{}> New variable {} (parameter: {})", indent(), name, parameter);
 
     // We need to create the Variable Symbol right away, because further actions in the grammar might need to set
     // attributes on it. We can't add it to the scope yet, because of statements like this: def var xyz like xyz.
@@ -1727,20 +1805,26 @@ public class TreeParser extends ProparseBaseListener {
     Variable variable = new Variable(name, currentScope, parameter);
     variable.setDefinitionNode(ctx);
     currSymbol = variable;
-    // TODO Symbol added on DEFINE node, not on ID anymore
-    defNode.setLink(IConstants.SYMBOL, variable);
+    if (defNode == null)
+      LOG.debug("Unable to set JPNode symbol for variable {}", name);
+    else
+      defNode.setSymbol(variable);
     return variable;
   }
 
   private Variable defineVariable(ParseTree ctx, JPNode defAST, JPNode idAST, String name, DataType dataType, boolean parameter) {
     Variable v = defineVariable(ctx, defAST, idAST, name, parameter);
+    if (LOG.isDebugEnabled())
+      LOG.debug("{}> Adding datatype {}", indent(), dataType);
     v.setDataType(dataType);
     return v;
   }
 
   /** The tree parser calls this at an AS node */
   public void defAs(ParseTree ctx, JPNode asNode) {
-    LOG.trace("Entering defAs {}", asNode);
+    if (LOG.isDebugEnabled())
+      LOG.debug("{}> Variable AS '{}'", indent(), ctx.getText());
+
     Primative primative = (Primative) currSymbol;
     
     String typeNode = ctx.getText();
@@ -1759,19 +1843,16 @@ public class TreeParser extends ProparseBaseListener {
     }*/ 
   }
 
-  public void defExtent(JPNode extentNode) {
-    LOG.trace("Entering defExtent {}", extentNode);
+  public void defExtent(String text) {
+    if (LOG.isDebugEnabled())
+      LOG.debug("{}> Variable extent '{}'", indent(), text);
+
     Primative primative = (Primative) currSymbol;
-    
-    /* TODO
-    JPNode exprNode = extentNode.getFirstChild();
-    // If there is no expression node, then it's an "indeterminate extent".
-    // If it's not a numeric literal, then we give up.
-    if (exprNode == null || exprNode.getNodeType() != ABLNodeType.NUMBER) {
+    try {
+      primative.setExtent(Integer.parseInt(text));
+    } catch (NumberFormatException caught) {
       primative.setExtent(-1);
-    } else {
-      primative.setExtent(Integer.parseInt(exprNode.getText()));
-    } */
+    }
   }
 
   public void defLike(ParseTree ctx, JPNode likeNode) {
@@ -1788,7 +1869,8 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   public Symbol defineSymbol(ABLNodeType symbolType, ParseTree defSymbol, JPNode defNode, JPNode idNode, String name) {
-    LOG.trace("Entering defineSymbol {} - {} - {}", symbolType, defNode, idNode);
+    if (LOG.isDebugEnabled())
+      LOG.debug("{}> Entering defineSymbol {} - {} - {}", indent(), symbolType, defNode, idNode);
     /*
      * Some notes: We need to create the Symbol right away, because further actions in the grammar might need to set
      * attributes on it. We can't add it to the scope yet, because of statements like this: def var xyz like xyz. The
@@ -1807,7 +1889,7 @@ public class TreeParser extends ProparseBaseListener {
     LOG.trace("Entering defineBrowse {} - {}", defAST, idAST);
     Browse browse = (Browse) defineSymbol(ABLNodeType.BROWSE, defSymbol, defAST, idAST, name);
     
-    // XXX frameStack.nodeOfDefineBrowse(browse, (JPNode) defAST);
+    frameStack.nodeOfDefineBrowse(browse, (JPNode) defAST, defSymbol);
     return browse;
   }
 
@@ -1856,10 +1938,9 @@ public class TreeParser extends ProparseBaseListener {
     }
   }
 
-  private void defineUseIndex(JPNode recNode, JPNode idNode) {
-    LOG.trace("Entering defineUseIndex {}", idNode);
+  private void defineUseIndex(JPNode recNode, String name) {
     ITable table = astTableLink(recNode);
-    IIndex idx = table.lookupIndex(idNode.getText());
+    IIndex idx = table.lookupIndex(name);
     currDefTable.getTable().add(new Index(currDefTable.getTable(), idx.getName(), idx.isUnique(), idx.isPrimary()));
     currDefTableUseIndex = true;
   }
@@ -1876,7 +1957,9 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   private void defineTable(ParseTree ctx, JPNode defNode, JPNode idNode, String name, int storeType) {
-    LOG.trace("Entering defineTable {} {} {}", defNode, idNode, storeType);
+    if (LOG.isDebugEnabled())
+      LOG.trace("{}> Table definition {} {} {}", indent(), defNode, idNode, storeType);
+
     TableBuffer buffer = rootScope.defineTable(name, storeType);
     currSymbol = buffer;
     currSymbol.setDefinitionNode(ctx);
@@ -1884,10 +1967,14 @@ public class TreeParser extends ProparseBaseListener {
     currDefTableLike = null;
     currDefTableUseIndex = false;
 
-    // TODO idNode.setLink(IConstants.SYMBOL, buffer);
+    // TODO Verifier
+    defNode.setLink(IConstants.SYMBOL, buffer);
   }
 
   private void postDefineTempTable() {
+    if (LOG.isDebugEnabled())
+      LOG.trace("{}> End of table definition {} {} {}", indent());
+
     // In case of DEFINE TT LIKE, indexes are copied only if USE-INDEX and INDEX are never used 
     if ((currDefTableLike != null) && !currDefTableUseIndex && currDefTable.getTable().getIndexes().isEmpty()) {
       LOG.trace("Copying all indexes from {}", currDefTableLike.getName());
@@ -1946,10 +2033,11 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   public void propGetSetBegin(ParseTree ctx, JPNode propAST) {
-    LOG.trace("Entering propGetSetBegin {}", propAST);
+    LOG.info("Entering propGetSetBegin {}", propAST);
     scopeAdd(propAST);
     BlockNode blockNode = (BlockNode) propAST;
     TreeParserSymbolScope definingScope = currentScope.getParentScope();
+ 
     Routine r = new Routine(propAST.getText(), definingScope, currentScope);
     r.setProgressType(propAST.getNodeType());
     r.setDefinitionNode(ctx);
@@ -1959,12 +2047,12 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   public void propGetSetEnd(JPNode propAST) {
-    LOG.trace("Entering propGetSetEnd {}", propAST);
+    LOG.info("Entering propGetSetEnd {}", propAST);
     scopeClose(propAST);
     currentRoutine = rootRoutine;
   }
   
-  public void widattr(WidattrWidNameContext ctx, JPNode idNode, ContextQualifier cq) {
+  private void widattr(ExprtWidNameContext ctx, JPNode idNode, ContextQualifier cq) {
     if ((ctx.widname().systemhandlename() != null) && (ctx.widname().systemhandlename().THISOBJECT() != null)) {
       if (ctx.attr_colon().OBJCOLON(0) != null) {
         String name = ctx.attr_colon().id.getText();
@@ -1981,7 +2069,24 @@ public class TreeParser extends ProparseBaseListener {
     }
   }
 
-  public void widattr(WidattrExprt2Context ctx, JPNode idNode, ContextQualifier cq) {
+  private void widattr(WidattrWidNameContext ctx, JPNode idNode, ContextQualifier cq) {
+    if ((ctx.widname().systemhandlename() != null) && (ctx.widname().systemhandlename().THISOBJECT() != null)) {
+      if (ctx.attr_colon().OBJCOLON(0) != null) {
+        String name = ctx.attr_colon().id.getText();
+        
+        FieldLookupResult result =  currentBlock.lookupField(name, true);
+        if (result == null)
+          return;
+
+        // Variable
+        if (result.variable != null) {
+          result.variable.noteReference(cq);
+        }
+      }
+    }
+  }
+
+  private void widattr(WidattrExprt2Context ctx, JPNode idNode, ContextQualifier cq) {
     if (ctx.exprt2() instanceof Exprt2FieldContext) {
       Exprt2FieldContext ctx2 = (Exprt2FieldContext) ctx.exprt2();
       if (ctx.attr_colon().OBJCOLON(0) != null) {
@@ -2007,12 +2112,12 @@ public class TreeParser extends ProparseBaseListener {
   }
   
   private void frameRef(JPNode idAST) {
-    // XXX frameStack.frameRefNode((JPNode) idAST, currentScope);
+    frameStack.frameRefNode(idAST, currentScope);
   }
 
   private void browseRef(JPNode idAST) {
     LOG.trace("Entering browseRef {}", idAST);
-    // XXX frameStack.browseRefNode((JPNode) idAST, currentScope);
+    frameStack.browseRefNode(idAST, currentScope);
   }
 
   private void bufferRef(String name) {
@@ -2047,7 +2152,7 @@ public class TreeParser extends ProparseBaseListener {
       // the usual field/variable lookup rules. It is done based on what is in
       // the referenced FRAME or BROWSE, or what is found in the frames most
       // recently referenced list.
-      // XXX result = frameStack.inputFieldLookup(refNode, currentScope);
+       result = frameStack.inputFieldLookup(refNode, currentScope);
     } else if (resolution == TableNameResolution.ANY) {
       // Lookup the field, with special handling for FIELDS/USING/EXCEPT phrases
       boolean getBufferScope = (cq != ContextQualifier.SYMBOL);
@@ -2125,8 +2230,8 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterEveryRule(ParserRuleContext ctx) {
     currentLevel++;
-    if (trace)
-      LOG.info("{}> {}", indent(), Proparse.ruleNames[ctx.getRuleIndex()]);
+    if (LOG.isTraceEnabled())
+      LOG.trace("{}> {}", indent(), Proparse.ruleNames[ctx.getRuleIndex()]);
   }
   
   @Override

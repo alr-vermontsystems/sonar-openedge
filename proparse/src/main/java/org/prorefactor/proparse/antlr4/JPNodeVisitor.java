@@ -155,7 +155,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
 
   @Override
   public JPNode.Builder visitParameterBufferFor(ParameterBufferForContext ctx) {
-    return createTreeFromFirstNode(ctx);
+    return createTreeFromFirstNode(ctx).setRuleNode(ctx);
   }
 
   @Override
@@ -381,7 +381,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
 
   @Override
   public JPNode.Builder visitRecordAsFormItem(RecordAsFormItemContext ctx) {
-    return createTree(ctx, ABLNodeType.FORM_ITEM);
+    return createTree(ctx, ABLNodeType.FORM_ITEM).setRuleNode(ctx);
   }
 
 
@@ -685,7 +685,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
 
   @Override
   public JPNode.Builder visitChoose_field(Choose_fieldContext ctx) {
-    return createTree(ctx, ABLNodeType.FORM_ITEM);
+    return createTree(ctx, ABLNodeType.FORM_ITEM).setRuleNode(ctx);
   }
 
   @Override
@@ -1159,7 +1159,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
 
   @Override
   public JPNode.Builder visitDef_browse_display_item(Def_browse_display_itemContext ctx) {
-    return createTree(ctx, ABLNodeType.FORM_ITEM);
+    return createTree(ctx, ABLNodeType.FORM_ITEM).setRuleNode(ctx);
   }
 
   @Override
@@ -1169,7 +1169,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
 
   @Override
   public JPNode.Builder visitDef_browse_enable_item(Def_browse_enable_itemContext ctx) {
-    return createTree(ctx, ABLNodeType.FORM_ITEM);
+    return createTree(ctx, ABLNodeType.FORM_ITEM).setRuleNode(ctx);
   }
 
   @Override
@@ -1243,12 +1243,13 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
   }
 
   @Override
-  public JPNode.Builder visitDefineproperty_accessor(Defineproperty_accessorContext ctx) {
-    if (ctx.SET().isEmpty()) {
-      return createTree(ctx, ABLNodeType.PROPERTY_GETTER).setRuleNode(ctx);
-    } else {
-      return createTree(ctx, ABLNodeType.PROPERTY_SETTER).setRuleNode(ctx);
-    }
+  public Builder visitDefineproperty_accessor_getblock(Defineproperty_accessor_getblockContext ctx) {
+    return createTree(ctx, ABLNodeType.PROPERTY_GETTER).setRuleNode(ctx);
+  }
+
+  @Override
+  public Builder visitDefineproperty_accessor_setblock(Defineproperty_accessor_setblockContext ctx) {
+    return createTree(ctx, ABLNodeType.PROPERTY_SETTER).setRuleNode(ctx);
   }
 
   @Override
@@ -1364,7 +1365,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
 
   @Override
   public JPNode.Builder visitDisplay_item(Display_itemContext ctx) {
-    return createTree(ctx, ABLNodeType.FORM_ITEM);
+    return createTree(ctx, ABLNodeType.FORM_ITEM).setRuleNode(ctx);
   }
 
   @Override
@@ -1455,7 +1456,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
 
   @Override
   public JPNode.Builder visitField_form_item(Field_form_itemContext ctx) {
-    return createTree(ctx, ABLNodeType.FORM_ITEM);
+    return createTree(ctx, ABLNodeType.FORM_ITEM).setRuleNode(ctx);
   }
 
   @Override
@@ -1513,7 +1514,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
 
   @Override
   public JPNode.Builder visitForm_item(Form_itemContext ctx) {
-    return createTree(ctx, ABLNodeType.FORM_ITEM);
+    return createTree(ctx, ABLNodeType.FORM_ITEM).setRuleNode(ctx);
   }
 
   @Override
@@ -1533,7 +1534,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
 
   @Override
   public JPNode.Builder visitFrame_widgetname(Frame_widgetnameContext ctx) {
-    return createTreeFromFirstNode(ctx);
+    return createTreeFromFirstNode(ctx).setRuleNode(ctx);
   }
 
   @Override
@@ -1821,7 +1822,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
 
   @Override
   public JPNode.Builder visitMessage_item(Message_itemContext ctx) {
-    return createTree(ctx, ABLNodeType.FORM_ITEM);
+    return createTree(ctx, ABLNodeType.FORM_ITEM).setRuleNode(ctx);
   }
 
   @Override

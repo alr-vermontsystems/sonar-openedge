@@ -408,7 +408,6 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterWidname(WidnameContext ctx) {
-    LOG.info("ici " + ctx.getText());
     if (ctx.FRAME() != null) {
       frameRef(support.getNode(ctx.identifier()));
     } else if (ctx.BROWSE() != null) {
@@ -677,6 +676,11 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   @Override
+  public void exitDefinebrowsestate(DefinebrowsestateContext ctx) {
+    addToSymbolScope(stack.pop());
+  }
+
+  @Override
   public void enterDef_browse_display(Def_browse_displayContext ctx) {
     if (ctx.except_fields() != null) {
       for (FieldContext fld : ctx.except_fields().field()) {
@@ -689,7 +693,16 @@ public class TreeParser extends ProparseBaseListener {
   public void enterDef_browse_display_items_or_record(Def_browse_display_items_or_recordContext ctx) {
     if (ctx.recordAsFormItem() != null) {
       setContextQualifier(ctx.recordAsFormItem(), ContextQualifier.INIT);
+    }
+  }
+
+  @Override
+  public void exitDef_browse_display_items_or_record(Def_browse_display_items_or_recordContext ctx) {
+    if (ctx.recordAsFormItem() != null) {
       frameStack.formItem(support.getNode(ctx.recordAsFormItem()));
+    }
+    for (Def_browse_display_itemContext item :ctx.def_browse_display_item()) {
+      frameStack.formItem(support.getNode(item));
     }
   }
 
@@ -1495,7 +1508,15 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   @Override
-  public void enterField(FieldContext ctx) {
+  public void enterField_frame_or_browse(Field_frame_or_browseContext ctx) {
+    if (ctx.FRAME() != null)
+      frameRef(support.getNode(ctx).getFirstChild());
+    else if (ctx.BROWSE() != null)
+      browseRef(support.getNode(ctx).getFirstChild());
+  }
+
+  @Override
+  public void exitField(FieldContext ctx) {
     TableNameResolution tnr = nameResolution.removeFrom(ctx);
     if (tnr == null) tnr = TableNameResolution.ANY;
     ContextQualifier qual = contextQualifiers.removeFrom(ctx);
@@ -1962,7 +1983,6 @@ public class TreeParser extends ProparseBaseListener {
   public Browse defineBrowse(ParseTree defSymbol, JPNode defAST, JPNode idAST, String name) {
     LOG.trace("Entering defineBrowse {} - {}", defAST, idAST);
     Browse browse = (Browse) defineSymbol(ABLNodeType.BROWSE, defSymbol, defAST, idAST, name);
-    
     frameStack.nodeOfDefineBrowse(browse, (JPNode) defAST, defSymbol);
     return browse;
   }

@@ -361,7 +361,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
 
   @Override
   public JPNode.Builder visitField_frame_or_browse(Field_frame_or_browseContext ctx) {
-    return createTreeFromFirstNode(ctx);
+    return createTreeFromFirstNode(ctx).setRuleNode(ctx);
   }
 
   @Override

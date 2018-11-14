@@ -253,7 +253,7 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void exitFunctionParamBufferFor(FunctionParamBufferForContext ctx) {
     if (ctx.bn != null) {
-      defineBuffer(ctx, support.getNode(ctx), null, support.getNode(ctx.record()), true);
+      defineBuffer(ctx, support.getNode(ctx), null, ctx.bn.getText(), support.getNode(ctx.record()), true);
     }
   }
 
@@ -266,7 +266,11 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterFunctionParamStandardLike(FunctionParamStandardLikeContext ctx) {
     stack.push(defineVariable(ctx, support.getNode(ctx), null, ctx.n2.getText(), true));
-    defLike(ctx, null);
+  }
+
+  @Override
+  public void exitFunctionParamStandardLike(FunctionParamStandardLikeContext ctx) {
+    defLike(ctx, support.getNode(ctx.like_field().field()));
     addToSymbolScope(stack.pop());
   }
 
@@ -388,9 +392,9 @@ public class TreeParser extends ProparseBaseListener {
   public void enterGwidget(GwidgetContext ctx) {
     if (ctx.inuic() != null) {
       if (ctx.inuic().FRAME() != null) {
-        frameRef(support.getNode(ctx.inuic().widgetname()));
+        frameRef(support.getNode(ctx.inuic()).nextNode().nextNode());
       } else if (ctx.inuic().BROWSE() != null) {
-        browseRef(support.getNode(ctx.inuic().widgetname()));
+        browseRef(support.getNode(ctx.inuic()).nextNode().nextNode());
       }
     }
   }
@@ -705,6 +709,17 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   @Override
+  public void enterDefinebufferstate(DefinebufferstateContext ctx) {
+    RecordNameNode recNode = (RecordNameNode) support.getNode(ctx.record());
+    recordNameNode(recNode, ctx.TEMPTABLE() == null ? ContextQualifier.SYMBOL : ContextQualifier.TEMPTABLESYMBOL);
+  }
+
+  @Override
+  public void exitDefinebufferstate(DefinebufferstateContext ctx) {
+    defineBuffer(ctx, support.getNode(ctx), null, ctx.n.getText(), support.getNode(ctx.record()), false);
+  }
+
+  @Override
   public void enterDefinebuttonstate(DefinebuttonstateContext ctx) {
     stack.push(defineSymbol(ABLNodeType.BUTTON, ctx, support.getNode(ctx), support.getNode(ctx.identifier()), ctx.identifier().getText()));
   }
@@ -837,6 +852,64 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   @Override
+  public void enterDefineparameterstatesub1(Defineparameterstatesub1Context ctx) {
+    recordNameNode((RecordNameNode) support.getNode(ctx.record()), ctx.TEMPTABLE() == null ? ContextQualifier.SYMBOL : ContextQualifier.TEMPTABLESYMBOL);
+  }
+
+  @Override
+  public void exitDefineparameterstatesub1(Defineparameterstatesub1Context ctx) {
+    if (ctx.bn != null) {
+      defineBuffer(ctx.parent, support.getNode(ctx.parent), null, ctx.bn.getText(), support.getNode(ctx.record()), true);
+    }
+  }
+
+  @Override
+  public void enterDefineParameterStatementSub2Variable(DefineParameterStatementSub2VariableContext ctx) {
+    stack.push(defineVariable(ctx.parent, support.getNode(ctx.parent), null, ctx.identifier().getText(), true));
+  }
+
+  @Override
+  public void exitDefineParameterStatementSub2Variable(DefineParameterStatementSub2VariableContext ctx) {
+    addToSymbolScope(stack.pop());
+  }
+
+  @Override
+  public void enterDefineParameterStatementSub2VariableLike(DefineParameterStatementSub2VariableLikeContext ctx) {
+    stack.push(defineVariable(ctx.parent, support.getNode(ctx.parent), null, ctx.identifier().getText(), true));
+  }
+
+  @Override
+  public void exitDefineParameterStatementSub2VariableLike(DefineParameterStatementSub2VariableLikeContext ctx) {
+    addToSymbolScope(stack.pop());
+  }
+
+  @Override
+  public void enterDefineparam_var(Defineparam_varContext ctx) {
+    // TODO defAs()
+  }
+  
+  @Override
+  public void exitDefineparam_var_like(Defineparam_var_likeContext ctx) {
+    defLike(ctx, support.getNode(ctx.field()));
+  }
+
+  @Override
+  public void enterDefineParameterStatementSub2Table(DefineParameterStatementSub2TableContext ctx) {
+    setContextQualifier(ctx.record(), ContextQualifier.TEMPTABLESYMBOL);
+  }
+  
+  @Override
+  public void enterDefineParameterStatementSub2TableHandle(DefineParameterStatementSub2TableHandleContext ctx) {
+    addToSymbolScope(defineVariable(ctx, support.getNode(ctx.parent), null, ctx.pn2.getText(), DataType.HANDLE, true));
+    }
+  
+
+  @Override
+  public void enterDefineParameterStatementSub2DatasetHandle(DefineParameterStatementSub2DatasetHandleContext ctx) {
+    addToSymbolScope(defineVariable(ctx, support.getNode(ctx.parent), null, ctx.dsh.getText(), DataType.HANDLE, true));
+  }
+
+  @Override
   public void enterDefinepropertystate(DefinepropertystateContext ctx) {
     stack.push(defineVariable(ctx, support.getNode(ctx), support.getNode(ctx.n), ctx.n.getText()));
     defAs(ctx.datatype(), support.getNode(ctx.AS()));
@@ -925,7 +998,8 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterDef_table_beforetable(Def_table_beforetableContext ctx) {
-    defineBuffer(ctx, support.getNode(ctx), support.getNode(ctx.identifier()), support.getNode(ctx.identifier()), false);
+    // TODO Check...
+    defineBuffer(ctx, support.getNode(ctx), null, ctx.i.getText(), support.getNode(ctx.parent), false);
   }
 
   @Override
@@ -2009,16 +2083,16 @@ public class TreeParser extends ProparseBaseListener {
    * Define a buffer. If the buffer is initialized at the same time it is defined (as in a buffer parameter), then
    * parameter init should be true.
    */
-  public void defineBuffer(ParseTree ctx, JPNode defAST, JPNode idNode, JPNode tableAST, boolean init) {
+  public void defineBuffer(ParseTree ctx, JPNode defAST, JPNode idNode, String name, JPNode tableAST, boolean init) {
     LOG.trace("Entering defineBuffer {} {} {} {}", defAST, idNode, tableAST, init);
     ITable table = astTableLink(tableAST);
-    TableBuffer bufSymbol = currentScope.defineBuffer(idNode.getText(), table);
+    TableBuffer bufSymbol = currentScope.defineBuffer(name, table);
     currSymbol = bufSymbol;
     currSymbol.setDefinitionNode(ctx);
-    idNode.setLink(IConstants.SYMBOL, bufSymbol);
+    defAST.setLink(IConstants.SYMBOL, bufSymbol);
     if (init) {
       BufferScope bufScope = currentBlock.getBufferForReference(bufSymbol);
-      idNode.setLink(IConstants.BUFFERSCOPE, bufScope);
+      defAST.setLink(IConstants.BUFFERSCOPE, bufScope);
     }
   }
 

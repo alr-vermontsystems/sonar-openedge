@@ -1951,24 +1951,32 @@ menu_item_opt: // TRANSLATED
 
 defineparameterstate: // TRANSLATED
     DEFINE define_share? ( PRIVATE | PROTECTED | PUBLIC | ABSTRACT | STATIC | OVERRIDE )*
-    (
-      PARAMETER BUFFER bn=identifier FOR TEMPTABLE? bf=record
-      PRESELECT? label_constant? fields_fields?
-      { support.defBuffer($bn.text, $bf.text); }
-    | ( INPUT | OUTPUT | INPUTOUTPUT | RETURN ) PARAMETER
-      ( TABLE FOR record ( APPEND | BIND | BYVALUE )*
-      | TABLEHANDLE FOR? pn2=identifier ( APPEND | BIND | BYVALUE )* { support.defVar($pn2.text); }
-      | DATASET FOR identifier ( APPEND | BIND | BYVALUE )*
-      | DATASETHANDLE dsh=identifier ( APPEND | BIND | BYVALUE )* { support.defVar($dsh.text); }
-      | pn=identifier defineparam_var triggerphrase? { support.defVar($pn.text); }
-      )
-    )
+    ( defineparameterstatesub1 | qualif=( INPUT | OUTPUT | INPUTOUTPUT | RETURN ) PARAMETER defineparameterstatesub2 )
     state_end
+  ;
+
+defineparameterstatesub1:
+    PARAMETER BUFFER bn=identifier FOR TEMPTABLE? bf=record PRESELECT? label_constant? fields_fields? { support.defBuffer($bn.text, $bf.text); }
+  ;
+
+defineparameterstatesub2:
+    TABLE FOR record ( APPEND | BIND | BYVALUE )* # defineParameterStatementSub2Table
+  | TABLEHANDLE FOR? pn2=identifier ( APPEND | BIND | BYVALUE )* { support.defVar($pn2.text); } # defineParameterStatementSub2TableHandle
+  | DATASET FOR identifier ( APPEND | BIND | BYVALUE )* # defineParameterStatementSub2Dataset
+  | DATASETHANDLE dsh=identifier ( APPEND | BIND | BYVALUE )* { support.defVar($dsh.text); } # defineParameterStatementSub2DatasetHandle
+  | pn=identifier defineparam_var triggerphrase? { support.defVar($pn.text); } # defineParameterStatementSub2Variable
+  | pn=identifier defineparam_var_like triggerphrase? { support.defVar($pn.text); } # defineParameterStatementSub2VariableLike
   ;
 
 defineparam_var: // TRANSLATED
     // See PSC's <varprm> rule.
-    ( AS HANDLE TO? datatype_dll | AS CLASS type_name | AS datatype_param | LIKE field )
+    ( AS HANDLE TO? datatype_dll | AS CLASS type_name | AS datatype_param )
+    ( casesens_or_not | format_expr | decimals_expr | initial_constant | label_constant | NOUNDO | extentphrase )*
+  ;
+
+defineparam_var_like: // TRANSLATED
+    // See PSC's <varprm> rule.
+    LIKE field
     ( casesens_or_not | format_expr | decimals_expr | initial_constant | label_constant | NOUNDO | extentphrase )*
   ;
 

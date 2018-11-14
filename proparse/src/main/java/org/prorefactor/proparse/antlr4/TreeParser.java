@@ -409,9 +409,9 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterWidname(WidnameContext ctx) {
     if (ctx.FRAME() != null) {
-      frameRef(support.getNode(ctx.identifier()));
+      frameRef(support.getNode(ctx).nextNode());
     } else if (ctx.BROWSE() != null) {
-      browseRef(support.getNode(ctx.identifier()));
+      browseRef(support.getNode(ctx).nextNode());
     } else if (ctx.BUFFER() != null) {
       bufferRef(ctx.filn().getText());
     } else if (ctx.FIELD() != null) {

@@ -434,6 +434,11 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
     return visitChildren(ctx).changeType(ABLNodeType.TYPE_NAME);
   }
 
+  @Override
+  public Builder visitWidname(WidnameContext ctx) {
+    return visitChildren(ctx).setRuleNode(ctx);
+  }
+
   // **********
   // Statements
   // **********

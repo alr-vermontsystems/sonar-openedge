@@ -67,18 +67,18 @@ public class ClassesTest {
     // Only zz and zz2 properties should be there
     Variable zz = unit.getRootScope().getVariable("zz");
     Variable zz2 = unit.getRootScope().getVariable("zz2");
+    assertEquals(unit.getRootScope().getVariables().size(), 2);
     assertNotNull(zz, "Property zz not in root scope");
     assertNotNull(zz2, "Property zz2 not in root scope");
-    assertEquals(unit.getRootScope().getVariables().size(), 2);
 
     for (TreeParserSymbolScope sc : unit.getRootScope().getChildScopesDeep()) {
       if (sc.getRootBlock().getNode().getType() == ProParserTokenTypes.METHOD) continue;
       if (sc.getRootBlock().getNode().getType() == ProParserTokenTypes.CATCH) continue;
       Variable arg = sc.getVariable("arg");
       Variable i = sc.getVariable("i");
+      assertEquals(sc.getVariables().size(), 2);
       assertNotNull(arg, "Property var not in GET/SET scope");
       assertNotNull(i, "Property i not in GET/SET scope");
-      assertEquals(sc.getVariables().size(), 2);
     }
   }
 
@@ -94,11 +94,11 @@ public class ClassesTest {
     Variable prop1 = unit.getRootScope().getVariable("prop1");
     Variable prop2 = unit.getRootScope().getVariable("prop2");
     assertNotNull(prop1);
-    assertNotNull(prop1);
-    assertTrue(prop2.getNumReads() == 1);
-    assertTrue(prop2.getNumWrites() == 1);
-    assertTrue(prop1.getNumReads() == 1);
-    assertTrue(prop1.getNumWrites() == 1);
+    assertNotNull(prop2);
+    assertEquals(prop1.getNumReads(), 1);
+    assertEquals(prop1.getNumWrites(), 1);
+    assertEquals(prop2.getNumReads(), 1);
+    assertEquals(prop2.getNumWrites(), 1);
   }
 
 }

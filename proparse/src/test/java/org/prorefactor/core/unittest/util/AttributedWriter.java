@@ -85,7 +85,7 @@ public class AttributedWriter {
     nodeComments.append(symbol.getScope().depth());
     nodeComments.append(":");
     nodeComments.append(symbol.fullName());
-    if (node.attrGet(IConstants.ABBREVIATED) > 0)
+    if ((node.getNodeType() != ABLNodeType.DEFINE) && (node.attrGet(IConstants.ABBREVIATED) > 0))
       nodeComments.append(" abbrev");
     if (node.attrGet(IConstants.UNQUALIFIED_FIELD) > 0)
       nodeComments.append(" unqualfield");
@@ -126,10 +126,8 @@ public class AttributedWriter {
   }
 
   private void writeNode(JPNode node) throws IOException {
-    ProToken t = node.getHiddenFirst();
-    while (t != null) {
+    for (ProToken t : node.getHiddenTokens()) {
       writer.write(t.getText());
-      t = t.getNext();
     }
     writer.write(getAttributes(node));
     writer.write(node.getText());

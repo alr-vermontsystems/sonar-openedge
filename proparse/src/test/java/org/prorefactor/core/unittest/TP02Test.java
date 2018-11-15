@@ -47,7 +47,7 @@ public class TP02Test {
   String snippetName = "target/test-temp/tp02test/tempsnippet.p";
   String snippetOutName = "target/test-temp/tp02test/tempout.p";
   File snippetOutFile = new File(snippetOutName);
-  String snippetSep = "--------------------------------" + System.getProperty("line.separator");
+  String snippetSep = System.getProperty("line.separator") + "--------------------------------" + System.getProperty("line.separator");
 
   @BeforeTest
   public void setUp() {
@@ -96,7 +96,7 @@ public class TP02Test {
    * @param target The file that gets appended to.
    * @param source The string to append.
    */
-  public static void fileAppendString(String target, String source) throws IOException {
+  private static void fileAppendString(String target, String source) throws IOException {
     BufferedWriter out = new BufferedWriter(new FileWriter(target, true));
     out.write(source);
     out.close();
@@ -108,7 +108,7 @@ public class TP02Test {
    * @param target The file that gets appended to.
    * @param source The file to append.
    */
-  public static void fileAppend(String target, String source) throws IOException {
+  private static void fileAppend(String target, String source) throws IOException {
     fileThing(source, target, true);
   }
 

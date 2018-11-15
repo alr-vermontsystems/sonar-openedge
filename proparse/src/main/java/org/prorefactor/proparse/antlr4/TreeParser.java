@@ -44,8 +44,6 @@ import org.prorefactor.treeparser.symbols.widgets.Browse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.primitives.Ints;
-
 public class TreeParser extends ProparseBaseListener {
   private static final Logger LOG = LoggerFactory.getLogger(TreeParser.class);
 
@@ -251,6 +249,11 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   @Override
+  public void enterFunctionParamBufferFor(FunctionParamBufferForContext ctx) {
+    recordNameNode((RecordNameNode) support.getNode(ctx.record()), ContextQualifier.SYMBOL );
+  }
+
+  @Override
   public void exitFunctionParamBufferFor(FunctionParamBufferForContext ctx) {
     if (ctx.bn != null) {
       defineBuffer(ctx, support.getNode(ctx), null, ctx.bn.getText(), support.getNode(ctx.record()), true);
@@ -258,7 +261,7 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   @Override
-  public void enterFunctionParamStandardAs(FunctionParamStandardAsContext ctx) {
+  public void exitFunctionParamStandardAs(FunctionParamStandardAsContext ctx) {
     addToSymbolScope(defineVariable(ctx, support.getNode(ctx), null, ctx.n.getText(), true));
     defAs(ctx, null);
   }
@@ -276,7 +279,8 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterFunctionParamStandardTable(FunctionParamStandardTableContext ctx) {
-    setContextQualifier(ctx.record(), ContextQualifier.TEMPTABLESYMBOL);
+    RecordNameNode recNode = (RecordNameNode) support.getNode(ctx.record());
+    recordNameNode(recNode, ContextQualifier.TEMPTABLESYMBOL);
   }
 
   @Override
@@ -1011,7 +1015,6 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterDef_table_beforetable(Def_table_beforetableContext ctx) {
-    // TODO Check...
     defineBuffer(ctx, support.getNode(ctx), null, ctx.i.getText(), support.getNode(ctx.parent), false);
   }
 
@@ -1035,7 +1038,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterDef_table_field(Def_table_fieldContext ctx) {
-    stack.push(defineTableFieldInitialize(ctx, support.getNode(ctx.identifier()), ctx.identifier().getText()));
+    stack.push(defineTableFieldInitialize(ctx, support.getNode(ctx), ctx.identifier().getText()));
   }
 
   @Override
@@ -2013,7 +2016,7 @@ public class TreeParser extends ProparseBaseListener {
     FieldBuffer fieldBuff = rootScope.defineTableFieldDelayedAttach(text, currDefTable);
     currSymbol = fieldBuff;
     fieldBuff.setDefinitionNode(ctx);
-    // TODO idNode.setLink(IConstants.SYMBOL, fieldBuff);
+    idNode.setLink(IConstants.SYMBOL, fieldBuff);
     return fieldBuff;
   }
 
@@ -2067,7 +2070,7 @@ public class TreeParser extends ProparseBaseListener {
 
   private void postDefineTempTable() {
     if (LOG.isDebugEnabled())
-      LOG.trace("{}> End of table definition {} {} {}", indent());
+      LOG.trace("{}> End of table definition", indent());
 
     // In case of DEFINE TT LIKE, indexes are copied only if USE-INDEX and INDEX are never used 
     if ((currDefTableLike != null) && !currDefTableUseIndex && currDefTable.getTable().getIndexes().isEmpty()) {

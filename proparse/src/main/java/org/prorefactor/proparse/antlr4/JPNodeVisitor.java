@@ -1279,7 +1279,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
 
   @Override
   public JPNode.Builder visitDef_table_field(Def_table_fieldContext ctx) {
-    JPNode.Builder holder = createTreeFromFirstNode(ctx);
+    JPNode.Builder holder = createTreeFromFirstNode(ctx).setRuleNode(ctx);
     if (holder.getNodeType() == ABLNodeType.FIELDS)
       holder.changeType(ABLNodeType.FIELD);
     return holder;
@@ -1609,7 +1609,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
 
   @Override
   public JPNode.Builder visitFunctionParamBufferFor(FunctionParamBufferForContext ctx) {
-    return createTreeFromFirstNode(ctx);
+    return createTreeFromFirstNode(ctx).setRuleNode(ctx);
   }
 
   @Override
@@ -1618,6 +1618,21 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
       return createTree(ctx, ABLNodeType.INPUT);
     else
       return createTreeFromFirstNode(ctx);
+  }
+
+  @Override
+  public Builder visitFunctionParamStandardAs(FunctionParamStandardAsContext ctx) {
+    return visitChildren(ctx).setRuleNode(ctx);
+  }
+
+  @Override
+  public Builder visitFunctionParamStandardTableHandle(FunctionParamStandardTableHandleContext ctx) {
+    return visitChildren(ctx).setRuleNode(ctx);
+  }
+
+  @Override
+  public Builder visitFunctionParamStandardDatasetHandle(FunctionParamStandardDatasetHandleContext ctx) {
+    return visitChildren(ctx).setRuleNode(ctx);
   }
 
   @Override

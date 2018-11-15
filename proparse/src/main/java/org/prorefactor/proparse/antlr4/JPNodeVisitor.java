@@ -2707,7 +2707,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
 
     ProToken t = node.getSymbol().getTokenIndex() > 0 ? (ProToken) stream.get(node.getSymbol().getTokenIndex() - 1)
         : null;
-    while ((t != null) && (t.getChannel() == Token.HIDDEN_CHANNEL)) {
+    while ((t != null) && (t.getChannel() != Token.DEFAULT_CHANNEL)) {
       if (firstHiddenTok == null) {
         firstHiddenTok = t;
       } else {

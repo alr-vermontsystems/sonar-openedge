@@ -1,4 +1,4 @@
- /* 0: buffers=sports2000.Customer */ 
+ /* 0:ROOT buffers=sports2000.Customer */ 
 /* Name resolves to customer.name.
  * It appears that a weakly scoped *named* buffer will not
  * have its scope automagically raised for a field name

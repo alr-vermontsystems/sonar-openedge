@@ -1,4 +1,4 @@
- /* 0: buffers=sports2000.BillTo */ 
+ /* 0:ROOT buffers=sports2000.BillTo */ 
 /* Displays customer.name. */
 find first  /* 0:sports2000.BillTo */ billto.
  /* buffers=sports2000.Customer */ do preselect each  /* 0:sports2000.Customer */ customer:

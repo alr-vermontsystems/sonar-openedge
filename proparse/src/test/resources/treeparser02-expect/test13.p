@@ -1,4 +1,4 @@
- /* 0: buffers=sports2000.Customer */ 
+ /* 0:ROOT buffers=sports2000.Customer */ 
 /* Displays customer.name. */
 for each  /* 0:sports2000.Customer */ customer:
   leave.

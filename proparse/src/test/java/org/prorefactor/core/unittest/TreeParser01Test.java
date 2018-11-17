@@ -29,8 +29,6 @@ import org.testng.annotations.Test;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
-import antlr.ANTLRException;
-
 public class TreeParser01Test {
 
   String expectName = "src/test/resources/treeparser01-expect/test01.p";

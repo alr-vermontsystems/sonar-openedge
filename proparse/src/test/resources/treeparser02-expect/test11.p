@@ -1,4 +1,4 @@
- /* 0: buffers=sports2000.Customer */ 
+ /* 0:ROOT buffers=sports2000.Customer */ 
 /* Now, the buffer scope is raised to the procedure,
    and two different customer names are displayed. */
 repeat:

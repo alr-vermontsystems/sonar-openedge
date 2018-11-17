@@ -1,4 +1,4 @@
- /* 0: */ 
+ /* 0:ROOT */ 
 /* Legal. DO FOR prevents scope raising. */
  /* buffers=sports2000.Customer */ repeat:
   find first  /* 0:sports2000.Customer */ customer.

@@ -119,6 +119,7 @@ public class AttributedWriter {
       pu.treeParser01();
       writer = new BufferedWriter(new FileWriter(outName));
       walker(pu.getTopNode(), true);
+      writer.newLine();
     } finally {
       if (writer != null)
         writer.close();

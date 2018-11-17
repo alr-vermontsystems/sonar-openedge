@@ -1,4 +1,4 @@
- /* 0: buffers=sports2000.BillTo,sports2000.Customer */ 
+ /* 0:ROOT buffers=sports2000.BillTo,sports2000.Customer */ 
 /* Even though customer is scoped to outer program, name resolves OK. */
 find first  /* 0:sports2000.BillTo */ billto.
 display /* 0:sports2000.BillTo.Name unqualfield */  name.

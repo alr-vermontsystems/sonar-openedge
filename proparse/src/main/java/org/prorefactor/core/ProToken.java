@@ -39,6 +39,7 @@ public class ProToken implements WritableToken {
 
   private int fileIndex;
   private int endFileIndex;
+  private String fileName;
   private int endLine;
   private int endCharPositionInLine;
   private int macroSourceNum;
@@ -81,7 +82,7 @@ public class ProToken implements WritableToken {
   }
 
   public String getFileName() {
-    throw new UnsupportedOperationException();
+    return fileName;
   }
 
   public ProToken getNext() {
@@ -211,6 +212,10 @@ public class ProToken implements WritableToken {
 
   public void setFileIndex(int fileIndex) {
     this.fileIndex = fileIndex;
+  }
+
+  public void setFileName(String fileName) {
+    this.fileName = fileName;
   }
 
   public void setAnalyzeSuspend(String analyzeSuspend) {

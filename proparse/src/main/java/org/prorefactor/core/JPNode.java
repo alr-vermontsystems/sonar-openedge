@@ -162,6 +162,10 @@ public class JPNode implements AST {
     return token.getFileIndex();
   }
 
+  public String getFileName() {
+    return token.getFileName();
+  }
+
   public int getEndFileIndex() {
     return token.getEndFileIndex();
   }

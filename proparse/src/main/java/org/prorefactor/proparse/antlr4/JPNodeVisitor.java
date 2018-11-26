@@ -1899,7 +1899,6 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
 
   @Override
   public JPNode.Builder visitOnstate(OnstateContext ctx) {
-    // TODO Add support#pushRuleContext (easy), and find a way to execute popRuleContext() 
     return createStatementTreeFromFirstNode(ctx);
   }
 
@@ -2521,6 +2520,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
 
   @Override
   public JPNode.Builder visitTriggerprocedurestate(TriggerprocedurestateContext ctx) {
+    // TODO Les defBuffer sont à remonter dans proparse.g4
     JPNode.Builder node = createStatementTreeFromFirstNode(ctx);
     if (ctx.buff != null) {
       if (ctx.newBuff != null)

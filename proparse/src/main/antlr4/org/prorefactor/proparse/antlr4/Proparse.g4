@@ -2963,29 +2963,8 @@ nullphrase: // TRANSLATED
 
 onstate: // TRANSLATED
     ON
-    (  ASSIGN OF field trigger_table_label?
-       ( OLD VALUE? f=identifier defineparam_var? { support.defVar($f.text); } )?
-       OVERRIDE?
-       ( REVERT state_end
-       | PERSISTENT runstate
-       | { support.addInnerScope(_localctx); } blockorstate { support.dropInnerScope(); }
-       )
-    |  // ON event OF database-object
-      (
-         ( CREATE | DELETE_KW | FIND ) OF record label_constant?
-      |  WRITE OF bf=record label_constant?
-        ( NEW BUFFER? n=identifier label_constant?
-          { support.defBuffer($n.text, $bf.text); }
-        )? 
-        ( OLD BUFFER? o=identifier label_constant?
-          { support.defBuffer($o.text, $bf.text); }
-        )? 
-      )
-      OVERRIDE?
-      (  REVERT state_end
-      |  PERSISTENT runstate
-      |  { support.addInnerScope(_localctx); } blockorstate { support.dropInnerScope(); }
-      )
+    (  onAssign
+    |  onEventOfDbObject
     |  // ON key-label keyfunction.
       . . state_end
     | eventlist
@@ -2999,6 +2978,35 @@ onstate: // TRANSLATED
       |  { support.addInnerScope(_localctx); } blockorstate { support.dropInnerScope(); }
       )
     )
+  ;
+
+onAssign:
+    ASSIGN OF field trigger_table_label?
+       ( OLD VALUE? f=identifier defineparam_var? { support.defVar($f.text); } )?
+       OVERRIDE?
+       ( REVERT state_end
+       | PERSISTENT runstate
+       | { support.addInnerScope(_localctx.parent); } blockorstate { support.dropInnerScope(); }
+       )
+  ;
+
+onEventOfDbObject:
+    ( onOtherOfDbObject | onWriteOfDbObject )
+    OVERRIDE?
+    (  REVERT state_end
+    |  PERSISTENT runstate
+    |  { support.addInnerScope(_localctx); } blockorstate { support.dropInnerScope(); }
+    )
+  ;
+
+onOtherOfDbObject:
+    ( CREATE | DELETE_KW | FIND ) OF record label_constant?
+  ;
+
+onWriteOfDbObject:
+    WRITE OF bf=record label_constant?
+    ( NEW BUFFER? n=identifier label_constant? { support.defBuffer($n.text, $bf.text); } )?
+    ( OLD BUFFER? o=identifier label_constant? { support.defBuffer($o.text, $bf.text); } )? 
   ;
 
 onstate_run_params: // TRANSLATED

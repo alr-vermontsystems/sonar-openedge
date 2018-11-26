@@ -716,6 +716,23 @@ public class JPNode implements AST {
   }
 
   /**
+   * Used by TreeParser in order to assign Symbol to the right node
+   * Never returns null
+   */
+  public JPNode getIdNode() {
+    // TODO Probably a better way to do that...
+    if ((getNodeType() == ABLNodeType.DEFINE) || (getNodeType() == ABLNodeType.BUFFER)) {
+      for (JPNode child : getDirectChildren()) {
+        if (child.getNodeType() == ABLNodeType.ID)
+          return child;
+      }
+      return this;
+    } else {
+      return this;
+    }
+  }
+
+  /**
    * @return Number total number of JPNode objects 
    */
   public int size() {

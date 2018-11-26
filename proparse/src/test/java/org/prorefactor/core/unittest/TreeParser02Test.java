@@ -216,12 +216,12 @@ public class TreeParser02Test {
     genericTest("test34.p");
   }
 
-  @Test
+  @Test(enabled = false)
   public void test35() throws IOException {
     genericTest("test35.p");
   }
 
-  @Test
+  @Test(enabled = false)
   public void test36() throws IOException {
     genericTest("test36.p");
   }

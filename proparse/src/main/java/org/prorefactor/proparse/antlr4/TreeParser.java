@@ -151,12 +151,28 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterBlock_for(Block_forContext ctx) {
     for (RecordContext record : ctx.record()) {
+      setContextQualifier(record, ContextQualifier.BUFFERSYMBOL);
+    }
+  }
+
+  @Override
+  public void exitBlock_for(Block_forContext ctx) {
+    for (RecordContext record : ctx.record()) {
       if (LOG.isDebugEnabled())
         LOG.debug("{}> Adding strong buffer scope for {} to current block", indent(), record.getText());
 
       RecordNameNode recNode = (RecordNameNode) support.getNode(record);
-      recordNameNode(recNode, ContextQualifier.BUFFERSYMBOL);
       currentBlock.addStrongBufferScope(recNode);
+    }
+  }
+
+  @Override
+  public void enterRecord(RecordContext ctx) {
+    ContextQualifier qual = contextQualifiers.removeFrom(ctx);
+    if (qual != null) {
+      recordNameNode((RecordNameNode) support.getNode(ctx), qual);
+    } else {
+      LOG.info("No context qualifier for {}, I probably should do something...", ctx.getText());
     }
   }
 
@@ -197,17 +213,17 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterRecordfunc(RecordfuncContext ctx) {
-    recordNameNode((RecordNameNode) support.getNode(ctx.record()), ContextQualifier.REF);
+    setContextQualifier(ctx.record(), ContextQualifier.REF);
   }
 
   @Override
   public void enterParameterBufferFor(ParameterBufferForContext ctx) {
-    recordNameNode((RecordNameNode) support.getNode(ctx.record()), ContextQualifier.REF);
+    setContextQualifier(ctx.record(), ContextQualifier.REF);
   }
 
   @Override
   public void enterParameterBufferRecord(ParameterBufferRecordContext ctx) {
-    recordNameNode((RecordNameNode) support.getNode(ctx.record()), ContextQualifier.INIT);
+    setContextQualifier(ctx.record(), ContextQualifier.INIT);
   }
 
   @Override
@@ -229,7 +245,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterParameterArgTable(ParameterArgTableContext ctx) {
-    recordNameNode((RecordNameNode) support.getNode(ctx.record()), ContextQualifier.TEMPTABLESYMBOL);
+    setContextQualifier(ctx.record(), ContextQualifier.TEMPTABLESYMBOL);
   }
 
   @Override
@@ -250,7 +266,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterFunctionParamBufferFor(FunctionParamBufferForContext ctx) {
-    recordNameNode((RecordNameNode) support.getNode(ctx.record()), ContextQualifier.SYMBOL );
+    setContextQualifier(ctx.record(), ContextQualifier.SYMBOL);
   }
 
   @Override
@@ -279,8 +295,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterFunctionParamStandardTable(FunctionParamStandardTableContext ctx) {
-    RecordNameNode recNode = (RecordNameNode) support.getNode(ctx.record());
-    recordNameNode(recNode, ContextQualifier.TEMPTABLESYMBOL);
+    setContextQualifier(ctx.record(), ContextQualifier.TEMPTABLESYMBOL);
   }
 
   @Override
@@ -685,7 +700,7 @@ public class TreeParser extends ProparseBaseListener {
     recordNode.setTableBuffer(newBuff);
     currentBlock.addHiddenCursor(recordNode);
 
-    recordNameNode(recordNode, ContextQualifier.INIT);
+    setContextQualifier(ctx.recordphrase().record(), ContextQualifier.INIT);
   }
 
   @Override
@@ -761,8 +776,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterDefinebufferstate(DefinebufferstateContext ctx) {
-    RecordNameNode recNode = (RecordNameNode) support.getNode(ctx.record());
-    recordNameNode(recNode, ctx.TEMPTABLE() == null ? ContextQualifier.SYMBOL : ContextQualifier.TEMPTABLESYMBOL);
+    setContextQualifier(ctx.record(), ctx.TEMPTABLE() == null ? ContextQualifier.SYMBOL : ContextQualifier.TEMPTABLESYMBOL);
   }
 
   @Override
@@ -838,7 +852,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterSource_buffer_phrase(Source_buffer_phraseContext ctx) {
-    recordNameNode((RecordNameNode) support.getNode(ctx.record()), ContextQualifier.INIT);
+    setContextQualifier(ctx.record(), ContextQualifier.INIT);
     if (ctx.field() != null) {
       for (FieldContext fld : ctx.field()) {
         setContextQualifier(fld, ContextQualifier.SYMBOL);
@@ -904,7 +918,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterDefineparameterstatesub1(Defineparameterstatesub1Context ctx) {
-    recordNameNode((RecordNameNode) support.getNode(ctx.record()), ctx.TEMPTABLE() == null ? ContextQualifier.SYMBOL : ContextQualifier.TEMPTABLESYMBOL);
+    setContextQualifier(ctx.record(), ctx.TEMPTABLE() == null ? ContextQualifier.SYMBOL : ContextQualifier.TEMPTABLESYMBOL);
   }
 
   @Override
@@ -944,7 +958,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterDefineParameterStatementSub2Table(DefineParameterStatementSub2TableContext ctx) {
-    recordNameNode((RecordNameNode) support.getNode(ctx.record()), ContextQualifier.TEMPTABLESYMBOL);
+    setContextQualifier(ctx.record(), ContextQualifier.TEMPTABLESYMBOL);
   }
   
   @Override
@@ -999,8 +1013,7 @@ public class TreeParser extends ProparseBaseListener {
   public void enterDefinequerystate(DefinequerystateContext ctx) {
     stack.push(defineSymbol(ABLNodeType.QUERY, ctx, support.getNode(ctx), support.getNode(ctx.identifier()), ctx.identifier().getText()));
     for (RecordContext record : ctx.record()) {
-      RecordNameNode recNode = (RecordNameNode) support.getNode(record);
-      recordNameNode(recNode, ContextQualifier.INIT);
+      setContextQualifier(record, ContextQualifier.INIT);
     }
   }
   
@@ -1058,7 +1071,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterDef_table_like(Def_table_likeContext ctx) {
-    recordNameNode((RecordNameNode) support.getNode(ctx.record()), ContextQualifier.SYMBOL);
+    setContextQualifier(ctx.record(), ContextQualifier.SYMBOL);
   }
 
   @Override
@@ -1151,7 +1164,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterDisabletriggersstate(DisabletriggersstateContext ctx) {
-    recordNameNode((RecordNameNode) support.getNode(ctx.record()), ContextQualifier.SYMBOL);
+    setContextQualifier(ctx.record(), ContextQualifier.SYMBOL);
   }
 
   @Override
@@ -1262,7 +1275,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterFindstate(FindstateContext ctx) {
-    recordNameNode((RecordNameNode) support.getNode(ctx.recordphrase().record()), ContextQualifier.INIT);
+    setContextQualifier(ctx.recordphrase().record(), ContextQualifier.INIT);
   }
   
   @Override
@@ -1287,7 +1300,7 @@ public class TreeParser extends ProparseBaseListener {
   public void enterFor_record_spec(For_record_specContext ctx) {
     ContextQualifier qual = contextQualifiers.removeFrom(ctx);
     for (RecordphraseContext rec : ctx.recordphrase()) {
-      recordNameNode((RecordNameNode) support.getNode(rec.record()), qual);
+      setContextQualifier(rec.record(), qual);
     }
   }
 
@@ -1309,6 +1322,11 @@ public class TreeParser extends ProparseBaseListener {
     for (int kk = 0; kk < ctx.getChildCount(); kk++) {
       setContextQualifier(ctx.getChild(kk), qual);
     }
+  }
+
+  @Override
+  public void enterRecordAsFormItem(RecordAsFormItemContext ctx) {
+    setContextQualifier(ctx.record(), contextQualifiers.removeFrom(ctx));
   }
 
   @Override
@@ -1572,8 +1590,7 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterRecord_opt(Record_optContext ctx) {
     if ((ctx.OF() != null) && (ctx.record() != null)) {
-      RecordNameNode recNode = (RecordNameNode) support.getNode(ctx.record());
-      recordNameNode(recNode, ContextQualifier.REF);
+      setContextQualifier(ctx.record(), ContextQualifier.REF);
     }
     if ((ctx.USING() != null) && (ctx.field() != null)) {
       for (FieldContext field : ctx.field()) {
@@ -1594,25 +1611,32 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterOnOtherOfDbObject(OnOtherOfDbObjectContext ctx) {
-    RecordNameNode recNode = (RecordNameNode) support.getNode(ctx.record());
-    recordNameNode(recNode, ContextQualifier.SYMBOL);
-    defineBufferForTrigger(recNode);
+    setContextQualifier(ctx.record(), ContextQualifier.SYMBOL);
+  }
+
+  @Override
+  public void exitOnOtherOfDbObject(OnOtherOfDbObjectContext ctx) {
+    defineBufferForTrigger(support.getNode(ctx.record()));
   }
 
   @Override
   public void enterOnWriteOfDbObject(OnWriteOfDbObjectContext ctx) {
-    RecordNameNode recNode = (RecordNameNode) support.getNode(ctx.bf);
-    recordNameNode(recNode, ContextQualifier.SYMBOL);
-    
+    setContextQualifier(ctx.bf, ContextQualifier.SYMBOL);
+  }
+
+  @Override
+  public void exitOnWriteOfDbObject(OnWriteOfDbObjectContext ctx) {
     if (ctx.n != null) {
-      defineBuffer(ctx, support.getNode(ctx.parent).findDirectChild(ABLNodeType.NEW), null, ctx.n.getText(), recNode, true);
+      defineBuffer(ctx, support.getNode(ctx.parent).findDirectChild(ABLNodeType.NEW), null, ctx.n.getText(),
+          support.getNode(ctx.bf), true);
     } else {
-      defineBufferForTrigger(recNode);
+      defineBufferForTrigger(support.getNode(ctx.bf));
     }
-    
+
     if (ctx.o != null) {
-      defineBuffer(ctx, support.getNode(ctx.parent).findDirectChild(ABLNodeType.OLD), null, ctx.o.getText(), recNode, true);
-      }
+      defineBuffer(ctx, support.getNode(ctx.parent).findDirectChild(ABLNodeType.OLD), null, ctx.o.getText(),
+          support.getNode(ctx.bf), true);
+    }
   }
 
   @Override

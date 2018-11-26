@@ -660,6 +660,40 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   @Override
+  public void enterCanfindfunc(CanfindfuncContext ctx) {
+    RecordNameNode recordNode = (RecordNameNode) support.getNode(ctx.recordphrase().record());
+    // Keep a ref to the current block...
+    Block b = currentBlock;
+    // ...create a can-find scope and block (assigns currentBlock)...
+    scopeAdd(support.getNode(ctx));
+    // ...and then set this "can-find block" to use it as its parent.
+    currentBlock.setParent(b);
+    String buffName = ctx.recordphrase().record().getText();
+    ITable table;
+    boolean isDefault;
+    TableBuffer tableBuffer = currentScope.lookupBuffer(buffName);
+    if (tableBuffer != null) {
+      table = tableBuffer.getTable();
+      isDefault = tableBuffer.isDefault();
+      // Notify table buffer that it's used in a CAN-FIND
+      tableBuffer.noteReference(ContextQualifier.INIT);
+    } else {
+      table = refSession.getSchema().lookupTable(buffName);
+      isDefault = true;
+    }
+    TableBuffer newBuff = currentScope.defineBuffer(isDefault ? "" : buffName, table);
+    recordNode.setTableBuffer(newBuff);
+    currentBlock.addHiddenCursor(recordNode);
+
+    recordNameNode(recordNode, ContextQualifier.INIT);
+  }
+
+  @Override
+  public void exitCanfindfunc(CanfindfuncContext ctx) {
+    scopeClose(support.getNode(ctx));
+  }
+
+  @Override
   public void enterDdegetstate(DdegetstateContext ctx) {
     setContextQualifier(ctx.field(), ContextQualifier.UPDATING);
     }
@@ -1538,7 +1572,8 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterRecord_opt(Record_optContext ctx) {
     if ((ctx.OF() != null) && (ctx.record() != null)) {
-      setContextQualifier(ctx.record(), ContextQualifier.REF);
+      RecordNameNode recNode = (RecordNameNode) support.getNode(ctx.record());
+      recordNameNode(recNode, ContextQualifier.REF);
     }
     if ((ctx.USING() != null) && (ctx.field() != null)) {
       for (FieldContext field : ctx.field()) {

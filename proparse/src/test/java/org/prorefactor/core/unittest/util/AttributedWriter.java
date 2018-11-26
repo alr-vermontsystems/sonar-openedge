@@ -132,6 +132,8 @@ public class AttributedWriter {
     }
     writer.write(getAttributes(node));
     writer.write(node.getText());
+    if ((node.getNodeType() == ABLNodeType.RUN) || (node.getNodeType() == ABLNodeType.PROCEDURE))
+      writer.write(' ');
   }
 
 }

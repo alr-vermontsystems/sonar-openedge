@@ -992,6 +992,11 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
   }
 
   @Override
+  public Builder visitCanfindfunc(CanfindfuncContext ctx) {
+    return visitChildren(ctx).setRuleNode(ctx);
+  }
+
+  @Override
   public JPNode.Builder visitCurrentvaluefunc(CurrentvaluefuncContext ctx) {
     return createTreeFromFirstNode(ctx);
   }

@@ -411,7 +411,7 @@ builtinfunc: // TRANSLATED
      ACCUMULATE accum_what ( by_expr expression | expression )
   |  ADDINTERVAL LEFTPAREN expression COMMA expression COMMA expression RIGHTPAREN
   |  AUDITENABLED LEFTPAREN expression? RIGHTPAREN
-  |  CANFIND LEFTPAREN findwhich? recordphrase RIGHTPAREN
+  |  canfindfunc
   |  CAST LEFTPAREN expression COMMA type_name RIGHTPAREN
   |  currentvaluefunc // is also a pseudfn.
   |  dynamiccurrentvaluefunc // is also a pseudfn.
@@ -1615,6 +1615,10 @@ createwidgetstate: // TRANSLATED
 
 createwidgetpoolstate: // TRANSLATED
     CREATE WIDGETPOOL expression? PERSISTENT? NOERROR_KW? state_end
+  ;
+
+canfindfunc:
+    CANFIND LEFTPAREN findwhich? recordphrase RIGHTPAREN
   ;
 
 currentvaluefunc: // TRANSLATED

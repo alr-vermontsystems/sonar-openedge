@@ -2525,23 +2525,18 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
 
   @Override
   public JPNode.Builder visitTriggerprocedurestate(TriggerprocedurestateContext ctx) {
-    // TODO Les defBuffer sont à remonter dans proparse.g4
-    JPNode.Builder node = createStatementTreeFromFirstNode(ctx);
-    if (ctx.buff != null) {
-      if (ctx.newBuff != null)
-        support.defBuffer(ctx.newBuff.getText(), ctx.buff.getText());
-      if (ctx.oldBuff != null)
-        support.defBuffer(ctx.oldBuff.getText(), ctx.buff.getText());
-    }
-    return node;
+    return createStatementTreeFromFirstNode(ctx);
   }
 
   @Override
-  public JPNode.Builder visitTrigger_of(Trigger_ofContext ctx) {
-    JPNode.Builder node = createTreeFromFirstNode(ctx);
-    if (ctx.id != null)
-      support.defVar(ctx.id.getText());
-    return node;
+  public Builder visitTriggerOfSub1(TriggerOfSub1Context ctx) {
+    return createTreeFromFirstNode(ctx);
+  }
+
+  @Override
+  public Builder visitTriggerOfSub2(TriggerOfSub2Context ctx) {
+    support.defVar(ctx.id.getText());
+    return createTreeFromFirstNode(ctx);
   }
 
   @Override

@@ -3681,18 +3681,26 @@ triggers_end: // TRANSLATED
 triggerprocedurestate: // TRANSLATED
     TRIGGER PROCEDURE FOR
       (
-        ( CREATE | DELETE_KW | FIND | REPLICATIONCREATE | REPLICATIONDELETE ) OF record label_constant?
-      | ( WRITE | REPLICATIONWRITE ) OF buff=record label_constant?
-           ( NEW BUFFER? newBuff=identifier label_constant? { support.defBuffer($newBuff.text, $buff.text); } )?
-           ( OLD BUFFER? oldBuff=identifier label_constant? { support.defBuffer($oldBuff.text, $buff.text); } )?
+        triggerprocedurestatesub1
+      | triggerprocedurestatesub2
       |  ASSIGN trigger_of? trigger_old?
       )
     state_end
   ;
 
+triggerprocedurestatesub1:
+    ( CREATE | DELETE_KW | FIND | REPLICATIONCREATE | REPLICATIONDELETE ) OF record label_constant?
+  ;
+
+triggerprocedurestatesub2:
+    ( WRITE | REPLICATIONWRITE ) OF buff=record label_constant?
+           ( NEW BUFFER? newBuff=identifier label_constant? { support.defBuffer($newBuff.text, $buff.text); } )?
+           ( OLD BUFFER? oldBuff=identifier label_constant? { support.defBuffer($oldBuff.text, $buff.text); } )?
+  ;
+
 trigger_of: // TRANSLATED
-    OF field trigger_table_label?
-  | NEW VALUE? id=identifier defineparam_var
+    OF field trigger_table_label?  # triggerOfSub1
+  | NEW VALUE? id=identifier defineparam_var # triggerOfSub2
   ;
 
 trigger_table_label: // TRANSLATED

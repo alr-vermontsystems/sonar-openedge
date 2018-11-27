@@ -1788,6 +1788,61 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   @Override
+  public void enterTriggerprocedurestatesub1(Triggerprocedurestatesub1Context ctx) {
+    setContextQualifier(ctx.record(), ContextQualifier.SYMBOL);
+  }
+
+  @Override
+  public void exitTriggerprocedurestatesub1(Triggerprocedurestatesub1Context ctx) {
+    defineBufferForTrigger(support.getNode(ctx.record()));
+  }
+
+  @Override
+  public void enterTriggerprocedurestatesub2(Triggerprocedurestatesub2Context ctx) {
+    setContextQualifier(ctx.buff, ContextQualifier.SYMBOL);
+  }
+  
+  @Override
+  public void exitTriggerprocedurestatesub2(Triggerprocedurestatesub2Context ctx) {
+    if (ctx.newBuff != null) {
+      defineBuffer(ctx, support.getNode(ctx.parent.parent).findDirectChild(ABLNodeType.NEW), null, ctx.newBuff.getText(),
+          support.getNode(ctx.buff), true);
+    } else {
+      defineBufferForTrigger(support.getNode(ctx.buff));
+    }
+
+    if (ctx.oldBuff != null) {
+      defineBuffer(ctx, support.getNode(ctx.parent.parent).findDirectChild(ABLNodeType.OLD), null, ctx.oldBuff.getText(),
+          support.getNode(ctx.buff), true);
+    }
+  }
+
+  @Override
+  public void enterTriggerOfSub1(TriggerOfSub1Context ctx) {
+    setContextQualifier(ctx.field(), ContextQualifier.SYMBOL);
+  }
+
+  @Override
+  public void enterTriggerOfSub2(TriggerOfSub2Context ctx) {
+      stack.push(defineVariable(ctx, support.getNode(ctx), null, ctx.id.getText()));
+  }
+
+  @Override
+  public void exitTriggerOfSub2(TriggerOfSub2Context ctx) {
+    addToSymbolScope(stack.pop());
+  }
+
+  @Override
+  public void enterTrigger_old(Trigger_oldContext ctx) {
+    stack.push(defineVariable(ctx, support.getNode(ctx), null, ctx.id.getText()));
+  }
+  
+  @Override
+  public void exitTrigger_old(Trigger_oldContext ctx) {
+    addToSymbolScope(stack.pop());
+  }
+
+  @Override
   public void enterTrigger_on(Trigger_onContext ctx) {
     scopeAdd(support.getNode(ctx));
   }

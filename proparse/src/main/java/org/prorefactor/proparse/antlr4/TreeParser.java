@@ -453,6 +453,7 @@ public class TreeParser extends ProparseBaseListener {
     if (ctx.except_fields() != null) {
       for (FieldContext fld : ctx.except_fields().field()) {
         setContextQualifier(fld, ContextQualifier.SYMBOL);
+        nameResolution.put(fld, TableNameResolution.LAST);
       }
     }
   }
@@ -489,6 +490,7 @@ public class TreeParser extends ProparseBaseListener {
       ContextQualifier qual = ctx.except_using_fields().USING() == null ? ContextQualifier.SYMBOL : ContextQualifier.REF;
       for (FieldContext field : ctx.except_using_fields().field()) {
         setContextQualifier(field, qual);
+        nameResolution.put(field, TableNameResolution.LAST);
       }
     }
 
@@ -508,6 +510,7 @@ public class TreeParser extends ProparseBaseListener {
       ContextQualifier qual = ctx.except_using_fields().USING() == null ? ContextQualifier.SYMBOL : ContextQualifier.REF;
       for (FieldContext field : ctx.except_using_fields().field()) {
         setContextQualifier(field, qual);
+        nameResolution.put(field, TableNameResolution.LAST);
       }
     }
 
@@ -738,6 +741,7 @@ public class TreeParser extends ProparseBaseListener {
     if (ctx.except_fields() != null) {
       for (FieldContext fld : ctx.except_fields().field()) {
         setContextQualifier(fld, ContextQualifier.SYMBOL);
+        nameResolution.put(fld, TableNameResolution.LAST);
       }
     }
   }
@@ -777,6 +781,14 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterDefinebufferstate(DefinebufferstateContext ctx) {
     setContextQualifier(ctx.record(), ctx.TEMPTABLE() == null ? ContextQualifier.SYMBOL : ContextQualifier.TEMPTABLESYMBOL);
+  }
+
+  @Override
+  public void enterFields_fields(Fields_fieldsContext ctx) {
+    for (FieldContext fld : ctx.field()) {
+      setContextQualifier(fld, ContextQualifier.SYMBOL);
+      nameResolution.put(fld, TableNameResolution.LAST);
+    }
   }
 
   @Override
@@ -835,8 +847,9 @@ public class TreeParser extends ProparseBaseListener {
   public void enterField_mapping_phrase(Field_mapping_phraseContext ctx) {
     for (int zz = 0; zz < ctx.field().size(); zz += 2) {
       setContextQualifier(ctx.field().get(zz), ContextQualifier.SYMBOL);
-      // TODO fld1 and fld2
+      nameResolution.put(ctx.field().get(zz), TableNameResolution.PREVIOUS);
       setContextQualifier(ctx.field().get(zz + 1), ContextQualifier.SYMBOL);
+      nameResolution.put(ctx.field().get(zz + 1), TableNameResolution.LAST);
     }
   }
 
@@ -880,6 +893,7 @@ public class TreeParser extends ProparseBaseListener {
     if (ctx.except_fields() != null) {
       for (FieldContext fld : ctx.except_fields().field()) {
         setContextQualifier(fld, ContextQualifier.SYMBOL);
+        nameResolution.put(fld, TableNameResolution.LAST);
       }
     }
   }
@@ -1174,6 +1188,7 @@ public class TreeParser extends ProparseBaseListener {
     if (ctx.except_fields() != null) {
       for (FieldContext fld : ctx.except_fields().field()) {
         setContextQualifier(fld, ContextQualifier.SYMBOL);
+        nameResolution.put(fld, TableNameResolution.LAST);
       }
     }
   }
@@ -1262,6 +1277,7 @@ public class TreeParser extends ProparseBaseListener {
     if (ctx.except_fields() != null) {
       for (FieldContext fld : ctx.except_fields().field()) {
         setContextQualifier(fld, ContextQualifier.SYMBOL);
+        nameResolution.put(fld, TableNameResolution.LAST);
       }
     }
   }
@@ -1352,6 +1368,7 @@ public class TreeParser extends ProparseBaseListener {
     if (ctx.except_fields() != null) {
       for (FieldContext fld : ctx.except_fields().field()) {
         setContextQualifier(fld, ContextQualifier.SYMBOL);
+        nameResolution.put(fld, TableNameResolution.LAST);
       }
     }
   }
@@ -1455,6 +1472,7 @@ public class TreeParser extends ProparseBaseListener {
     if (ctx.except_fields() != null) {
       for (FieldContext fld : ctx.except_fields().field()) {
         setContextQualifier(fld, ContextQualifier.SYMBOL);
+        nameResolution.put(fld, TableNameResolution.LAST);
       }
     }
   }
@@ -1467,6 +1485,7 @@ public class TreeParser extends ProparseBaseListener {
     if (ctx.except_fields() != null) {
       for (FieldContext fld : ctx.except_fields().field()) {
         setContextQualifier(fld, ContextQualifier.SYMBOL);
+        nameResolution.put(fld, TableNameResolution.LAST);
       }
     }
   }
@@ -1550,6 +1569,7 @@ public class TreeParser extends ProparseBaseListener {
     if (ctx.except_fields() != null) {
       for (FieldContext fld : ctx.except_fields().field()) {
         setContextQualifier(fld, ContextQualifier.SYMBOL);
+        nameResolution.put(fld, TableNameResolution.LAST);
       }
     }
   }
@@ -1586,7 +1606,7 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   @Override
-  public void exitField(FieldContext ctx) {
+  public void enterField(FieldContext ctx) {
     TableNameResolution tnr = nameResolution.removeFrom(ctx);
     if (tnr == null) tnr = TableNameResolution.ANY;
     ContextQualifier qual = contextQualifiers.removeFrom(ctx);
@@ -1596,10 +1616,9 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterRecord_fields(Record_fieldsContext ctx) {
-    if (ctx.field() != null) {
-      for (FieldContext fld : ctx.field()) {
-        setContextQualifier(fld, ContextQualifier.SYMBOL);
-      }
+    for (FieldContext fld : ctx.field()) {
+      setContextQualifier(fld, ContextQualifier.SYMBOL);
+      nameResolution.put(fld, TableNameResolution.LAST);
     }
   }
 
@@ -1611,6 +1630,7 @@ public class TreeParser extends ProparseBaseListener {
     if ((ctx.USING() != null) && (ctx.field() != null)) {
       for (FieldContext field : ctx.field()) {
         setContextQualifier(field, ContextQualifier.SYMBOL);
+        nameResolution.put(field, TableNameResolution.LAST);
       }
     }
   }
@@ -1711,6 +1731,7 @@ public class TreeParser extends ProparseBaseListener {
     if (ctx.except_fields() != null) {
       for (FieldContext fld : ctx.except_fields().field()) {
         setContextQualifier(fld, ContextQualifier.SYMBOL);
+        nameResolution.put(fld, TableNameResolution.LAST);
       }
     }
   }
@@ -1808,6 +1829,7 @@ public class TreeParser extends ProparseBaseListener {
     if (ctx.except_fields() != null) {
       for (FieldContext fld : ctx.except_fields().field()) {
         setContextQualifier(fld, ContextQualifier.SYMBOL);
+        nameResolution.put(fld, TableNameResolution.LAST);
       }
     }
   }

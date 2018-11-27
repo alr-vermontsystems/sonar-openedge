@@ -2374,8 +2374,8 @@ public class TreeParser extends ProparseBaseListener {
           return;
 
         // Variable
-        if (result.variable != null) {
-          result.variable.noteReference(cq);
+        if (result.getSymbol() instanceof Variable) {
+          result.getSymbol().noteReference(cq);
         }
       }
     }
@@ -2391,8 +2391,8 @@ public class TreeParser extends ProparseBaseListener {
           return;
 
         // Variable
-        if (result.variable != null) {
-          result.variable.noteReference(cq);
+        if (result.getSymbol() instanceof Variable) {
+          result.getSymbol().noteReference(cq);
         }
       }
     }
@@ -2415,8 +2415,8 @@ public class TreeParser extends ProparseBaseListener {
             return;
 
           // Variable
-          if (result.variable != null) {
-            result.variable.noteReference(cq);
+          if (result.getSymbol() instanceof Variable) {
+            result.getSymbol().noteReference(cq);
           }
         }
       }
@@ -2486,8 +2486,7 @@ public class TreeParser extends ProparseBaseListener {
         // TODO Throw exception
       }
       FieldBuffer fieldBuffer = ourBuffer.getFieldBuffer(field);
-      result = new FieldLookupResult();
-      result.field = fieldBuffer;
+      result = new FieldLookupResult.Builder().setSymbol(fieldBuffer).build();
     }
 
     // TODO Once we've added static member resolution, we can re-add this test.
@@ -2501,40 +2500,26 @@ public class TreeParser extends ProparseBaseListener {
     // + " Unknown field or variable name: " + name
     // );
 
-    if (result.isUnqualified)
+    if (result.isUnqualified())
       refNode.attrSet(IConstants.UNQUALIFIED_FIELD, IConstants.TRUE);
-    if (result.isAbbreviated)
+    if (result.isAbbreviated())
       refNode.attrSet(IConstants.ABBREVIATED, IConstants.TRUE);
-    // Variable
-    if (result.variable != null) {
-      refNode.setSymbol(result.variable);
-      refNode.attrSet(IConstants.STORETYPE, IConstants.ST_VAR);
-      result.variable.noteReference(cq);
-    }
-    // FieldLevelWidget
-    if (result.fieldLevelWidget != null) {
-      refNode.setSymbol(result.fieldLevelWidget);
-      refNode.attrSet(IConstants.STORETYPE, IConstants.ST_VAR);
-      result.fieldLevelWidget.noteReference(cq);
-    }
+
     // Buffer attributes
-    if (result.bufferScope != null) {
-      refNode.setBufferScope(result.bufferScope);
+    if (result.getBufferScope() != null) {
+      refNode.setBufferScope(result.getBufferScope());
     }
-    // Table field
-    if (result.field != null) {
-      refNode.setSymbol(result.field);
-      refNode.attrSet(IConstants.STORETYPE, result.field.getField().getTable().getStoretype());
-      result.field.noteReference(cq);
-      if (result.field.getBuffer() != null) {
-        result.field.getBuffer().noteReference(cq);
+
+    refNode.setSymbol(result.getSymbol());
+    result.getSymbol().noteReference(cq);
+    if (result.getSymbol() instanceof FieldBuffer) {
+      FieldBuffer fb = (FieldBuffer) result.getSymbol();
+      refNode.attrSet(IConstants.STORETYPE, fb.getField().getTable().getStoretype());
+      if (fb.getBuffer() != null) {
+        fb.getBuffer().noteReference(cq);
       }
-    }
-    // Event
-    if (result.event != null) {
-      refNode.setSymbol(result.event);
+    } else {
       refNode.attrSet(IConstants.STORETYPE, IConstants.ST_VAR);
-      result.event.noteReference(cq);
     }
 
   } // field()

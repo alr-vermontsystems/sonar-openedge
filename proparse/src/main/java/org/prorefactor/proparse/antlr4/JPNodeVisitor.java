@@ -23,6 +23,7 @@ import org.prorefactor.core.JPNode;
 import org.prorefactor.core.JPNode.Builder;
 import org.prorefactor.core.ProToken;
 import org.prorefactor.proparse.ParserSupport;
+import org.prorefactor.proparse.SymbolScope.FieldType;
 import org.prorefactor.proparse.antlr4.Proparse.*;
 
 public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {

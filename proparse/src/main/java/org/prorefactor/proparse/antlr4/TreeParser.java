@@ -1170,10 +1170,26 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterDisplaystate(DisplaystateContext ctx) {
     frameInitializingStatement(ctx);
+    setContextQualifier(ctx.display_items_or_record(), ContextQualifier.SYMBOL);
     if (ctx.except_fields() != null) {
       for (FieldContext fld : ctx.except_fields().field()) {
         setContextQualifier(fld, ContextQualifier.SYMBOL);
       }
+    }
+  }
+
+  @Override
+  public void enterDisplay_items_or_record(Display_items_or_recordContext ctx) {
+    ContextQualifier qual = contextQualifiers.removeFrom(ctx);
+    for (int zz = 0; zz < ctx.getChildCount(); zz++) {
+      setContextQualifier(ctx.getChild(zz), qual);
+    }
+  }
+
+  @Override
+  public void enterDisplay_item(Display_itemContext ctx) {
+    if (ctx.expression() != null) {
+      setContextQualifier(ctx.expression(), contextQualifiers.removeFrom(ctx));
     }
   }
 
@@ -1627,14 +1643,14 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void exitOnWriteOfDbObject(OnWriteOfDbObjectContext ctx) {
     if (ctx.n != null) {
-      defineBuffer(ctx, support.getNode(ctx.parent).findDirectChild(ABLNodeType.NEW), null, ctx.n.getText(),
+      defineBuffer(ctx, support.getNode(ctx.parent.parent).findDirectChild(ABLNodeType.NEW), null, ctx.n.getText(),
           support.getNode(ctx.bf), true);
     } else {
       defineBufferForTrigger(support.getNode(ctx.bf));
     }
 
     if (ctx.o != null) {
-      defineBuffer(ctx, support.getNode(ctx.parent).findDirectChild(ABLNodeType.OLD), null, ctx.o.getText(),
+      defineBuffer(ctx, support.getNode(ctx.parent.parent).findDirectChild(ABLNodeType.OLD), null, ctx.o.getText(),
           support.getNode(ctx.bf), true);
     }
   }

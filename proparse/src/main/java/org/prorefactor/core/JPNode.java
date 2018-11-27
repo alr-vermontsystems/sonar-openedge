@@ -727,7 +727,20 @@ public class JPNode implements AST {
           return child;
       }
       return this;
-    } else {
+    } else if ((getNodeType() == ABLNodeType.NEW)|| (getNodeType() == ABLNodeType.OLD)) {
+      JPNode nxt = nextNode();
+      if ((nxt != null) && (nxt.getNodeType() == ABLNodeType.ID))
+        return nxt;
+      if ((nxt != null) && (nxt.getNodeType() == ABLNodeType.BUFFER)) {
+        nxt = nxt.nextNode();
+        if ((nxt != null) && (nxt.getNodeType() == ABLNodeType.ID))
+          return nxt;
+        else
+          return this;
+      }
+      return this;
+    }
+    else {
       return this;
     }
   }

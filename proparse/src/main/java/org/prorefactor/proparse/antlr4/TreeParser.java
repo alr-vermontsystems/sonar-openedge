@@ -1346,12 +1346,11 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterForm_item(Form_itemContext ctx) {
+    ContextQualifier qual = contextQualifiers.removeFrom(ctx);
     if (ctx.field() != null) {
-      setContextQualifier(ctx.field(), contextQualifiers.removeFrom(ctx));
-      frameStack.formItem(support.getNode(ctx));
+      setContextQualifier(ctx.field(), qual);
     } else if (ctx.recordAsFormItem() != null) {
-      setContextQualifier(ctx.recordAsFormItem(), contextQualifiers.removeFrom(ctx));
-      frameStack.formItem(support.getNode(ctx));
+      setContextQualifier(ctx.recordAsFormItem(), qual);
     }
     // TODO Il reste le cas text_opt (line 1306 de TreeParser01.g)
   }

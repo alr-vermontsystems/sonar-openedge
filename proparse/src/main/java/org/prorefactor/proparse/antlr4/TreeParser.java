@@ -373,18 +373,22 @@ public class TreeParser extends ProparseBaseListener {
   
   @Override
   public void enterExprtNoReturnValue(ExprtNoReturnValueContext ctx) {
-    setContextQualifier(ctx.s_widget(), contextQualifiers.removeFrom(ctx));
+    ContextQualifier qual = contextQualifiers.removeFrom(ctx);
+    setContextQualifier(ctx.s_widget(), qual);
+    setContextQualifier(ctx.attr_colon(), qual);
   }
 
   @Override
   public void enterExprtWidName(ExprtWidNameContext ctx) {
     widattr(ctx, support.getNode(ctx.widname()), contextQualifiers.removeFrom(ctx));
-    // setContextQualifier(ctx.widname(), contextQualifiers.removeFrom(ctx));
   }
 
   @Override
   public void enterExprtExprt2(ExprtExprt2Context ctx) {
-    setContextQualifier(ctx.exprt2(), contextQualifiers.removeFrom(ctx));
+    ContextQualifier qual = contextQualifiers.removeFrom(ctx);
+    setContextQualifier(ctx.exprt2(), qual);
+    if (ctx.attr_colon() != null)
+      setContextQualifier(ctx.attr_colon(), qual);
   }
 
   @Override

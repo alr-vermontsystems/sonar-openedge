@@ -1357,6 +1357,15 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   @Override
+  public void exitForm_item(Form_itemContext ctx) {
+    if (ctx.field() != null) {
+      frameStack.formItem(support.getNode(ctx));
+    } else if (ctx.recordAsFormItem() != null) {
+      frameStack.formItem(support.getNode(ctx));
+    }
+  }
+
+  @Override
   public void enterForm_items_or_record(Form_items_or_recordContext ctx) {
     ContextQualifier qual = contextQualifiers.removeFrom(ctx);
     for (int kk = 0; kk < ctx.getChildCount(); kk++) {

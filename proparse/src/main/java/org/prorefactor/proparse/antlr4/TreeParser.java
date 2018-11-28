@@ -386,9 +386,13 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterExprtExprt2(ExprtExprt2Context ctx) {
     ContextQualifier qual = contextQualifiers.removeFrom(ctx);
-    setContextQualifier(ctx.exprt2(), qual);
-    if (ctx.attr_colon() != null)
-      setContextQualifier(ctx.attr_colon(), qual);
+    if ((ctx.attr_colon() != null) && (ctx.exprt2() instanceof Exprt2FieldContext)) {
+      widattr(ctx, null, qual);
+    } else {
+      setContextQualifier(ctx.exprt2(), qual);
+      if (ctx.attr_colon() != null)
+        setContextQualifier(ctx.attr_colon(), qual);
+    }
   }
 
   @Override
@@ -2417,7 +2421,31 @@ public class TreeParser extends ProparseBaseListener {
       }
     }
   }
-  
+
+  private void widattr(ExprtExprt2Context ctx, JPNode idNode, ContextQualifier cq) {
+    if (ctx.exprt2() instanceof Exprt2FieldContext) {
+      Exprt2FieldContext ctx2 = (Exprt2FieldContext) ctx.exprt2();
+    if (ctx.attr_colon().OBJCOLON(0) != null) {
+      String clsRef = ctx2.field().getText();
+      String clsName = rootScope.getClassName();
+      if ((clsRef != null) && (clsName != null) && (clsRef.indexOf('.') == -1) && (clsName.indexOf('.') != -1))
+        clsName = clsName.substring(clsName.indexOf('.') + 1);
+      
+      if ((clsRef != null) && (clsName != null) && clsRef.equalsIgnoreCase(clsName)) {
+        String right = ctx.attr_colon().id.getText();
+        
+        FieldLookupResult result =  currentBlock.lookupField(right, true);
+        if (result == null)
+          return;
+
+        // Variable
+        if (result.getSymbol() instanceof Variable) {
+          result.getSymbol().noteReference(cq);
+        }
+      }
+    } }
+  }
+
   private void frameRef(JPNode idAST) {
     frameStack.frameRefNode(idAST, currentScope);
   }

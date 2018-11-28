@@ -75,6 +75,8 @@ public class TreeParser extends ProparseBaseListener {
   private boolean currDefTableUseIndex = false;
   private ITable currDefTableLike = null;
 
+  private boolean formItem2 = false;
+
   // This tree parser's stack. I think it is best to keep the stack
   // in the tree parser grammar for visibility sake, rather than hide
   // it in the support class. If we move grammar and actions around
@@ -895,6 +897,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterDefineframestate(DefineframestateContext ctx) {
+    formItem2 = true;
     frameStack.nodeOfDefineFrame(ctx, support.getNode(ctx), null, ctx.identifier().getText(), currentScope);
     setContextQualifier(ctx.form_items_or_record(), ContextQualifier.SYMBOL);
 
@@ -909,6 +912,7 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void exitDefineframestate(DefineframestateContext ctx) {
     frameStack.statementEnd();
+    formItem2 = false;
   }
 
   @Override
@@ -1168,6 +1172,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterDisablestate(DisablestateContext ctx) {
+    formItem2 = true;
     frameEnablingStatement(ctx);
     for (Form_itemContext form : ctx.form_item()) {
       setContextQualifier(form, ContextQualifier.SYMBOL);
@@ -1182,6 +1187,7 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void exitDisablestate(DisablestateContext ctx) {
     frameStack.statementEnd();
+    formItem2 = false;
   }
 
   @Override
@@ -1263,6 +1269,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterEnablestate(EnablestateContext ctx) {
+    formItem2 = true;
     frameEnablingStatement(ctx);
 
     for (Form_itemContext form : ctx.form_item()) {
@@ -1278,6 +1285,7 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void exitEnablestate(EnablestateContext ctx) {
     frameStack.statementEnd();
+    formItem2 = false;
   }
 
   @Override
@@ -1368,7 +1376,10 @@ public class TreeParser extends ProparseBaseListener {
   public void enterForm_items_or_record(Form_items_or_recordContext ctx) {
     ContextQualifier qual = contextQualifiers.removeFrom(ctx);
     for (int kk = 0; kk < ctx.getChildCount(); kk++) {
-      setContextQualifier(ctx.getChild(kk), qual);
+      if (formItem2 && (ctx.getChild(kk) instanceof RecordAsFormItemContext)&& (qual == ContextQualifier.SYMBOL))
+        setContextQualifier(ctx.getChild(kk), ContextQualifier.BUFFERSYMBOL);
+      else
+        setContextQualifier(ctx.getChild(kk), qual);
     }
   }
 
@@ -1379,6 +1390,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterFormstate(FormstateContext ctx) {
+    formItem2 = true;
     frameInitializingStatement(ctx);
     setContextQualifier(ctx.form_items_or_record(), ContextQualifier.SYMBOL);
     if (ctx.except_fields() != null) {
@@ -1392,6 +1404,7 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void exitFormstate(FormstateContext ctx) {
     frameStack.statementEnd();
+    formItem2 = false;
   }
 
   @Override
@@ -1579,6 +1592,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterPromptforstate(PromptforstateContext ctx) {
+    formItem2 = true;
     frameEnablingStatement(ctx);
 
     setContextQualifier(ctx.form_items_or_record(), ContextQualifier.SYMBOL);
@@ -1593,6 +1607,7 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void exitPromptforstate(PromptforstateContext ctx) {
     frameStack.statementEnd();
+    formItem2 = false;
   }
 
   @Override
@@ -1741,6 +1756,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterSetstate(SetstateContext ctx) {
+    formItem2 = true;
     frameInitializingStatement(ctx);
 
     setContextQualifier(ctx.form_items_or_record(), ContextQualifier.REFUP);
@@ -1755,6 +1771,7 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void exitSetstate(SetstateContext ctx) {
      frameStack.statementEnd();
+     formItem2 = false;
   }
 
   @Override
@@ -1895,6 +1912,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterUpdatestate(UpdatestateContext ctx) {
+    formItem2 = true;
     frameEnablingStatement(ctx);
     setContextQualifier(ctx.form_items_or_record(), ContextQualifier.REFUP);
     if (ctx.except_fields() != null) {
@@ -1908,6 +1926,7 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void exitUpdatestate(UpdatestateContext ctx) {
     frameStack.statementEnd();
+    formItem2 = false;
   }
 
   @Override

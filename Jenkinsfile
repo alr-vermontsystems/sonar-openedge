@@ -31,7 +31,7 @@ pipeline {
         script {
           withEnv(["PATH+MAVEN=${tool name: 'Maven 3', type: 'hudson.tasks.Maven$MavenInstallation'}/bin"]) {
             withCredentials([string(credentialsId: 'AdminTokenSonarQube', variable: 'SQ_TOKEN')]) {
-              if (("master" == env.BRANCH_NAME) || ("develop" == env.BRANCH_NAME)) {
+              if (("master" == env.BRANCH_NAME) || ("develop" == env.BRANCH_NAME) || ("feature/ANTLR2-deprecation" == env.BRANCH_NAME)) {
                 sh "mvn -Dsonar.host.url=http://sonar.riverside-software.fr -Dsonar.login=${env.SQ_TOKEN} -Dsonar.branch.name=${env.BRANCH_NAME} sonar:sonar"
               } else if (env.BRANCH_NAME.startsWith("release") || env.BRANCH_NAME.startsWith("hotfix")) {
                 sh "mvn -Dsonar.host.url=http://sonar.riverside-software.fr -Dsonar.login=${env.SQ_TOKEN} -Dsonar.branch.name=${env.BRANCH_NAME} -Dsonar.branch.target=master sonar:sonar"

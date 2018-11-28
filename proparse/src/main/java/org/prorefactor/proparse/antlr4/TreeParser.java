@@ -1710,6 +1710,11 @@ public class TreeParser extends ProparseBaseListener {
   public void enterOnAssign(OnAssignContext ctx) {
     setContextQualifier(ctx.field(), ContextQualifier.INIT);
     
+  }
+
+  @Override
+  public void exitOnAssign(OnAssignContext ctx) {
+    // TODO Likely to have side effect, variable has to be defined before starting block
     if (ctx.OLD() != null) {
       stack.push(defineVariable(ctx, support.getNode(ctx), null, ctx.f.getText(), support.getNode(ctx.field())));
     }
@@ -2132,7 +2137,7 @@ public class TreeParser extends ProparseBaseListener {
     variable.setDefinitionNode(ctx);
     currSymbol = variable;
     if (defNode == null)
-      LOG.debug("Unable to set JPNode symbol for variable {}", name);
+      LOG.info("Unable to set JPNode symbol for variable {}", name);
     else
       defNode.getIdNode().setSymbol(variable);
     return variable;

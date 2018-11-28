@@ -23,7 +23,6 @@ import org.prorefactor.core.JPNode;
 import org.prorefactor.core.JPNode.Builder;
 import org.prorefactor.core.ProToken;
 import org.prorefactor.proparse.ParserSupport;
-import org.prorefactor.proparse.SymbolScope.FieldType;
 import org.prorefactor.proparse.antlr4.Proparse.*;
 
 public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
@@ -1906,6 +1905,11 @@ public class JPNodeVisitor extends ProparseBaseVisitor<JPNode.Builder> {
   @Override
   public JPNode.Builder visitOnstate(OnstateContext ctx) {
     return createStatementTreeFromFirstNode(ctx);
+  }
+
+  @Override
+  public Builder visitOnAssign(OnAssignContext ctx) {
+    return visitChildren(ctx).setRuleNode(ctx);
   }
 
   @Override

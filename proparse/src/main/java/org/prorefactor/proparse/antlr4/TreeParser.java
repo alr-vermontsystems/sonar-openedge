@@ -563,9 +563,9 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   @Override
-  public void enterClearstate(ClearstateContext ctx) {
+  public void exitClearstate(ClearstateContext ctx) {
     if (ctx.frame_widgetname() != null) {
-      frameStack.simpleFrameInitStatement(ctx, support.getNode(ctx), support.getNode(ctx.frame_widgetname().widgetname()), currentBlock);
+      frameStack.simpleFrameInitStatement(ctx, support.getNode(ctx), support.getNode(ctx.frame_widgetname()), currentBlock);
     }
   }
 
@@ -1947,7 +1947,7 @@ public class TreeParser extends ProparseBaseListener {
     for (JPNode frameNode : headNode.query(ABLNodeType.FRAME)) {
       ABLNodeType parentType = frameNode.getParent().getNodeType();
       if (parentType == ABLNodeType.WIDGET_REF || parentType == ABLNodeType.IN) {
-        frameStack.simpleFrameInitStatement(ctx, headNode, frameNode.nextNode(), currentBlock);
+        frameStack.simpleFrameInitStatement(ctx, headNode, frameNode, currentBlock);
         return;
       }
     }

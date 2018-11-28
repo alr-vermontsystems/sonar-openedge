@@ -311,7 +311,7 @@ public class FrameStack {
    * all symbols (including FRAME ID) have been resolved.
    */
   void simpleFrameInitStatement(ParseTree headNode2, JPNode headNode, JPNode frameIDNode, Block currentBlock) {
-    Frame frame = (Frame) frameIDNode.getSymbol();
+    Frame frame = (Frame) frameIDNode.nextNode().getSymbol();
     assert frame != null;
     initializeFrame(frame, currentBlock);
     headNode.setFieldContainer(frame);

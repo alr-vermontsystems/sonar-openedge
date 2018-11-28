@@ -970,8 +970,10 @@ public class JPNode implements AST {
         case PROGRAM_ROOT:
           node = new ProgramRootNode(tok);
           break;
-        case DO:
         case FOR:
+          node = stmt ? new BlockNode(tok) : new JPNode(tok); 
+          break;
+        case DO:
         case REPEAT:
         case FUNCTION:
         case PROCEDURE:

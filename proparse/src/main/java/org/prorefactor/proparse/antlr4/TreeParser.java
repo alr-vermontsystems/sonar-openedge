@@ -1614,7 +1614,7 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   @Override
-  public void enterField(FieldContext ctx) {
+  public void exitField(FieldContext ctx) {
     TableNameResolution tnr = nameResolution.removeFrom(ctx);
     if (tnr == null) tnr = TableNameResolution.ANY;
     ContextQualifier qual = contextQualifiers.removeFrom(ctx);

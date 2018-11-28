@@ -2303,7 +2303,7 @@ public class TreeParser extends ProparseBaseListener {
    */
   public void defineBuffer(ParseTree ctx, JPNode defAST, JPNode idNode, String name, JPNode tableAST, boolean init) {
     LOG.trace("Entering defineBuffer {} {} {}", defAST, tableAST, init);
-    ITable table = astTableLink(tableAST);
+    ITable table = astTableLink(tableAST.getIdNode());
     TableBuffer bufSymbol = currentScope.defineBuffer(name, table);
     currSymbol = bufSymbol;
     currSymbol.setDefinitionNode(ctx);

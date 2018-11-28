@@ -279,7 +279,7 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void exitFunctionParamStandardAs(FunctionParamStandardAsContext ctx) {
     addToSymbolScope(defineVariable(ctx, support.getNode(ctx), null, ctx.n.getText(), true));
-    defAs(ctx, null);
+    defAs(ctx.asDataTypeVar());
   }
 
   @Override
@@ -563,7 +563,7 @@ public class TreeParser extends ProparseBaseListener {
   public void enterCatchstate(CatchstateContext ctx) {
     scopeAdd(support.getNode(ctx));
     addToSymbolScope(defineVariable(ctx, support.getNode(ctx).getFirstChild(), support.getNode(ctx.ID()), ctx.n.getText()));
-    defAs(ctx.class_type_name(), support.getNode(ctx.AS()));
+    defAs(ctx.class_type_name());
   }
 
   @Override
@@ -989,7 +989,7 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterDefinepropertystate(DefinepropertystateContext ctx) {
     stack.push(defineVariable(ctx, support.getNode(ctx), support.getNode(ctx.n), ctx.n.getText()));
-    defAs(ctx.datatype(), support.getNode(ctx.AS()));
+    defAs(ctx.datatype());
     
   }
   
@@ -1292,7 +1292,7 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterFieldoption(FieldoptionContext ctx) {
     if (ctx.AS() != null) {
-        defAs(ctx.type_name() == null ? ctx.datatype_field() : ctx.type_name(), support.getNode(ctx.AS()));
+      defAs(ctx.asDataTypeField());
     } else if (ctx.LIKE() != null) {
       setContextQualifier(ctx.field(), ContextQualifier.SYMBOL);
     }
@@ -2124,26 +2124,17 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   /** The tree parser calls this at an AS node */
-  public void defAs(ParseTree ctx, JPNode asNode) {
+  public void defAs(ParserRuleContext ctx) {
     if (LOG.isDebugEnabled())
       LOG.debug("{}> Variable AS '{}'", indent(), ctx.getText());
 
     Primative primative = (Primative) currSymbol;
-    
-    String typeNode = ctx.getText();
-    if (typeNode.toLowerCase().startsWith("class")) {
-      typeNode = typeNode.substring(5).trim();
-      // TODO
-    }
-    /* JPNode typeNode = asNode.nextNode();
-    if (typeNode.getNodeType() == ABLNodeType.CLASS)
-      typeNode = typeNode.nextNode();
-    if (typeNode.getNodeType() == ABLNodeType.TYPE_NAME) {
+    if ((ctx.getStart().getType() == ABLNodeType.CLASS.getType()) ||  (ctx.getStop().getType() == ABLNodeType.TYPE_NAME.getType())) {
       primative.setDataType(DataType.CLASS);
-      primative.setClassName(ClassSupport.qualifiedClassName(typeNode));
+      primative.setClassName(ctx.getStop().getText());
     } else {
-      primative.setDataType(DataType.getDataType(typeNode.getType()));
-    }*/ 
+      primative.setDataType(DataType.getDataType(ctx.getStop().getType()));
+    }
   }
 
   public void defExtent(String text) {

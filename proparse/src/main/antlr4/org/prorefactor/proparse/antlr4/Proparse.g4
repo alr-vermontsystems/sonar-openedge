@@ -2322,7 +2322,7 @@ fields_fields: // TRANSLATED
   ;
 
 fieldoption: // TRANSLATED
-    AS ( CLASS type_name | datatype_field )
+    AS asDataTypeField
   | casesens_or_not
   | color_expr
   | COLUMNCODEPAGE expression
@@ -2345,6 +2345,14 @@ fieldoption: // TRANSLATED
   | xml_node_type
   | serialize_name
   | SERIALIZEHIDDEN
+  ;
+
+asDataTypeField:
+    ( CLASS type_name | datatype_field )
+  ;
+
+asDataTypeVar:
+    ( CLASS type_name | datatype_var )
   ;
 
 fillinphrase: // TRANSLATED
@@ -2609,7 +2617,7 @@ function_param: // TRANSLATED
   ;
 
 function_param_std:
-    n=identifier AS ( CLASS type_name | datatype_var ) extentphrase? { support.defVar($n.text); } # functionParamStandardAs
+    n=identifier AS asDataTypeVar extentphrase? { support.defVar($n.text); } # functionParamStandardAs
   | n2=identifier like_field extentphrase? { support.defVar($n2.text); } # functionParamStandardLike
   | { _input.LA(2) != NAMEDOT }? TABLE FOR? record APPEND? BIND? # functionParamStandardTable
   | { _input.LA(2) != NAMEDOT }? TABLEHANDLE FOR? hn=identifier APPEND? BIND? { support.defVar($hn.text); } # functionParamStandardTableHandle

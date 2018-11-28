@@ -721,7 +721,7 @@ public class JPNode implements AST {
    */
   public JPNode getIdNode() {
     // TODO Probably a better way to do that...
-    if ((getNodeType() == ABLNodeType.DEFINE) || (getNodeType() == ABLNodeType.BUFFER)) {
+    if ((getNodeType() == ABLNodeType.DEFINE) || (getNodeType() == ABLNodeType.BUFFER) ) {
       for (JPNode child : getDirectChildren()) {
         if (child.getNodeType() == ABLNodeType.ID)
           return child;
@@ -739,8 +739,11 @@ public class JPNode implements AST {
           return this;
       }
       return this;
-    }
-    else {
+    } else if  (getNodeType() == ABLNodeType.TABLEHANDLE) {
+      if ((nextNode() != null) && (nextNode().getNodeType() == ABLNodeType.ID))
+        return nextNode();
+      else return this;
+    } else {
       return this;
     }
   }

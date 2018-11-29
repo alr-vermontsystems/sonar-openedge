@@ -971,7 +971,8 @@ public class JPNode implements AST {
           node = new ProgramRootNode(tok);
           break;
         case FOR:
-          node = stmt ? new BlockNode(tok) : new JPNode(tok); 
+          // FOR in 'DEFINE BUFFER x FOR y' is not a BlockNode
+          node = stmt ? new BlockNode(tok) : new JPNode(tok);
           break;
         case DO:
         case REPEAT:

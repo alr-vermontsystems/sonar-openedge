@@ -18,11 +18,13 @@ import javax.annotation.Nonnull;
 
 import org.antlr.v4.runtime.BufferedTokenStream;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.RuleNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.prorefactor.core.ABLNodeType;
 import org.prorefactor.core.JPNode.Builder;
 import org.prorefactor.core.ProToken;
+import org.prorefactor.core.ProparseRuntimeException;
 import org.prorefactor.proparse.ParserSupport;
 import org.prorefactor.proparse.antlr4.Proparse.*;
 
@@ -986,7 +988,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<Builder> {
 
   @Override
   public Builder visitCanfindfunc(CanfindfuncContext ctx) {
-    return visitChildren(ctx).setRuleNode(ctx);
+    return createTreeFromFirstNode(ctx).setRuleNode(ctx);
   }
 
   @Override
@@ -2511,7 +2513,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<Builder> {
 
   @Override
   public Builder visitTrigger_on(Trigger_onContext ctx) {
-    return createTreeFromFirstNode(ctx);
+    return createTreeFromFirstNode(ctx).setRuleNode(ctx);
   }
 
   @Override
@@ -2759,6 +2761,11 @@ public class JPNodeVisitor extends ProparseBaseVisitor<Builder> {
   @Override
   protected Builder defaultResult() {
     throw new UnsupportedOperationException("Not implemented");
+  }
+
+  @Override
+  public Builder visitErrorNode(ErrorNode node) {
+    throw new ProparseRuntimeException(node.getText());
   }
 
   /**

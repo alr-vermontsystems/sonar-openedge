@@ -721,7 +721,7 @@ public class JPNode implements AST {
    */
   public JPNode getIdNode() {
     // TODO Probably a better way to do that...
-    if ((getNodeType() == ABLNodeType.DEFINE) || (getNodeType() == ABLNodeType.BUFFER) ) {
+    if ((getNodeType() == ABLNodeType.DEFINE) || (getNodeType() == ABLNodeType.BUFFER) || (getNodeType() == ABLNodeType.BEFORETABLE)) {
       for (JPNode child : getDirectChildren()) {
         if (child.getNodeType() == ABLNodeType.ID)
           return child;

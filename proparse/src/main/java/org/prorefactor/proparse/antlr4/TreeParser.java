@@ -1561,7 +1561,15 @@ public class TreeParser extends ProparseBaseListener {
     definingScope.add(r);
     currentRoutine = r;
 
-    // TODO TP01Support.routineReturnDatatype(returnTypeNode);
+    if (ctx.VOID() != null) {
+      currentRoutine.setReturnDatatypeNode(DataType.VOID);
+    } else {
+      if (ctx.datatype().CLASS() != null) {
+        currentRoutine.setReturnDatatypeNode(DataType.CLASS);
+      } else {
+        currentRoutine.setReturnDatatypeNode(DataType.getDataType(ctx.datatype().datatype_var().start.getType()));
+      }
+    }
   }
 
   @Override

@@ -16,6 +16,7 @@
 package org.prorefactor.proparse.antlr4;
 
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -52,11 +53,12 @@ public class FrameStack {
   private static final Logger LOG = LoggerFactory.getLogger(FrameStack.class);
 
   private boolean currStatementIsEnabler = false;
-  private LinkedList<Frame> frameMRU = new LinkedList<>();
+  private Deque<Frame> frameMRU = new LinkedList<>();
   private FieldContainer containerForCurrentStatement = null;
   private JPNode currStatementWholeTableFormItemNode = null;
 
-  FrameStack() {
+  protected FrameStack() {
+    // Only from TreeParser
   }
 
   /**
@@ -64,6 +66,8 @@ public class FrameStack {
    * the statement head was processed.
    */
   void browseRefNode(JPNode idNode, TreeParserSymbolScope symbolScope) {
+    LOG.debug("Enter FrameStack#browseRefNode");
+
     if (idNode.getSymbol() == null)
       browseRefSet(idNode, symbolScope);
   }
@@ -78,7 +82,7 @@ public class FrameStack {
    * For a Form_item node which is for a whole table reference, get a list of the FieldBuffers that would be added to
    * the frame, respecting any EXCEPT fields list.
    */
-  public List<FieldBuffer> calculateFormItemTableFields(JPNode formItemNode) {
+  private List<FieldBuffer> calculateFormItemTableFields(JPNode formItemNode) {
     assert formItemNode.getType() == ProParserTokenTypes.Form_item;
     assert formItemNode.getFirstChild().getType() == ProParserTokenTypes.RECORD_NAME;
     RecordNameNode recordNameNode = (RecordNameNode) formItemNode.getFirstChild();
@@ -117,6 +121,8 @@ public class FrameStack {
    * containerForCurrentStatement==null, and this function is a no-op.
    */
   void formItem(JPNode formItemNode) {
+    LOG.debug("Enter FrameStack#formItem");
+
     if (containerForCurrentStatement == null)
       return;
     assert formItemNode.getType() == ProParserTokenTypes.Form_item;
@@ -144,6 +150,8 @@ public class FrameStack {
    * The ID node in a FRAME ID pair. For "WITH FRAME id", the ID was already set when we processed the statement head.
    */
   void frameRefNode(JPNode idNode, TreeParserSymbolScope symbolScope) {
+    LOG.debug("Enter FrameStack#frameRefNode");
+
     if (idNode.getSymbol() == null)
       frameRefSet(idNode, symbolScope);
   }
@@ -239,12 +247,16 @@ public class FrameStack {
 
   /** Receive the node (will be a Field_ref) that follows an @ in a frame phrase. */
   void lexAt(JPNode fieldRefNode) {
+    LOG.debug("Enter FrameStack#lexAt");
+
     if (containerForCurrentStatement != null)
       containerForCurrentStatement.addSymbol(fieldRefNode.getSymbol(), currStatementIsEnabler);
   }
 
   /** FOR|REPEAT|DO blocks need to be checked for explicit WITH FRAME phrase. */
   void nodeOfBlock(JPNode blockNode, Block currentBlock) {
+    LOG.debug("Enter FrameStack#nodeOfBlock");
+
     JPNode containerTypeNode = getContainerTypeNode(blockNode);
     if (containerTypeNode == null)
       return;
@@ -260,6 +272,8 @@ public class FrameStack {
 
   /** Called at tree parser DEFINE BROWSE statement. */
   void nodeOfDefineBrowse(Browse newBrowseSymbol, JPNode defNode, ParseTree defNode2) {
+    LOG.debug("Enter FrameStack#nodeOfDefineBrowse");
+
     containerForCurrentStatement = newBrowseSymbol;
     containerForCurrentStatement.addStatement(defNode2);
   }
@@ -270,6 +284,8 @@ public class FrameStack {
    * multiple FORM statements, I suppose. A DEFINE FRAME statement does not initialize the frame's scope.
    */
   void nodeOfDefineFrame(ParseTree defNode2, JPNode defNode, JPNode idNode, String frameName, TreeParserSymbolScope currentSymbolScope) {
+    LOG.debug("Enter FrameStack#nodeOfDefineFrame");
+
     Frame frame = (Frame) currentSymbolScope.lookupSymbolLocally(ProParserTokenTypes.FRAME, frameName);
     if (frame == null)
       frame = createFrame(frameName, currentSymbolScope);
@@ -286,6 +302,8 @@ public class FrameStack {
    * not count as a "reference" for frame scoping purposes.
    */
   void nodeOfInitializingStatement(ParseTree stateNode2, JPNode stateNode, Block currentBlock) {
+    LOG.debug("Enter FrameStack#nodeOfInitializingStatement");
+
     JPNode containerTypeNode = getContainerTypeNode(stateNode);
     JPNode idNode = null;
     if (containerTypeNode != null) {
@@ -311,6 +329,8 @@ public class FrameStack {
    * all symbols (including FRAME ID) have been resolved.
    */
   void simpleFrameInitStatement(ParseTree headNode2, JPNode headNode, JPNode frameIDNode, Block currentBlock) {
+    LOG.debug("Enter FrameStack#simpleFrameInitStatement");
+
     Frame frame = (Frame) frameIDNode.nextNode().getSymbol();
     assert frame != null;
     initializeFrame(frame, currentBlock);
@@ -320,10 +340,10 @@ public class FrameStack {
 
   /** Called at the end of a frame affecting statement. */
   void statementEnd() {
-    /*
-     * For something like DISPLAY customer, we delay adding the fields to the frame until the end of the statement.
-     * That's because any fields in an EXCEPT fields phrase need to have their symbols resolved first.
-     */
+    LOG.debug("Enter FrameStack#statementEnd");
+
+    // For something like DISPLAY customer, we delay adding the fields to the frame until the end of the statement.
+    // That's because any fields in an EXCEPT fields phrase need to have their symbols resolved first.
     if (currStatementWholeTableFormItemNode != null) {
       List<FieldBuffer> fields = calculateFormItemTableFields(currStatementWholeTableFormItemNode);
       for (FieldBuffer fieldBuffer : fields) {
@@ -336,7 +356,7 @@ public class FrameStack {
   }
 
   /** Used only by the tree parser, for ENABLE|UPDATE|PROMPT-FOR. */
-  public void statementIsEnabler() {
+  void statementIsEnabler() {
     currStatementIsEnabler = true;
   }
 

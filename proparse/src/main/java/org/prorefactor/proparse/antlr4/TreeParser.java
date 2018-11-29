@@ -572,7 +572,7 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterCatchstate(CatchstateContext ctx) {
     scopeAdd(support.getNode(ctx));
-    addToSymbolScope(defineVariable(ctx, support.getNode(ctx).getFirstChild(), support.getNode(ctx.ID()), ctx.n.getText()));
+    addToSymbolScope(defineVariable(ctx, support.getNode(ctx).getFirstChild(), ctx.n.getText()));
     defAs(ctx.class_type_name());
   }
 
@@ -1000,7 +1000,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterDefinepropertystate(DefinepropertystateContext ctx) {
-    stack.push(defineVariable(ctx, support.getNode(ctx), support.getNode(ctx.n), ctx.n.getText()));
+    stack.push(defineVariable(ctx, support.getNode(ctx), ctx.n.getText()));
     defAs(ctx.datatype());
     
   }
@@ -1133,7 +1133,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterDefinevariablestate(DefinevariablestateContext ctx) {
-    stack.push(defineVariable(ctx, support.getNode(ctx), support.getNode(ctx.n), ctx.n.getText()));
+    stack.push(defineVariable(ctx, support.getNode(ctx), ctx.n.getText()));
     // TODO Vérifier que les modificateurs sont bien là
   }
 
@@ -1210,8 +1210,11 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterDisplay_items_or_record(Display_items_or_recordContext ctx) {
     ContextQualifier qual = contextQualifiers.removeFrom(ctx);
-    for (int zz = 0; zz < ctx.getChildCount(); zz++) {
-      setContextQualifier(ctx.getChild(zz), qual);
+    for (int kk = 0; kk < ctx.getChildCount(); kk++) {
+      if (ctx.getChild(kk) instanceof RecordAsFormItemContext)
+        setContextQualifier(ctx.getChild(kk), ContextQualifier.BUFFERSYMBOL);
+      else
+        setContextQualifier(ctx.getChild(kk), qual);
     }
   }
 
@@ -1219,6 +1222,13 @@ public class TreeParser extends ProparseBaseListener {
   public void enterDisplay_item(Display_itemContext ctx) {
     if (ctx.expression() != null) {
       setContextQualifier(ctx.expression(), contextQualifiers.removeFrom(ctx));
+    }
+  }
+
+  @Override
+  public void exitDisplay_item(Display_itemContext ctx) {
+    if (ctx.expression() != null) {
+      frameStack.formItem(support.getNode(ctx));
     }
   }
 
@@ -1859,7 +1869,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterTriggerOfSub2(TriggerOfSub2Context ctx) {
-      stack.push(defineVariable(ctx, support.getNode(ctx), null, ctx.id.getText()));
+      stack.push(defineVariable(ctx, support.getNode(ctx), ctx.id.getText()));
   }
 
   @Override
@@ -1869,7 +1879,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterTrigger_old(Trigger_oldContext ctx) {
-    stack.push(defineVariable(ctx, support.getNode(ctx), null, ctx.id.getText()));
+    stack.push(defineVariable(ctx, support.getNode(ctx), ctx.id.getText()));
   }
   
   @Override
@@ -2118,7 +2128,7 @@ public class TreeParser extends ProparseBaseListener {
     frameStack.nodeOfBlock(ast, currentBlock);
   }
 
-  private Variable defineVariable(ParseTree ctx, JPNode defAST, JPNode idAST, String name) {
+  private Variable defineVariable(ParseTree ctx, JPNode defAST, String name) {
     return defineVariable(ctx, defAST, name, false);
   }
 
@@ -2501,7 +2511,7 @@ public class TreeParser extends ProparseBaseListener {
     // Check if this is a Field_ref being "inline defined"
     // If so, we define it right now.
     if (refNode.attrGet(IConstants.INLINE_VAR_DEF) == 1)
-      addToSymbolScope(defineVariable(ctx, refAST, refAST, name));
+      addToSymbolScope(defineVariable(ctx, refAST, name));
 
     if ((refNode.getParent().getNodeType() == ABLNodeType.USING && refNode.getParent().getParent().getNodeType() == ABLNodeType.RECORD_NAME)
         || (refNode.getFirstChild().getNodeType() == ABLNodeType.INPUT &&

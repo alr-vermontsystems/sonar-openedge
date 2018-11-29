@@ -136,7 +136,7 @@ public class TreeParser extends ProparseBaseListener {
 
     Routine routine = new Routine("", rootScope, rootScope);
     routine.setProgressType(ABLNodeType.PROGRAM_ROOT);
-    routine.setDefinitionNode(ctx);
+    routine.setDefinitionNode(blockNode);
     blockNode.setSymbol(routine);
 
     rootScope.add(routine);
@@ -627,7 +627,7 @@ public class TreeParser extends ProparseBaseListener {
     // 'structors don't have names, so use empty string.
     Routine r = new Routine("", definingScope, currentScope);
     r.setProgressType(blockNode.getNodeType());
-    r.setDefinitionNode(ctx);
+    r.setDefinitionNode(blockNode);
     blockNode.setSymbol(r);
     currentRoutine = r;
   }
@@ -1161,7 +1161,7 @@ public class TreeParser extends ProparseBaseListener {
     // 'structors don't have names, so use empty string.
     Routine r = new Routine("", definingScope, currentScope);
     r.setProgressType(blockNode.getNodeType());
-    r.setDefinitionNode(ctx);
+    r.setDefinitionNode(blockNode);
     blockNode.setSymbol(r);
     currentRoutine = r;
   }
@@ -1451,7 +1451,7 @@ public class TreeParser extends ProparseBaseListener {
 
     Routine r = new Routine(ctx.id.getText(), definingScope, currentScope);
     r.setProgressType(ABLNodeType.FUNCTION);
-    r.setDefinitionNode(ctx);
+    r.setDefinitionNode(blockNode);
     blockNode.setSymbol(r);
     definingScope.add(r);
     currentRoutine = r;
@@ -1556,7 +1556,7 @@ public class TreeParser extends ProparseBaseListener {
 
     Routine r = new Routine(ctx.id.getText(), definingScope, currentScope);
     r.setProgressType(ABLNodeType.METHOD);
-    r.setDefinitionNode(ctx);
+    r.setDefinitionNode(blockNode);
     blockNode.setSymbol(r);
     definingScope.add(r);
     currentRoutine = r;
@@ -1588,7 +1588,7 @@ public class TreeParser extends ProparseBaseListener {
 
     Routine r = new Routine(ctx.filename().getText(), definingScope, currentScope);
     r.setProgressType(ABLNodeType.PROCEDURE);
-    r.setDefinitionNode(ctx);
+    r.setDefinitionNode(blockNode);
     blockNode.setSymbol(r);
     definingScope.add(r);
     currentRoutine = r;
@@ -2143,12 +2143,13 @@ public class TreeParser extends ProparseBaseListener {
     // The tree parser is responsible for calling addToScope at the end of the statement or when it is otherwise safe to
     // do so.
     Variable variable = new Variable(name, currentScope, parameter);
-    variable.setDefinitionNode(ctx);
-    currSymbol = variable;
     if (defNode == null)
       LOG.info("Unable to set JPNode symbol for variable {}", name);
-    else
+    else {
       defNode.getIdNode().setSymbol(variable);
+      variable.setDefinitionNode(defNode.getIdNode());
+    }
+    currSymbol = variable;
     return variable;
   }
 
@@ -2222,7 +2223,7 @@ public class TreeParser extends ProparseBaseListener {
      */
     Symbol symbol = SymbolFactory.create(symbolType, name, currentScope);
     currSymbol = symbol;
-    currSymbol.setDefinitionNode(defSymbol);
+    currSymbol.setDefinitionNode(defNode.getIdNode());
     defNode.getIdNode().setLink(IConstants.SYMBOL, symbol);
     return symbol;
   }
@@ -2241,7 +2242,7 @@ public class TreeParser extends ProparseBaseListener {
     if (name == null || name.length() == 0)
       name = idNode.getNodeType().name(); */
     Event event = new Event(name, currentScope);
-    event.setDefinitionNode(ctx);
+    event.setDefinitionNode(defNode.getIdNode());
     currSymbol = event;
     defNode.getIdNode().setLink(IConstants.SYMBOL, event);
     return event;
@@ -2260,7 +2261,7 @@ public class TreeParser extends ProparseBaseListener {
     LOG.trace("Entering defineTableFieldInitialize {}", idNode);
     FieldBuffer fieldBuff = rootScope.defineTableFieldDelayedAttach(text, currDefTable);
     currSymbol = fieldBuff;
-    fieldBuff.setDefinitionNode(ctx);
+    fieldBuff.setDefinitionNode(idNode.getFirstChild());
     idNode.getFirstChild().setLink(IConstants.SYMBOL, fieldBuff);
     return fieldBuff;
   }
@@ -2304,7 +2305,7 @@ public class TreeParser extends ProparseBaseListener {
 
     TableBuffer buffer = rootScope.defineTable(name, storeType);
     currSymbol = buffer;
-    currSymbol.setDefinitionNode(ctx);
+    currSymbol.setDefinitionNode(defNode.getIdNode());
     currDefTable = buffer;
     currDefTableLike = null;
     currDefTableUseIndex = false;
@@ -2355,7 +2356,7 @@ public class TreeParser extends ProparseBaseListener {
     ITable table = astTableLink(tableAST.getIdNode());
     TableBuffer bufSymbol = currentScope.defineBuffer(name, table);
     currSymbol = bufSymbol;
-    currSymbol.setDefinitionNode(ctx);
+    currSymbol.setDefinitionNode(defAST.getIdNode());
     defAST.getIdNode().setLink(IConstants.SYMBOL, bufSymbol);
     if (init) {
       BufferScope bufScope = currentBlock.getBufferForReference(bufSymbol);
@@ -2392,7 +2393,7 @@ public class TreeParser extends ProparseBaseListener {
  
     Routine r = new Routine(propAST.getText(), definingScope, currentScope);
     r.setProgressType(propAST.getNodeType());
-    r.setDefinitionNode(ctx);
+    r.setDefinitionNode(blockNode);
     blockNode.setSymbol(r);
     definingScope.add(r);
     currentRoutine = r;

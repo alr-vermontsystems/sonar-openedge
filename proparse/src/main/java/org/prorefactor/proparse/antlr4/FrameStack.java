@@ -289,7 +289,7 @@ public class FrameStack {
     Frame frame = (Frame) currentSymbolScope.lookupSymbolLocally(ProParserTokenTypes.FRAME, frameName);
     if (frame == null)
       frame = createFrame(frameName, currentSymbolScope);
-    frame.setDefinitionNode(defNode2);
+    frame.setDefinitionNode(defNode.getIdNode());
     defNode.setLink(IConstants.SYMBOL, frame);
     defNode.setFieldContainer(frame);
     containerForCurrentStatement = frame;

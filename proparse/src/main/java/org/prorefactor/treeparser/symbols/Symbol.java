@@ -15,7 +15,7 @@
  ********************************************************************************/
 package org.prorefactor.treeparser.symbols;
 
-import org.antlr.v4.runtime.tree.ParseTree;
+import org.prorefactor.core.JPNode;
 import org.prorefactor.treeparser.ContextQualifier;
 import org.prorefactor.treeparser.TreeParserSymbolScope;
 
@@ -31,7 +31,7 @@ public abstract class Symbol implements ISymbol {
 
   // We store the DEFINE node if available and sensible. If defined in a syntax where there is no DEFINE node briefly
   // preceeding the ID node, then we store the ID node. If this is a schema symbol, then this member is null.
-  private ParseTree defNode;
+  private JPNode defNode;
 
   // What scope this symbol was defined in
   private TreeParserSymbolScope scope;
@@ -50,7 +50,7 @@ public abstract class Symbol implements ISymbol {
   }
 
   @Override
-  public void setDefinitionNode(ParseTree node) {
+  public void setDefinitionNode(JPNode node) {
     defNode = node;
   }
 
@@ -75,7 +75,7 @@ public abstract class Symbol implements ISymbol {
   }
 
   @Override
-  public ParseTree getDefineNode() {
+  public JPNode getDefineNode() {
     return defNode;
   }
 

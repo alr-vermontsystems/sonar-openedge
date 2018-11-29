@@ -15,7 +15,7 @@
  ********************************************************************************/
 package org.prorefactor.treeparser.symbols;
 
-import org.antlr.v4.runtime.tree.ParseTree;
+import org.prorefactor.core.JPNode;
 import org.prorefactor.treeparser.ContextQualifier;
 import org.prorefactor.treeparser.TreeParserSymbolScope;
 
@@ -37,12 +37,12 @@ public interface ISymbol {
 
   int getNumReferenced();
 
-  void setDefinitionNode(ParseTree node);
+  void setDefinitionNode(JPNode node);
 
   /**
    * Returns tree object where symbol was defined. Can be a DEFINE keyword or directly the ID token. 
    */
-  ParseTree getDefineNode();
+  JPNode getDefineNode();
 
   /**
    * From TokenTypes: VARIABLE, FRAME, MENU, MENUITEM, etc. A TableBuffer object always returns BUFFER, regardless of

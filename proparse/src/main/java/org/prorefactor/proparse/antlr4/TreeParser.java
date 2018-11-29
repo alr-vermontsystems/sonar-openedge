@@ -280,13 +280,13 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void exitFunctionParamStandardAs(FunctionParamStandardAsContext ctx) {
-    addToSymbolScope(defineVariable(ctx, support.getNode(ctx), null, ctx.n.getText(), true));
+    addToSymbolScope(defineVariable(ctx, support.getNode(ctx), ctx.n.getText(), true));
     defAs(ctx.asDataTypeVar());
   }
 
   @Override
   public void enterFunctionParamStandardLike(FunctionParamStandardLikeContext ctx) {
-    stack.push(defineVariable(ctx, support.getNode(ctx), null, ctx.n2.getText(), true));
+    stack.push(defineVariable(ctx, support.getNode(ctx), ctx.n2.getText(), true));
   }
 
   @Override
@@ -302,12 +302,12 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterFunctionParamStandardTableHandle(FunctionParamStandardTableHandleContext ctx) {
-    addToSymbolScope(defineVariable(ctx, support.getNode(ctx), null, ctx.hn.getText(), DataType.HANDLE, true));
+    addToSymbolScope(defineVariable(ctx, support.getNode(ctx), ctx.hn.getText(), DataType.HANDLE, true));
   }
 
   @Override
   public void enterFunctionParamStandardDatasetHandle(FunctionParamStandardDatasetHandleContext ctx) {
-    addToSymbolScope(defineVariable(ctx, support.getNode(ctx), null, ctx.hn2.getText(), DataType.HANDLE, true));
+    addToSymbolScope(defineVariable(ctx, support.getNode(ctx), ctx.hn2.getText(), DataType.HANDLE, true));
   }
 
   private void enterExpression(ExpressionContext ctx) {
@@ -451,7 +451,7 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterAggregate_opt(Aggregate_optContext ctx) {
     // TODO Verifier le nom de la variable
-    addToSymbolScope(defineVariable(ctx, support.getNode(ctx.accum_what()), support.getNode(ctx.accum_what()), "", DataType.DECIMAL, false));
+    addToSymbolScope(defineVariable(ctx, support.getNode(ctx.accum_what()), "", DataType.DECIMAL, false));
     // TODO Ou integer depending on type
   }
 
@@ -954,7 +954,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterDefineParameterStatementSub2Variable(DefineParameterStatementSub2VariableContext ctx) {
-    stack.push(defineVariable(ctx.parent, support.getNode(ctx.parent), null, ctx.identifier().getText(), true));
+    stack.push(defineVariable(ctx.parent, support.getNode(ctx.parent), ctx.identifier().getText(), true));
   }
 
   @Override
@@ -964,7 +964,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterDefineParameterStatementSub2VariableLike(DefineParameterStatementSub2VariableLikeContext ctx) {
-    stack.push(defineVariable(ctx.parent, support.getNode(ctx.parent), null, ctx.identifier().getText(), true));
+    stack.push(defineVariable(ctx.parent, support.getNode(ctx.parent), ctx.identifier().getText(), true));
   }
 
   @Override
@@ -989,13 +989,13 @@ public class TreeParser extends ProparseBaseListener {
   
   @Override
   public void enterDefineParameterStatementSub2TableHandle(DefineParameterStatementSub2TableHandleContext ctx) {
-    addToSymbolScope(defineVariable(ctx, support.getNode(ctx.parent), null, ctx.pn2.getText(), DataType.HANDLE, true));
+    addToSymbolScope(defineVariable(ctx, support.getNode(ctx.parent), ctx.pn2.getText(), DataType.HANDLE, true));
     }
   
 
   @Override
   public void enterDefineParameterStatementSub2DatasetHandle(DefineParameterStatementSub2DatasetHandleContext ctx) {
-    addToSymbolScope(defineVariable(ctx, support.getNode(ctx.parent), null, ctx.dsh.getText(), DataType.HANDLE, true));
+    addToSymbolScope(defineVariable(ctx, support.getNode(ctx.parent), ctx.dsh.getText(), DataType.HANDLE, true));
   }
 
   @Override
@@ -1365,9 +1365,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void exitForm_item(Form_itemContext ctx) {
-    if (ctx.field() != null) {
-      frameStack.formItem(support.getNode(ctx));
-    } else if (ctx.recordAsFormItem() != null) {
+    if ((ctx.field() != null) || (ctx.recordAsFormItem() != null)) {
       frameStack.formItem(support.getNode(ctx));
     }
   }
@@ -1716,7 +1714,7 @@ public class TreeParser extends ProparseBaseListener {
   public void exitOnAssign(OnAssignContext ctx) {
     // TODO Likely to have side effect, variable has to be defined before starting block
     if (ctx.OLD() != null) {
-      stack.push(defineVariable(ctx, support.getNode(ctx), null, ctx.f.getText(), support.getNode(ctx.field())));
+      stack.push(defineVariable(ctx, support.getNode(ctx), ctx.f.getText(), support.getNode(ctx.field())));
     }
   }
 
@@ -1801,7 +1799,6 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterSystemdialoggetdir_opt(Systemdialoggetdir_optContext ctx) {
     if (ctx.field() != null) {
-      // TODO Check consistency with sys diag get file
       setContextQualifier(ctx.field(), ContextQualifier.REFUP);
     }
   }
@@ -2122,10 +2119,10 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   private Variable defineVariable(ParseTree ctx, JPNode defAST, JPNode idAST, String name) {
-    return defineVariable(ctx, defAST, idAST, name, false);
+    return defineVariable(ctx, defAST, name, false);
   }
 
-  private Variable defineVariable(ParseTree ctx, JPNode defNode, JPNode idNode, String name, boolean parameter) {
+  private Variable defineVariable(ParseTree ctx, JPNode defNode, String name, boolean parameter) {
     if (LOG.isDebugEnabled())
       LOG.debug("{}> New variable {} (parameter: {})", indent(), name, parameter);
 
@@ -2143,20 +2140,20 @@ public class TreeParser extends ProparseBaseListener {
     return variable;
   }
 
-  private Variable defineVariable(ParseTree ctx, JPNode defAST, JPNode idAST, String name, DataType dataType, boolean parameter) {
-    Variable v = defineVariable(ctx, defAST, idAST, name, parameter);
+  private Variable defineVariable(ParseTree ctx, JPNode defAST, String name, DataType dataType, boolean parameter) {
+    Variable v = defineVariable(ctx, defAST, name, parameter);
     if (LOG.isDebugEnabled())
       LOG.debug("{}> Adding datatype {}", indent(), dataType);
     v.setDataType(dataType);
     return v;
   }
 
-  private Variable defineVariable(ParseTree ctx, JPNode defAST, JPNode idAST, String name, JPNode likeAST) {
-    return defineVariable(ctx, defAST, idAST, name, likeAST, false);
+  private Variable defineVariable(ParseTree ctx, JPNode defAST, String name, JPNode likeAST) {
+    return defineVariable(ctx, defAST, name, likeAST, false);
   }
 
-  public Variable defineVariable(ParseTree ctx, JPNode defAST, JPNode idAST, String name, JPNode likeAST, boolean parameter) {
-    Variable v = defineVariable(ctx, defAST, idAST, name, parameter);
+  public Variable defineVariable(ParseTree ctx, JPNode defAST, String name, JPNode likeAST, boolean parameter) {
+    Variable v = defineVariable(ctx, defAST, name, parameter);
     FieldRefNode likeRefNode = (FieldRefNode) likeAST;
     v.setDataType(likeRefNode.getDataType());
     v.setClassName(likeRefNode.getClassName());

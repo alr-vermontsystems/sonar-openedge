@@ -2385,7 +2385,7 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   public void propGetSetBegin(ParseTree ctx, JPNode propAST) {
-    LOG.info("Entering propGetSetBegin {}", propAST);
+    LOG.trace("Entering propGetSetBegin {}", propAST);
     scopeAdd(propAST);
     BlockNode blockNode = (BlockNode) propAST;
     TreeParserSymbolScope definingScope = currentScope.getParentScope();
@@ -2399,7 +2399,7 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   public void propGetSetEnd(JPNode propAST) {
-    LOG.info("Entering propGetSetEnd {}", propAST);
+    LOG.trace("Entering propGetSetEnd {}", propAST);
     scopeClose(propAST);
     currentRoutine = rootRoutine;
   }

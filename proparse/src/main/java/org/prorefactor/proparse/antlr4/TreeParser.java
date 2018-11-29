@@ -130,7 +130,7 @@ public class TreeParser extends ProparseBaseListener {
     }
 
     BlockNode blockNode = (BlockNode) support.getNode(ctx);
-    currentBlock = pushBlock(new Block(rootScope, ABLNodeType.PROGRAM_ROOT));
+    currentBlock = pushBlock(new Block(rootScope, blockNode));
     rootScope.setRootBlock(currentBlock);
     blockNode.setBlock(currentBlock);
 
@@ -2066,7 +2066,7 @@ public class TreeParser extends ProparseBaseListener {
     if (LOG.isDebugEnabled())
       LOG.debug("{}> Creating new block", indent());
     BlockNode blockNode = (BlockNode) support.getNode(ctx);
-    currentBlock = pushBlock(new Block(currentBlock, blockNode.getNodeType()));
+    currentBlock = pushBlock(new Block(currentBlock, blockNode));
     blockNode.setBlock(currentBlock);
   }
 
@@ -2082,7 +2082,7 @@ public class TreeParser extends ProparseBaseListener {
 
     BlockNode blockNode = (BlockNode) anode;
     currentScope = currentScope.addScope();
-    currentBlock = pushBlock(new Block(currentScope, blockNode.getNodeType()));
+    currentBlock = pushBlock(new Block(currentScope, blockNode));
     currentScope.setRootBlock(currentBlock);
     blockNode.setBlock(currentBlock);
   }

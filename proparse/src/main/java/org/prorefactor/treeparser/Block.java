@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.prorefactor.core.ABLNodeType;
+import org.prorefactor.core.JPNode;
 import org.prorefactor.core.nodetypes.RecordNameNode;
 import org.prorefactor.core.schema.IField;
 import org.prorefactor.proparse.ProParserTokenTypes;
@@ -41,7 +42,7 @@ public class Block {
   private List<Frame> frames = new ArrayList<>();
   private Block parent;
   private Frame defaultFrame = null;
-  private final ABLNodeType blockStatementNode;
+  private final JPNode blockStatementNode;
   private Set<BufferScope> bufferScopes = new HashSet<>();
 
   /**
@@ -51,7 +52,7 @@ public class Block {
   private TreeParserSymbolScope symbolScope;
 
   /** For constructing nested blocks */
-  public Block(Block parent, ABLNodeType node) {
+  public Block(Block parent, JPNode node) {
     this.blockStatementNode = node;
     this.parent = parent;
     this.symbolScope = parent.symbolScope;
@@ -63,7 +64,7 @@ public class Block {
    * @param symbolScope
    * @param node Is the Program_root if this is the program root block.
    */
-  public Block(TreeParserSymbolScope symbolScope, ABLNodeType node) {
+  public Block(TreeParserSymbolScope symbolScope, JPNode node) {
     this.blockStatementNode = node;
     this.symbolScope = symbolScope;
     if (symbolScope.getParentScope() != null)
@@ -78,7 +79,7 @@ public class Block {
    */
   public void addBufferScopeReferences(BufferScope bufferScope) {
     // References do not get added to DO blocks.
-    if (blockStatementNode != ABLNodeType.DO)
+    if (blockStatementNode.getNodeType() != ABLNodeType.DO)
       bufferScopes.add(bufferScope);
     if (parent != null && bufferScope.getSymbol().getScope().getRootBlock() != this) {
       parent.addBufferScopeReferences(bufferScope);
@@ -164,8 +165,8 @@ public class Block {
 
   /** Can a frame be scoped to this block? */
   private boolean canScopeFrame() {
-    if ((blockStatementNode == ABLNodeType.REPEAT)
-        || (blockStatementNode == ABLNodeType.FOR)) {
+    if ((blockStatementNode.getNodeType() == ABLNodeType.REPEAT)
+        || (blockStatementNode.getNodeType() == ABLNodeType.FOR)) {
       return true;
     }
     return isRootBlock();
@@ -281,7 +282,7 @@ public class Block {
    * Get the node for this block. Returns a node of one of these types:
    * Program_root/DO/FOR/REPEAT/EDITING/PROCEDURE/FUNCTION/ON/TRIGGERS.
    */
-  public ABLNodeType getNode() {
+  public JPNode getNode() {
     return blockStatementNode;
   }
 

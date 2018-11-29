@@ -25,6 +25,7 @@ import com.google.common.base.Strings;
 
 public enum ABLNodeType {
   // Placeholders and unknown tokens
+  EMPTY_NODE(-1000, NodeTypesOption.PLACEHOLDER),
   INVALID_NODE(Token.INVALID_TYPE, NodeTypesOption.PLACEHOLDER),
   EOF_ANTLR4(Token.EOF, NodeTypesOption.PLACEHOLDER),
   INCLUDEDIRECTIVE(ProParserTokenTypes.INCLUDEDIRECTIVE, NodeTypesOption.PLACEHOLDER),

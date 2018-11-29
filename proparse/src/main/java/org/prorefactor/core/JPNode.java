@@ -961,6 +961,8 @@ public class JPNode implements AST {
     private JPNode build(ParserSupport support, JPNode up, JPNode left) {
       JPNode node;
       switch (tok.getNodeType()) {
+        case EMPTY_NODE:
+          throw new IllegalStateException("Empty node can't generate JPNode");
         case RECORD_NAME:
           node = new RecordNameNode(tok);
           break;
@@ -1023,10 +1025,30 @@ public class JPNode implements AST {
       if ((ctx != null) && (support != null))
         support.pushNode(ctx, node);
       if (down != null) {
-        node.down = down.build(support, node, null);
+        if (down.getNodeType() == ABLNodeType.EMPTY_NODE) {
+          // Safety net: EMPTY_NODE can't have children
+          if (down.down != null) {
+            throw new IllegalStateException("Found EMPTY_NODE with children (first is " + down.down.getNodeType());
+          }
+          if (down.right != null) {
+            node.down = down.right.build(support, node, null);
+          }
+        } else {
+          node.down = down.build(support, node, null);
+        }
       }
       if (right != null) {
-        node.right = right.build(support, up, node);
+        if (right.getNodeType() == ABLNodeType.EMPTY_NODE) {
+          // Safety net: EMPTY_NODE can't have children
+          if (right.down != null) {
+            throw new IllegalStateException("Found EMPTY_NODE with children (first is " + right.down.getNodeType());
+          }
+          if (right.right != null) {
+            node.right = right.right.build(support, node, null);
+          }
+        } else {
+          node.right = right.build(support, up, node);
+        }
       }
       return node;
     }

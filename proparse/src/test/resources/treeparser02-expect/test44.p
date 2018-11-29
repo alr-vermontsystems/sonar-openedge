@@ -1,4 +1,4 @@
- /* 0:ROOT buffers=sports2000.bcust */ 
+ /* 0: buffers=sports2000.bcust */ 
 /* Name lookup is based on "buffers first" even if we only want a symbol. */
 def buffer  /* 0:sports2000.bcust */ bcust for  /* 0:sports2000.Customer */ customer.
 find first  /* 0:sports2000.bcust */ bcust.

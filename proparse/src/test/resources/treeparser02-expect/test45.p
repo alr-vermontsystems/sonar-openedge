@@ -1,4 +1,4 @@
- /* 0:ROOT buffers=b,b_c */ 
+ /* 0: buffers=b,b_c */ 
 /* Resolves b_c to temp-table "b" */
 def temp-table  /* 0:b */ b field  /* 0:b.f1 */ f1 as char.
 create  /* 0:b */ b.

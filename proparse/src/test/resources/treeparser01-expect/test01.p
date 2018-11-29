@@ -1,4 +1,4 @@
- /* 0:ROOT buffers=sports2000.Customer,sports2000.State,sports2000.bs,tt1,tt12,wt1 */ 
+ /* 0: buffers=sports2000.Customer,sports2000.State,sports2000.bs,tt1,tt12,wt1 */ 
 /* Data file for testing treeparser01.
  */
 

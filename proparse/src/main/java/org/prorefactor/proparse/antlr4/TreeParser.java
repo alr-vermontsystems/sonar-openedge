@@ -134,7 +134,7 @@ public class TreeParser extends ProparseBaseListener {
     rootScope.setRootBlock(currentBlock);
     blockNode.setBlock(currentBlock);
 
-    Routine routine = new Routine("ROOT", rootScope, rootScope);
+    Routine routine = new Routine("", rootScope, rootScope);
     routine.setProgressType(ABLNodeType.PROGRAM_ROOT);
     routine.setDefinitionNode(ctx);
     blockNode.setSymbol(routine);

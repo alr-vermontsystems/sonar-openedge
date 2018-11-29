@@ -1,4 +1,4 @@
- /* 0:ROOT buffers=b,cust */ 
+ /* 0: buffers=b,cust */ 
 /* Resolves b to temp-table, rather than schema table 'customer' */
 def temp-table  /* 0:cust */ cust field  /* 0:cust.f1 */ f1 as char.
 do transaction:

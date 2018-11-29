@@ -1,4 +1,4 @@
- /* 0:ROOT */ 
+ /* 0: */ 
 /* The strong scope prevents the buffer scope from
    being raised to the procedure. The same customer
    name is displayed 3 times. */

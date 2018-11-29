@@ -552,7 +552,9 @@ public class TreeParser extends ProparseBaseListener {
   public void enterClassstate(ClassstateContext ctx) {
     rootScope.setClassName(ctx.tn.getText());
     rootScope.setTypeInfo(refSession.getTypeInfo(ctx.tn.getText()));
-    // ABSTRACT, SERIALIZABLE and FINAL are read from rcode
+    rootScope.setAbstractClass(!ctx.ABSTRACT().isEmpty());
+    rootScope.setSerializableClass(!ctx.SERIALIZABLE().isEmpty());
+    rootScope.setFinalClass(!ctx.FINAL().isEmpty());
   }
   
   @Override

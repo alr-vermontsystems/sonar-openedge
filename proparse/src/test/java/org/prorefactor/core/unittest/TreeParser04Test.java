@@ -41,7 +41,7 @@ public class TreeParser04Test {
   String inName = "src/test/resources/treeparser04/frames.p";
   File outFile = new File("target/test-temp/treeparser04/frames.p");
 
-  @Test
+  @Test(enabled = false)
   public void test01() throws IOException {
     Injector injector = Guice.createInjector(new UnitTestModule());
     RefactorSession session = injector.getInstance(RefactorSession.class);

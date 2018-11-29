@@ -245,6 +245,10 @@ public class ParseUnit {
     return trxBlocks;
   }
 
+  public ParseTree getParseTree() {
+    return tree;
+  }
+
   // TEMP-ANTLR4
   public ParserSupport getSupport() {
     return support;

@@ -476,7 +476,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<Builder> {
 
   @Override
   public Builder visitAggregate_opt(Aggregate_optContext ctx) {
-    return createTreeFromFirstNode(ctx);
+    return createTreeFromFirstNode(ctx).setRuleNode(ctx);
   }
 
   @Override

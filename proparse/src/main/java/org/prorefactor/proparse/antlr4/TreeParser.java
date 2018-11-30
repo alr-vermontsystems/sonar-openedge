@@ -507,7 +507,7 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterAggregate_opt(Aggregate_optContext ctx) {
     // TODO Verifier le nom de la variable
-    addToSymbolScope(defineVariable(ctx, support.getNode(ctx.accum_what()), "", DataType.DECIMAL, false));
+    addToSymbolScope(defineVariable(ctx, support.getNode(ctx), "", ctx.accum_what().COUNT() != null ? DataType.INTEGER : DataType.DECIMAL, false));
     // TODO Ou integer depending on type
   }
 
@@ -2223,6 +2223,26 @@ public class TreeParser extends ProparseBaseListener {
     return defineVariable(ctx, defAST, name, false);
   }
 
+  private Variable defineVariable(ParseTree ctx, JPNode defAST, String name, DataType dataType, boolean parameter) {
+    Variable v = defineVariable(ctx, defAST, name, parameter);
+    if (LOG.isDebugEnabled())
+      LOG.debug("{}> Adding datatype {}", indent(), dataType);
+    v.setDataType(dataType);
+    return v;
+  }
+
+  private Variable defineVariable(ParseTree ctx, JPNode defAST, String name, JPNode likeAST) {
+    return defineVariable(ctx, defAST, name, likeAST, false);
+  }
+
+  private Variable defineVariable(ParseTree ctx, JPNode defAST, String name, JPNode likeAST, boolean parameter) {
+    Variable v = defineVariable(ctx, defAST, name, parameter);
+    FieldRefNode likeRefNode = (FieldRefNode) likeAST;
+    v.setDataType(likeRefNode.getDataType());
+    v.setClassName(likeRefNode.getClassName());
+    return v;
+  }
+
   private Variable defineVariable(ParseTree ctx, JPNode defNode, String name, boolean parameter) {
     if (LOG.isDebugEnabled())
       LOG.debug("{}> New variable {} (parameter: {})", indent(), name, parameter);
@@ -2242,25 +2262,6 @@ public class TreeParser extends ProparseBaseListener {
     return variable;
   }
 
-  private Variable defineVariable(ParseTree ctx, JPNode defAST, String name, DataType dataType, boolean parameter) {
-    Variable v = defineVariable(ctx, defAST, name, parameter);
-    if (LOG.isDebugEnabled())
-      LOG.debug("{}> Adding datatype {}", indent(), dataType);
-    v.setDataType(dataType);
-    return v;
-  }
-
-  private Variable defineVariable(ParseTree ctx, JPNode defAST, String name, JPNode likeAST) {
-    return defineVariable(ctx, defAST, name, likeAST, false);
-  }
-
-  public Variable defineVariable(ParseTree ctx, JPNode defAST, String name, JPNode likeAST, boolean parameter) {
-    Variable v = defineVariable(ctx, defAST, name, parameter);
-    FieldRefNode likeRefNode = (FieldRefNode) likeAST;
-    v.setDataType(likeRefNode.getDataType());
-    v.setClassName(likeRefNode.getClassName());
-    return v;
-  }
 
   /** The tree parser calls this at an AS node */
   public void defAs(ParserRuleContext ctx) {

@@ -608,7 +608,7 @@ public class TreeParser extends ProparseBaseListener {
   }
   
   @Override
-  public void enterColumnformat_opt(Columnformat_optContext ctx) {
+  public void exitColumnformat_opt(Columnformat_optContext ctx) {
     if ((ctx.LEXAT() != null) && ( ctx.field() != null)) {
       setContextQualifier(ctx.field(), ContextQualifier.SYMBOL);
       frameStack.lexAt(support.getNode(ctx.field()));
@@ -2152,7 +2152,7 @@ public class TreeParser extends ProparseBaseListener {
     // do so.
     Variable variable = new Variable(name, currentScope, parameter);
     if (defNode == null)
-      LOG.info("Unable to set JPNode symbol for variable {}", name);
+      LOG.info("Unable to set JPNode symbol for variable {}", ctx.getText());
     else {
       defNode.getIdNode().setSymbol(variable);
       variable.setDefinitionNode(defNode.getIdNode());

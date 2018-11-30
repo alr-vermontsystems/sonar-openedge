@@ -28,6 +28,7 @@ import org.prorefactor.treeparser.BufferScope;
 import org.prorefactor.treeparser.ContextQualifier;
 import org.prorefactor.treeparser.DataType;
 import org.prorefactor.treeparser.FieldLookupResult;
+import org.prorefactor.treeparser.Parameter;
 import org.prorefactor.treeparser.Primative;
 import org.prorefactor.treeparser.SymbolFactory;
 import org.prorefactor.treeparser.TableNameResolution;
@@ -83,6 +84,8 @@ public class TreeParser extends ProparseBaseListener {
   // within this .g, the effect on the stack should be highly visible.
   // Deque implementation has to support null elements
   private Deque<Symbol> stack = new LinkedList<>();
+  // Since there can be more than one WIP Call, there can be more than one WIP Parameter
+  private Deque<Parameter> wipParameters = new LinkedList<>();
 
   /*
    * Note that blockStack is *only* valid for determining the current block - the stack itself cannot be used for
@@ -200,16 +203,17 @@ public class TreeParser extends ProparseBaseListener {
     if ((ctx.PUTBITS() != null) || (ctx.PUTBYTE() != null) || (ctx.PUTBYTES() != null) || (ctx.PUTDOUBLE() != null)
         || (ctx.PUTFLOAT() != null) || (ctx.PUTINT64() != null) || (ctx.PUTLONG() != null) || (ctx.PUTSHORT() != null)
         || (ctx.PUTSTRING() != null) || (ctx.PUTUNSIGNEDLONG() != null) || (ctx.PUTUNSIGNEDSHORT() != null)
-        || (ctx.SETPOINTERVALUE() != null)) {
+        || (ctx.SETPOINTERVALUE() != null) || (ctx.SETSIZE() != null)) {
       setContextQualifier(ctx.funargs().expression(0), ContextQualifier.UPDATING);
     }
   }
 
   @Override
   public void enterFunargs(FunargsContext ctx) {
-    // TODO Check conflict with previous function (memory mgmt function)
     for (ExpressionContext exp : ctx.expression()) {
-      setContextQualifier(exp, ContextQualifier.REF);
+      ContextQualifier qual = contextQualifiers.get(exp);
+      if (qual == null)
+        setContextQualifier(exp, ContextQualifier.REF);
     }
   }
 
@@ -230,18 +234,24 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterParameterOther(ParameterOtherContext ctx) {
-    if (ctx.OUTPUT() != null) {
-      setContextQualifier(ctx.parameter_arg(), ContextQualifier.UPDATING);
-    } else if (ctx.INPUTOUTPUT() != null) {
-      setContextQualifier(ctx.parameter_arg(), ContextQualifier.REFUP);
-    } else {
-      setContextQualifier(ctx.parameter_arg(), ContextQualifier.REF);
+    if (ctx.p != null) {
+      if (ctx.OUTPUT() != null) {
+        setContextQualifier(ctx.parameter_arg(), ContextQualifier.UPDATING);
+      } else if (ctx.INPUTOUTPUT() != null) {
+        setContextQualifier(ctx.parameter_arg(), ContextQualifier.REFUP);
+      } else {
+        setContextQualifier(ctx.parameter_arg(), ContextQualifier.REF);
+      }
     }
   }
 
   @Override
   public void enterParameterArgTableHandle(ParameterArgTableHandleContext ctx) {
     setContextQualifier(ctx.field(), ContextQualifier.INIT);
+  }
+
+  @Override
+  public void exitParameterArgTableHandle(ParameterArgTableHandleContext ctx) {
     noteReference(support.getNode(ctx.field()), contextQualifiers.removeFrom(ctx));
   }
 
@@ -253,6 +263,10 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterParameterArgDatasetHandle(ParameterArgDatasetHandleContext ctx) {
     setContextQualifier(ctx.field(), ContextQualifier.INIT);
+  }
+
+  @Override
+  public void exitParameterArgDatasetHandle(ParameterArgDatasetHandleContext ctx) {
     noteReference(support.getNode(ctx.field()), contextQualifiers.removeFrom(ctx));
   }
 
@@ -268,25 +282,57 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterFunctionParamBufferFor(FunctionParamBufferForContext ctx) {
+    Parameter param = new Parameter();
+    param.setDirectionNode(null);
+    currentRoutine.addParameter(param);
+    wipParameters.addFirst(param);
+
+    wipParameters.getFirst().setDirectionNode(ABLNodeType.BUFFER);
+    wipParameters.getFirst().setProgressType(ABLNodeType.BUFFER.getType());
+
     setContextQualifier(ctx.record(), ContextQualifier.SYMBOL);
   }
 
   @Override
   public void exitFunctionParamBufferFor(FunctionParamBufferForContext ctx) {
     if (ctx.bn != null) {
-      defineBuffer(ctx, support.getNode(ctx), support.getNode(ctx), ctx.bn.getText(), support.getNode(ctx.record()), true);
+      TableBuffer buf = defineBuffer(ctx, support.getNode(ctx), support.getNode(ctx), ctx.bn.getText(), support.getNode(ctx.record()), true);
+      wipParameters.getFirst().setSymbol(buf);
+    }
+    wipParameters.removeFirst();
+  }
+
+  @Override
+  public void enterFunctionParamStandard(FunctionParamStandardContext ctx) {
+    Parameter param = new Parameter();
+    param.setDirectionNode(null);
+    currentRoutine.addParameter(param);
+    wipParameters.addFirst(param);
+    if (ctx.qualif == null) {
+      param.setDirectionNode(ABLNodeType.INPUT);
+    } else {
+      param.setDirectionNode(ABLNodeType.getNodeType(ctx.qualif.getType()));
     }
   }
 
   @Override
+  public void exitFunctionParamStandard(FunctionParamStandardContext ctx) {
+    wipParameters.removeFirst();
+  }
+
+  @Override
   public void exitFunctionParamStandardAs(FunctionParamStandardAsContext ctx) {
-    addToSymbolScope(defineVariable(ctx, support.getNode(ctx), ctx.n.getText(), true));
+    Variable var = defineVariable(ctx, support.getNode(ctx), ctx.n.getText(), true);
+    wipParameters.getFirst().setSymbol(var);
+    addToSymbolScope(var);
     defAs(ctx.asDataTypeVar());
   }
 
   @Override
   public void enterFunctionParamStandardLike(FunctionParamStandardLikeContext ctx) {
-    stack.push(defineVariable(ctx, support.getNode(ctx), ctx.n2.getText(), true));
+    Variable var = defineVariable(ctx, support.getNode(ctx), ctx.n2.getText(), true);
+    wipParameters.getFirst().setSymbol(var);
+    stack.push(var);
   }
 
   @Override
@@ -297,17 +343,25 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterFunctionParamStandardTable(FunctionParamStandardTableContext ctx) {
+    wipParameters.getFirst().setProgressType(ABLNodeType.TEMPTABLE.getType());
     setContextQualifier(ctx.record(), ContextQualifier.TEMPTABLESYMBOL);
   }
 
   @Override
   public void enterFunctionParamStandardTableHandle(FunctionParamStandardTableHandleContext ctx) {
-    addToSymbolScope(defineVariable(ctx, support.getNode(ctx), ctx.hn.getText(), DataType.HANDLE, true));
+    Variable var = defineVariable(ctx, support.getNode(ctx), ctx.hn.getText(), DataType.HANDLE, true);
+    wipParameters.getFirst().setSymbol(var);
+    wipParameters.getFirst().setProgressType(ABLNodeType.TABLEHANDLE.getType());
+    addToSymbolScope(var);
   }
 
   @Override
   public void enterFunctionParamStandardDatasetHandle(FunctionParamStandardDatasetHandleContext ctx) {
-    addToSymbolScope(defineVariable(ctx, support.getNode(ctx), ctx.hn2.getText(), DataType.HANDLE, true));
+    Variable var = defineVariable(ctx, support.getNode(ctx), ctx.hn2.getText(), DataType.HANDLE, true);
+    wipParameters.getFirst().setSymbol(var);
+    wipParameters.getFirst().setProgressType(ABLNodeType.DATASETHANDLE.getType());
+
+    addToSymbolScope(var);
   }
 
   private void enterExpression(ExpressionContext ctx) {
@@ -404,7 +458,9 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterExprt2Field(Exprt2FieldContext ctx) {
-    setContextQualifier(ctx.field(), ContextQualifier.REF);
+    ContextQualifier qual = contextQualifiers.removeFrom(ctx);
+    if ((qual == null) || (qual == ContextQualifier.SYMBOL)) qual = ContextQualifier.REF;
+    setContextQualifier(ctx.field(), qual);
   }
 
   @Override
@@ -945,7 +1001,27 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   @Override
+  public void enterDefineparameterstate(DefineparameterstateContext ctx) {
+    Parameter param = new Parameter();
+    if (ctx.defineparameterstatesub2() != null) {
+      if (ctx.qualif != null)
+        param.setDirectionNode(ABLNodeType.getNodeType(ctx.qualif.getType()));
+      else
+        param.setDirectionNode(ABLNodeType.INPUT);
+    }
+    currentRoutine.addParameter(param);
+    wipParameters.addFirst(param);
+  }
+
+  @Override
+  public void exitDefineparameterstate(DefineparameterstateContext ctx) {
+    wipParameters.removeFirst();
+  }
+
+  @Override
   public void enterDefineparameterstatesub1(Defineparameterstatesub1Context ctx) {
+    wipParameters.getFirst().setDirectionNode(ABLNodeType.BUFFER);
+    wipParameters.getFirst().setProgressType(ABLNodeType.BUFFER.getType());
     setContextQualifier(ctx.record(), ctx.TEMPTABLE() == null ? ContextQualifier.SYMBOL : ContextQualifier.TEMPTABLESYMBOL);
   }
 
@@ -961,6 +1037,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void exitDefineParameterStatementSub2Variable(DefineParameterStatementSub2VariableContext ctx) {
+    wipParameters.getFirst().setSymbol(stack.peek());
     addToSymbolScope(stack.pop());
   }
 
@@ -971,6 +1048,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void exitDefineParameterStatementSub2VariableLike(DefineParameterStatementSub2VariableLikeContext ctx) {
+    wipParameters.getFirst().setSymbol(stack.peek());
     addToSymbolScope(stack.pop());
   }
 
@@ -986,17 +1064,20 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterDefineParameterStatementSub2Table(DefineParameterStatementSub2TableContext ctx) {
+    wipParameters.getFirst().setProgressType(ABLNodeType.TEMPTABLE.getType());
     setContextQualifier(ctx.record(), ContextQualifier.TEMPTABLESYMBOL);
   }
   
   @Override
   public void enterDefineParameterStatementSub2TableHandle(DefineParameterStatementSub2TableHandleContext ctx) {
+    wipParameters.getFirst().setProgressType(ABLNodeType.TABLEHANDLE.getType());
     addToSymbolScope(defineVariable(ctx, support.getNode(ctx.parent), ctx.pn2.getText(), DataType.HANDLE, true));
-    }
+  }
   
 
   @Override
   public void enterDefineParameterStatementSub2DatasetHandle(DefineParameterStatementSub2DatasetHandleContext ctx) {
+    wipParameters.getFirst().setProgressType(ABLNodeType.DATASETHANDLE.getType());
     addToSymbolScope(defineVariable(ctx, support.getNode(ctx.parent), ctx.dsh.getText(), DataType.HANDLE, true));
   }
 
@@ -2359,7 +2440,7 @@ public class TreeParser extends ProparseBaseListener {
    * Define a buffer. If the buffer is initialized at the same time it is defined (as in a buffer parameter), then
    * parameter init should be true.
    */
-  public void defineBuffer(ParseTree ctx, JPNode defAST, JPNode idNode, String name, JPNode tableAST, boolean init) {
+  public TableBuffer defineBuffer(ParseTree ctx, JPNode defAST, JPNode idNode, String name, JPNode tableAST, boolean init) {
     LOG.trace("Entering defineBuffer {} {} {}", defAST, tableAST, init);
     ITable table = astTableLink(tableAST.getIdNode());
     TableBuffer bufSymbol = currentScope.defineBuffer(name, table);
@@ -2370,6 +2451,7 @@ public class TreeParser extends ProparseBaseListener {
       BufferScope bufScope = currentBlock.getBufferForReference(bufSymbol);
       defAST.setLink(IConstants.BUFFERSCOPE, bufScope);
     }
+    return bufSymbol;
   }
 
   /**

@@ -2282,6 +2282,8 @@ public class TreeParser extends ProparseBaseListener {
       LOG.debug("{}> Variable extent '{}'", indent(), text);
 
     Primative primative = (Primative) currSymbol;
+    if (primative == null)
+      return;
     try {
       primative.setExtent(Integer.parseInt(text));
     } catch (NumberFormatException caught) {

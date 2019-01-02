@@ -31,6 +31,7 @@ import static org.testng.Assert.assertTrue;
 
 import org.prorefactor.refactor.settings.ProparseSettings.OperatingSystem;
 import org.sonar.api.batch.rule.internal.ActiveRulesBuilder;
+import org.sonar.api.batch.rule.internal.NewActiveRule;
 import org.sonar.api.batch.sensor.internal.SensorContextTester;
 import org.sonar.api.rule.RuleKey;
 import org.sonar.plugins.openedge.api.CheckRegistration;
@@ -67,8 +68,9 @@ public class OpenEdgeProparseSensorTest {
   public void testRules() throws Exception {
     SensorContextTester context = TestProjectSensorContext.createContext();
     ActiveRulesBuilder rulesBuilder = new ActiveRulesBuilder();
-    rulesBuilder.create(RuleKey.of(Constants.STD_REPOSITORY_KEY, ClumsySyntax.class.getCanonicalName())).setLanguage(
-        Constants.LANGUAGE_KEY).activate();
+    rulesBuilder.addRule(new NewActiveRule.Builder().setRuleKey(
+        RuleKey.of(Constants.STD_REPOSITORY_KEY, ClumsySyntax.class.getCanonicalName())).setLanguage(
+            Constants.LANGUAGE_KEY).build());
     context.setActiveRules(rulesBuilder.build());
     OpenEdgeSettings oeSettings = new OpenEdgeSettings(context.config(), context.fileSystem());
     OpenEdgeComponents components = new OpenEdgeComponents(new CheckRegistration[] {new BasicChecksRegistration()},

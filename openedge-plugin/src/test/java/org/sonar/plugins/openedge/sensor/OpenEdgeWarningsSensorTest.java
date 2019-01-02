@@ -24,6 +24,7 @@ import java.util.Iterator;
 
 import org.sonar.api.batch.rule.ActiveRules;
 import org.sonar.api.batch.rule.internal.ActiveRulesBuilder;
+import org.sonar.api.batch.rule.internal.NewActiveRule;
 import org.sonar.api.batch.sensor.internal.SensorContextTester;
 import org.sonar.api.batch.sensor.issue.Issue;
 import org.sonar.api.rule.RuleKey;
@@ -66,8 +67,9 @@ public class OpenEdgeWarningsSensorTest {
   }
 
   private ActiveRules createRules() {
-    return new ActiveRulesBuilder().create(RuleKey.of(Constants.STD_REPOSITORY_KEY,
-        OpenEdgeRulesDefinition.COMPILER_WARNING_RULEKEY)).activate().build();
+    return new ActiveRulesBuilder().addRule(new NewActiveRule.Builder().setRuleKey(
+        RuleKey.of(Constants.STD_REPOSITORY_KEY, OpenEdgeRulesDefinition.COMPILER_WARNING_RULEKEY)).setLanguage(
+            Constants.LANGUAGE_KEY).build()).build();
   }
 
 }

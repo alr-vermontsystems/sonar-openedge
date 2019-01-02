@@ -19,7 +19,6 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringBufferInputStream;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
@@ -35,6 +34,7 @@ import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.misc.Utils;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.antlr.v4.runtime.tree.RuleNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.antlr.v4.runtime.tree.Tree;
@@ -51,6 +51,7 @@ import org.prorefactor.proparse.antlr4.JPNodeVisitor;
 import org.prorefactor.proparse.antlr4.ProgressLexer;
 import org.prorefactor.proparse.antlr4.Proparse;
 import org.prorefactor.proparse.antlr4.ProparseErrorStrategy;
+import org.prorefactor.proparse.antlr4.TreeParser;
 import org.prorefactor.refactor.RefactorSession;
 import org.prorefactor.refactor.settings.ProparseSettings;
 import org.prorefactor.treeparser.ParseUnit;
@@ -395,11 +396,15 @@ public class ANTLR4ParserTest {
         parser.addErrorListener(new DescriptiveErrorListener());
         tree = parser.program();
       }
+
       JPNode root4 = new JPNodeVisitor(parser.getParserSupport(), (BufferedTokenStream) parser.getInputStream()).visit(
           tree).build(parser.getParserSupport());
       displayParseInfo(parser.getParseInfo());
       displayRootNode4(root4, parser.getParserSupport(), "target/antlr4.txt");
 
+      ParseTreeWalker walker = new ParseTreeWalker();
+      TreeParser treeParser = new TreeParser(parser.getParserSupport(), session);
+      walker.walk(treeParser, tree);
     } catch (IOException | RuntimeException uncaught) {
       System.err.println(uncaught);
     }

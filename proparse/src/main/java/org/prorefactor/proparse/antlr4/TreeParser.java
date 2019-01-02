@@ -1941,14 +1941,14 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void exitTriggerprocedurestatesub2(Triggerprocedurestatesub2Context ctx) {
     if (ctx.newBuff != null) {
-      defineBuffer(ctx, support.getNode(ctx.parent.parent).findDirectChild(ABLNodeType.NEW), null, ctx.newBuff.getText(),
+      defineBuffer(ctx, support.getNode(ctx.parent).findDirectChild(ABLNodeType.NEW), null, ctx.newBuff.getText(),
           support.getNode(ctx.buff), true);
     } else {
       defineBufferForTrigger(support.getNode(ctx.buff));
     }
 
     if (ctx.oldBuff != null) {
-      defineBuffer(ctx, support.getNode(ctx.parent.parent).findDirectChild(ABLNodeType.OLD), null, ctx.oldBuff.getText(),
+      defineBuffer(ctx, support.getNode(ctx.parent).findDirectChild(ABLNodeType.OLD), null, ctx.oldBuff.getText(),
           support.getNode(ctx.buff), true);
     }
   }

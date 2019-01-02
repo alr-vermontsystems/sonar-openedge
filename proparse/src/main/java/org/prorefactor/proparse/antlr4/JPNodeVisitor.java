@@ -131,6 +131,11 @@ public class JPNodeVisitor extends ProparseBaseVisitor<Builder> {
   }
 
   @Override
+  public Builder visitMemoryManagementFunc(MemoryManagementFuncContext ctx) {
+    return createTreeFromFirstNode(ctx);
+  }
+
+  @Override
   public Builder visitBuiltinfunc(BuiltinfuncContext ctx) {
     if (ctx.getChild(0) instanceof TerminalNode) {
       return createTreeFromFirstNode(ctx);

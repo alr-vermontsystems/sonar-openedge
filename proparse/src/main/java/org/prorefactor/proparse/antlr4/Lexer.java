@@ -19,6 +19,7 @@ import java.util.Locale;
 import java.util.Set;
 
 import org.prorefactor.core.ABLNodeType;
+import org.prorefactor.core.ProToken;
 import org.prorefactor.macrolevel.MacroDef;
 import org.prorefactor.proparse.ProParserTokenTypes;
 import org.slf4j.Logger;
@@ -46,7 +47,6 @@ public class Lexer  {
 
   private final ProgressLexer prepro;
 
-  private boolean mergeNameDotInId = false;
   private boolean gettingAmpIfDefArg = false;
   private boolean preserve = false;
   private int preserveFile;
@@ -840,12 +840,7 @@ public class Lexer  {
             ttype = ABLNodeType.FILENAME;
           break;
         case '.':
-          if (mergeNameDotInId && prepro.isNameDot()) {
-            append();
-            getChar();
-            break;
-          } else
-            break for_loop;
+          break for_loop;
         default:
           if (currInt >= 128 && currInt <= 255) {
             append();
@@ -1126,19 +1121,10 @@ public class Lexer  {
     } else if ((textStartFile == 0) && (type != ABLNodeType.WS) && (type != ABLNodeType.EOF_ANTLR4) && (textStartLine > 0)) {
       loc.add(textStartLine);
     }
-    ProToken tok = new ProToken(type, text);
-    tok.setText(text);
-    tok.setFileIndex(textStartFile);
-    tok.setLine(textStartLine);
-    tok.setCharPositionInLine(textStartCol);
-    tok.setEndFileIndex(prevFile);
-    tok.setEndLine(prevLine);
-    tok.setEndCharPositionInLine(prevCol);
-    tok.setMacroExpansion(prevMacro);
-    tok.setMacroSourceNum(textStartSource);
-    tok.setAnalyzeSuspend(prepro.getCurrentAnalyzeSuspend());
-
-    return tok;
+    return new ProToken.Builder(type, text).setFileIndex(textStartFile).setLine(textStartLine).setCharPositionInLine(
+        textStartCol).setEndFileIndex(prevFile).setEndLine(prevLine).setEndCharPositionInLine(
+            prevCol).setMacroExpansion(prevMacro).setMacroSourceNum(textStartSource).setAnalyzeSuspend(
+                prepro.getCurrentAnalyzeSuspend()).build();
   }
 
   /**
@@ -1182,14 +1168,6 @@ public class Lexer  {
 
   public ProgressLexer getPreprocessor() {
     return prepro;
-  }
-
-  /**
-   * Only for ANTLR4, don't produce NAMEDOT tokens but merge them in ID tokens
-   */
-  // TEMP-ANTLR4
-  public void setMergeNameDotInId(boolean merge) {
-    this.mergeNameDotInId = merge;
   }
 
 }

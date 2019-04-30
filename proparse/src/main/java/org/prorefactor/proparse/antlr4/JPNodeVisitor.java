@@ -2606,6 +2606,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<Builder> {
 
   @Override
   public Builder visitUsingStatement(UsingStatementContext ctx) {
+    support.usingState(ctx.typeName2().getText());
     return createStatementTreeFromFirstNode(ctx);
   }
 

@@ -255,7 +255,7 @@ public class ProToken implements Token {
 
     private int line;
     private int endLine;
-    private int charPositionInLine = -1; // set to invalid position
+    private int charPositionInLine;
     private int endCharPositionInLine;
     private int fileIndex;
     private int endFileIndex;

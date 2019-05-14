@@ -34,7 +34,7 @@ import org.prorefactor.core.IConstants;
 import org.prorefactor.core.JPNode;
 import org.prorefactor.core.JsonNodeLister;
 import org.prorefactor.core.unittest.util.UnitTestModule;
-import org.prorefactor.proparse.ProParserTokenTypes;
+import org.prorefactor.proparse.antlr4.Proparse;
 import org.prorefactor.refactor.RefactorSession;
 import org.prorefactor.treeparser.ParseUnit;
 import org.prorefactor.treeparser.symbols.TableBuffer;
@@ -388,17 +388,17 @@ public class BugFixTest {
     List<JPNode> list = unit.getTopNode().query(ABLNodeType.CREATE);
     // COM automation
     assertEquals(list.get(0).getLine(), 3);
-    assertEquals(list.get(0).getState2(), ProParserTokenTypes.Automationobject);
+    assertEquals(list.get(0).getState2(), Proparse.Automationobject);
     assertEquals(list.get(1).getLine(), 4);
-    assertEquals(list.get(1).getState2(), ProParserTokenTypes.Automationobject);
+    assertEquals(list.get(1).getState2(), Proparse.Automationobject);
     // Widgets
     assertEquals(list.get(2).getLine(), 8);
-    assertEquals(list.get(2).getState2(), ProParserTokenTypes.WIDGET);
+    assertEquals(list.get(2).getState2(), Proparse.WIDGET);
     assertEquals(list.get(3).getLine(), 12);
-    assertEquals(list.get(3).getState2(), ProParserTokenTypes.WIDGET);
+    assertEquals(list.get(3).getState2(), Proparse.WIDGET);
     // Ambiguous
     assertEquals(list.get(4).getLine(), 15);
-    assertEquals(list.get(4).getState2(), ProParserTokenTypes.WIDGET);
+    assertEquals(list.get(4).getState2(), Proparse.WIDGET);
   }
 
   @Test
@@ -435,19 +435,19 @@ public class BugFixTest {
   public void testTildeInComment() {
     TokenSource stream = genericLex("comment-tilde.p");
     Token tok = stream.nextToken();
-    assertEquals(tok.getType(), ProParserTokenTypes.COMMENT);
+    assertEquals(tok.getType(), Proparse.COMMENT);
     assertEquals(tok.getText(), "// \"~n\"");
-    assertEquals(stream.nextToken().getType(), ProParserTokenTypes.WS);
-    assertEquals(stream.nextToken().getType(), ProParserTokenTypes.DEFINE);
+    assertEquals(stream.nextToken().getType(), Proparse.WS);
+    assertEquals(stream.nextToken().getType(), Proparse.DEFINE);
   }
 
   @Test
   public void testTildeInComment2() {
     TokenSource stream = genericLex("comment-tilde2.p");
-    assertEquals(stream.nextToken().getType(), ProParserTokenTypes.DEFINE);
-    assertEquals(stream.nextToken().getType(), ProParserTokenTypes.WS);
+    assertEquals(stream.nextToken().getType(), Proparse.DEFINE);
+    assertEquals(stream.nextToken().getType(), Proparse.WS);
     Token tok = stream.nextToken();
-    assertEquals(tok.getType(), ProParserTokenTypes.COMMENT);
+    assertEquals(tok.getType(), Proparse.COMMENT);
     assertEquals(tok.getText(), "// \"~n\"");
   }
 

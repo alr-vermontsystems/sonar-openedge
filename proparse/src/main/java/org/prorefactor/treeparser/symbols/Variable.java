@@ -15,7 +15,7 @@
  ********************************************************************************/
 package org.prorefactor.treeparser.symbols;
 
-import org.prorefactor.proparse.ProParserTokenTypes;
+import org.prorefactor.proparse.antlr4.Proparse;
 import org.prorefactor.treeparser.DataType;
 import org.prorefactor.treeparser.Primative;
 import org.prorefactor.treeparser.TreeParserSymbolScope;
@@ -80,7 +80,7 @@ public class Variable extends Symbol implements Primative, Value {
    */
   @Override
   public int getProgressType() {
-    return ProParserTokenTypes.VARIABLE;
+    return Proparse.VARIABLE;
   }
 
   @Override

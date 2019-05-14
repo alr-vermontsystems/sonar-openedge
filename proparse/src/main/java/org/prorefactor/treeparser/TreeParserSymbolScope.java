@@ -26,7 +26,7 @@ import java.util.Set;
 
 import org.prorefactor.core.IConstants;
 import org.prorefactor.core.schema.ITable;
-import org.prorefactor.proparse.ProParserTokenTypes;
+import org.prorefactor.proparse.antlr4.Proparse;
 import org.prorefactor.treeparser.symbols.Dataset;
 import org.prorefactor.treeparser.symbols.Datasource;
 import org.prorefactor.treeparser.symbols.Query;
@@ -70,7 +70,7 @@ public class TreeParserSymbolScope {
   @SuppressWarnings({"unchecked", "rawtypes"})
   private TreeParserSymbolScope(TreeParserSymbolScope parentScope) {
     this.parentScope = parentScope;
-    typeMap.put(ProParserTokenTypes.VARIABLE, Collections.checkedMap((Map) variableMap, String.class, Symbol.class));
+    typeMap.put(Proparse.VARIABLE, Collections.checkedMap((Map) variableMap, String.class, Symbol.class));
   }
 
   /** Add a FieldLevelWidget for names lookup. */
@@ -354,11 +354,11 @@ public class TreeParserSymbolScope {
   }
 
   public Dataset lookupDataset(String name) {
-    return (Dataset) lookupSymbolLocally(ProParserTokenTypes.DATASET, name);
+    return (Dataset) lookupSymbolLocally(Proparse.DATASET, name);
   }
 
   public Datasource lookupDatasource(String name) {
-    return (Datasource) lookupSymbolLocally(ProParserTokenTypes.DATASOURCE, name);
+    return (Datasource) lookupSymbolLocally(Proparse.DATASOURCE, name);
   }
 
   /** Lookup a FieldLevelWidget in this scope or an enclosing scope. */
@@ -370,7 +370,7 @@ public class TreeParserSymbolScope {
   }
 
   public Query lookupQuery(String name) {
-    return (Query) lookupSymbolLocally(ProParserTokenTypes.QUERY, name);
+    return (Query) lookupSymbolLocally(Proparse.QUERY, name);
   }
 
   public Routine lookupRoutine(String name) {
@@ -378,7 +378,7 @@ public class TreeParserSymbolScope {
   }
 
   public Stream lookupStream(String name) {
-    return (Stream) lookupSymbolLocally(ProParserTokenTypes.STREAM, name);
+    return (Stream) lookupSymbolLocally(Proparse.STREAM, name);
   }
 
   public Symbol lookupSymbol(Integer symbolType, String name) {

@@ -16,13 +16,13 @@
 package org.prorefactor.treeparser;
 
 import org.prorefactor.core.ABLNodeType;
-import org.prorefactor.proparse.ProParserTokenTypes;
+import org.prorefactor.proparse.antlr4.Proparse;
 import org.prorefactor.treeparser.symbols.Symbol;
 
 public class Parameter {
 
   private boolean bind = false;
-  private int progressType = ProParserTokenTypes.VARIABLE;
+  private int progressType = Proparse.VARIABLE;
   private ABLNodeType directionNode;
   private Symbol symbol;
 

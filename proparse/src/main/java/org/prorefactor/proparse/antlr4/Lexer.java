@@ -21,7 +21,6 @@ import java.util.Set;
 import org.prorefactor.core.ABLNodeType;
 import org.prorefactor.core.ProToken;
 import org.prorefactor.macrolevel.MacroDef;
-import org.prorefactor.proparse.ProParserTokenTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -908,14 +907,14 @@ public class Lexer  {
     if ("&global-define".startsWith(macroType) && macroType.length() >= 4) {
       appendToEOL();
       // We have to do the define *before* getting next char.
-      macroDefine(ProParserTokenTypes.AMPGLOBALDEFINE);
+      macroDefine(Proparse.AMPGLOBALDEFINE);
       getChar();
       return makeToken(ABLNodeType.AMPGLOBALDEFINE);
     }
     if ("&scoped-define".startsWith(macroType) && macroType.length() >= 4) {
       appendToEOL();
       // We have to do the define *before* getting next char.
-      macroDefine(ProParserTokenTypes.AMPSCOPEDDEFINE);
+      macroDefine(Proparse.AMPSCOPEDDEFINE);
       getChar();
       return makeToken(ABLNodeType.AMPSCOPEDDEFINE);
     }
@@ -1080,8 +1079,8 @@ public class Lexer  {
     defText = defText.trim();
     // Do listing before lowercasing the name
     prepro.getLstListener().define(textStartLine, textStartCol, macroName.toLowerCase(Locale.ENGLISH), defText,
-            defType == ProParserTokenTypes.AMPGLOBALDEFINE ? MacroDef.GLOBAL : MacroDef.SCOPED);
-    if (defType == ProParserTokenTypes.AMPGLOBALDEFINE)
+            defType == Proparse.AMPGLOBALDEFINE ? MacroDef.GLOBAL : MacroDef.SCOPED);
+    if (defType == Proparse.AMPGLOBALDEFINE)
       prepro.defGlobal(macroName.toLowerCase(), defText);
     else
       prepro.defScoped(macroName.toLowerCase(), defText);

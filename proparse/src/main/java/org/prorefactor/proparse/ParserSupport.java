@@ -28,6 +28,7 @@ import org.prorefactor.core.ABLNodeType;
 import org.prorefactor.core.IConstants;
 import org.prorefactor.core.JPNode;
 import org.prorefactor.proparse.SymbolScope.FieldType;
+import org.prorefactor.proparse.antlr4.Proparse;
 import org.prorefactor.refactor.RefactorSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,21 +100,21 @@ public class ParserSupport {
   public int abbrevDatatype(String text) {
     String s = text.toLowerCase();
     if ("cha".startsWith(s))
-      return ProParserTokenTypes.CHARACTER;
+      return Proparse.CHARACTER;
     if ("da".equals(s) || "dat".equals(s))
-      return ProParserTokenTypes.DATE;
+      return Proparse.DATE;
     if ("de".equals(s))
-      return ProParserTokenTypes.DECIMAL;
+      return Proparse.DECIMAL;
     if ("i".equals(s) || "in".equals(s))
-      return ProParserTokenTypes.INTEGER;
+      return Proparse.INTEGER;
     if ("logical".startsWith(s))
-      return ProParserTokenTypes.LOGICAL;
+      return Proparse.LOGICAL;
     if ("rec".equals(s) || "reci".equals(s))
-      return ProParserTokenTypes.RECID;
+      return Proparse.RECID;
     if ("rowi".equals(s))
-      return ProParserTokenTypes.ROWID;
+      return Proparse.ROWID;
     if ("widget-h".startsWith(s) && s.length() >= 4)
-      return ProParserTokenTypes.WIDGETHANDLE;
+      return Proparse.WIDGETHANDLE;
     return 0;
   }
 

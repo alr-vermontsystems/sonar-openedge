@@ -45,7 +45,6 @@ import org.prorefactor.core.ABLNodeType;
 import org.prorefactor.core.JsonNodeLister;
 import org.prorefactor.core.ProToken;
 import org.prorefactor.core.ProparseRuntimeException;
-import org.prorefactor.proparse.ProParserTokenTypes;
 import org.prorefactor.proparse.antlr4.IncludeFileNotFoundException;
 import org.prorefactor.proparse.antlr4.Proparse;
 import org.prorefactor.proparse.antlr4.XCodedFileException;
@@ -469,7 +468,7 @@ public class OpenEdgeProparseSensor implements Sensor {
     for (TreeParserSymbolScope child : unit.getRootScope().getChildScopesDeep()) {
       int scopeType = child.getRootBlock().getNode().getType();
       switch (scopeType) {
-        case ProParserTokenTypes.PROCEDURE:
+        case Proparse.PROCEDURE:
           boolean externalProc = false;
           /* FIXME for (JPNode node : child.getRootBlock().getNode().getDirectChildren()) {
             if ((node.getType() == ProParserTokenTypes.IN_KW) || (node.getType() == ProParserTokenTypes.SUPER)
@@ -481,7 +480,7 @@ public class OpenEdgeProparseSensor implements Sensor {
             numProcs++;
           }
           break;
-        case ProParserTokenTypes.FUNCTION:
+        case Proparse.FUNCTION:
           boolean externalFunc = false;
           /* FIXME for (JPNode node : child.getRootBlock().getNode().getDirectChildren()) {
             if ((node.getType() == ProParserTokenTypes.IN_KW) || (node.getType() == ProParserTokenTypes.FORWARDS)) {
@@ -492,7 +491,7 @@ public class OpenEdgeProparseSensor implements Sensor {
             numFuncs++;
           }
           break;
-        case ProParserTokenTypes.METHOD:
+        case Proparse.METHOD:
           numMethds++;
           break;
         default:

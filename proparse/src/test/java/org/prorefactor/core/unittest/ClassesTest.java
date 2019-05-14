@@ -23,7 +23,7 @@ import java.io.File;
 
 import org.prorefactor.core.ABLNodeType;
 import org.prorefactor.core.unittest.util.UnitTestModule;
-import org.prorefactor.proparse.ProParserTokenTypes;
+import org.prorefactor.proparse.antlr4.Proparse;
 import org.prorefactor.refactor.RefactorSession;
 import org.prorefactor.treeparser.ParseUnit;
 import org.prorefactor.treeparser.TreeParserSymbolScope;
@@ -72,8 +72,8 @@ public class ClassesTest {
     assertNotNull(zz2, "Property zz2 not in root scope");
 
     for (TreeParserSymbolScope sc : unit.getRootScope().getChildScopesDeep()) {
-      if (sc.getRootBlock().getNode().getType() == ProParserTokenTypes.METHOD) continue;
-      if (sc.getRootBlock().getNode().getType() == ProParserTokenTypes.CATCH) continue;
+      if (sc.getRootBlock().getNode().getType() == Proparse.METHOD) continue;
+      if (sc.getRootBlock().getNode().getType() == Proparse.CATCH) continue;
       Variable arg = sc.getVariable("arg");
       Variable i = sc.getVariable("i");
       assertEquals(sc.getVariables().size(), 2);

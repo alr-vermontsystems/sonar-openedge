@@ -2316,6 +2316,7 @@ public class TreeParser extends ProparseBaseListener {
     // The tree parser is responsible for calling addToScope at the end of the statement or when it is otherwise safe to
     // do so.
     Variable variable = new Variable(name, currentScope, parameter);
+    // FIXME En cas de xyz like foo.bar
     if (defNode == null)
       LOG.info("Unable to set JPNode symbol for variable {}", ctx.getText());
     else {
@@ -2345,6 +2346,7 @@ public class TreeParser extends ProparseBaseListener {
     if (LOG.isDebugEnabled())
       LOG.debug("{}> Variable extent '{}'", indent(), text);
 
+    // FIXME ClassCastException TableBuffer -> Primative
     Primative primative = (Primative) currSymbol;
     if (primative == null)
       return;
@@ -2506,6 +2508,7 @@ public class TreeParser extends ProparseBaseListener {
     LOG.trace("Entering astTableLink {}", tableAST);
     TableBuffer buffer = (TableBuffer) tableAST.getLink(IConstants.SYMBOL);
     assert buffer != null;
+    // FIXME NPE
     return buffer.getTable();
   }
 
@@ -2516,6 +2519,7 @@ public class TreeParser extends ProparseBaseListener {
   public TableBuffer defineBuffer(ParseTree ctx, JPNode defAST, JPNode idNode, String name, JPNode tableAST,
       boolean init) {
     LOG.trace("Entering defineBuffer {} {} {}", defAST, tableAST, init);
+    // FIXME NPE
     ITable table = astTableLink(tableAST.getIdNode());
     TableBuffer bufSymbol = currentScope.defineBuffer(name, table);
     currSymbol = bufSymbol;
@@ -2704,6 +2708,7 @@ public class TreeParser extends ProparseBaseListener {
     } else {
       // If we are in a FIELDS phrase, then we know which table the field is from.
       // The field lookup in Table expects an unqualified name.
+      // FIXME NPE
       String[] parts = name.split("\\.");
       String fieldPart = parts[parts.length - 1];
       TableBuffer ourBuffer = resolution == TableNameResolution.PREVIOUS ? prevTableReferenced : lastTableReferenced;

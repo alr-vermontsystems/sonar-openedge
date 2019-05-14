@@ -116,6 +116,7 @@ public class TreeParserSymbolScope {
   /** Add a TableBuffer to the appropriate map. */
   private void addTableBuffer(String name, ITable table, TableBuffer buffer) {
     if (name.length() == 0) {
+      // FIXME NPE - From :169 - From enterCanFindFunc
       if (table.getStoretype() == IConstants.ST_DBTABLE)
         unnamedBuffers.put(table, buffer);
       else // default buffers for temp/work tables go into the "named" buffer map

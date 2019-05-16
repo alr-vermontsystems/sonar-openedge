@@ -115,6 +115,26 @@ public class JPNodeTest {
   }
 
   @Test
+  public void testStatements() {
+    ParseUnit unit = new ParseUnit(new File(SRC_DIR, "query01.p"), session);
+    unit.parse();
+
+    List<JPNode> doStmts = unit.getTopNode().queryStateHead(ABLNodeType.DO);
+    List<JPNode> msgStmts = unit.getTopNode().queryStateHead(ABLNodeType.MESSAGE);
+    assertEquals(doStmts.size(), 2);
+    assertEquals(msgStmts.size(), 3);
+
+    assertEquals(doStmts.get(0).query(ABLNodeType.VIEWAS).size(), 3);
+    assertEquals(doStmts.get(0).queryCurrentStatement(ABLNodeType.VIEWAS).size(), 0);
+    assertEquals(doStmts.get(1).query(ABLNodeType.VIEWAS).size(), 1);
+    assertEquals(doStmts.get(1).queryCurrentStatement(ABLNodeType.VIEWAS).size(), 0);
+
+    assertEquals(msgStmts.get(0).query(ABLNodeType.VIEWAS).size(), 1);
+    assertEquals(msgStmts.get(1).query(ABLNodeType.VIEWAS).size(), 1);
+    assertEquals(msgStmts.get(2).query(ABLNodeType.VIEWAS).size(), 1);
+  }
+
+  @Test
   public void testDotComment01() {
     ParseUnit unit = genericTest("dotcomment01.p");
     JPNode node = unit.getTopNode().firstNaturalChild();

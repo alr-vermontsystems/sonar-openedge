@@ -1058,8 +1058,9 @@ public class ProgressLexer implements TokenSource, IPreprocessor {
       if (this.getClass() == obj.getClass()) {
         FilePos fp = (FilePos) obj;
         return (fp.file == file) && (fp.line == line) && (fp.col == col) && (fp.sourceNum == sourceNum);
-      } else
+      } else {
         return false;
+      }
     }
   }
 

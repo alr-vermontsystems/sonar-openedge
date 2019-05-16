@@ -197,7 +197,7 @@ public class PreprocessorEventListener implements IPreprocessorEventListener {
   public boolean isLineInEditableSection(int file, int line) {
     for (EditableCodeSection range : sections) {
       if ((range.fileNum == file) && (range.startLine <= line) && (range.endLine >= line))
-      return true;
+        return true;
     }
     return false;
   }

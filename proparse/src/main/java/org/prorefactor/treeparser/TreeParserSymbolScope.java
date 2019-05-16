@@ -121,8 +121,9 @@ public class TreeParserSymbolScope {
         unnamedBuffers.put(table, buffer);
       else // default buffers for temp/work tables go into the "named" buffer map
         bufferMap.put(table.getName().toLowerCase(), buffer);
-    } else
+    } else {
       bufferMap.put(name.toLowerCase(), buffer);
+    }
   }
 
   /** Add a Symbol for names lookup. */

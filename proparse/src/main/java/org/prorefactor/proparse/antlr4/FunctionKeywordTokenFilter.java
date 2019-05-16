@@ -70,8 +70,9 @@ public class FunctionKeywordTokenFilter implements TokenSource {
           currToken.setNodeType(ABLNodeType.LOGICAL);
         else if (currToken.getNodeType() == ABLNodeType.GETCODEPAGE)
           currToken.setNodeType(ABLNodeType.GETCODEPAGES);
-      } else if (currToken.getNodeType() == ABLNodeType.GETCODEPAGES)
+      } else if (currToken.getNodeType() == ABLNodeType.GETCODEPAGES) {
         currToken.setNodeType(ABLNodeType.GETCODEPAGE);
+      }
     }
     if (LOGGER.isTraceEnabled()) {
       logToken(currToken);

@@ -588,8 +588,9 @@ public class Lexer  {
             append();
             getChar();
             break;
-          } else
+          } else {
             break for_loop;
+          }
         default:
           break for_loop;
       }
@@ -669,8 +670,9 @@ public class Lexer  {
             append();
             getChar();
             break;
-          } else
+          } else {
             break for_loop;
+          }
         default:
           break for_loop;
       }
@@ -1161,8 +1163,9 @@ public class Lexer  {
       append(prepro.getEscapeText());
       if (prepro.isEscapeAppend())
         append();
-    } else
+    } else {
       append();
+    }
   }
 
   public ProgressLexer getPreprocessor() {

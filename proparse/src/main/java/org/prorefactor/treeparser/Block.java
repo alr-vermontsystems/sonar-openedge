@@ -96,8 +96,9 @@ public class Block {
     if (canScopeFrame()) {
       frames.add(frame);
       return this;
-    } else
+    } else {
       return parent.addFrame(frame);
+    }
   }
 
   /**
@@ -462,8 +463,9 @@ public class Block {
       this.defaultFrame = frame;
       frames.add(frame);
       return this;
-    } else
+    } else {
       return parent.setDefaultFrameImplicit(frame);
+    }
   }
 
   public void setParent(Block parent) {

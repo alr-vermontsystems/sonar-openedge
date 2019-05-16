@@ -209,14 +209,23 @@ public class JPNodeTest {
 
     assertNotNull(node.getFirstChild());
     assertEquals(node.getFirstChild().getNodeType(), ABLNodeType.FILENAME);
-    assertEquals(node.getFirstChild().getText(), "foo/bar/something.p");
+    assertEquals(node.getFirstChild().getText(), "c:/foo/bar/something.p");
     assertEquals(node.getFirstChild().getLine(), 1);
     assertEquals(node.getFirstChild().getEndLine(), 1);
     assertEquals(node.getFirstChild().getColumn(), 9);
-    assertEquals(node.getFirstChild().getEndColumn(), 27);
+    assertEquals(node.getFirstChild().getEndColumn(), 30);
 
     assertNotNull(node.getFirstChild().getNextSibling());
     assertEquals(node.getFirstChild().getNextSibling().getNodeType(), ABLNodeType.PERIOD);
+
+    JPNode node2 = node.getNextSibling();
+    assertEquals(node2.getNodeType(), ABLNodeType.INPUT);
+    assertEquals(node2.getFirstChild().getNodeType(), ABLNodeType.THROUGH);
+    assertEquals(node2.getFirstChild().getNextSibling().getNodeType(), ABLNodeType.FILENAME);
+    assertEquals(node2.getFirstChild().getNextSibling().getText(), "echo $$ $PATH c:/foobar/something.p");
+    assertEquals(node2.getFirstChild().getNextSibling().getNextSibling().getNodeType(), ABLNodeType.NOECHO);
+    assertEquals(node2.getFirstChild().getNextSibling().getNextSibling().getNextSibling().getNodeType(), ABLNodeType.APPEND);
+    assertEquals(node2.getFirstChild().getNextSibling().getNextSibling().getNextSibling().getNextSibling().getNodeType(), ABLNodeType.KEEPMESSAGES);
   }
 
   @Test
@@ -238,6 +247,45 @@ public class JPNodeTest {
     assertEquals(node.getText(), "@MyAnnotation");
     assertNotNull(node.getFirstChild());
     assertEquals(node.getFirstChild().getNodeType(), ABLNodeType.UNQUOTEDSTRING);
-    assertEquals(node.getFirstChild().getText(), "(xxx=\"yyy\",zz=\"abc\")");
+    assertEquals(node.getFirstChild().getText(), "( xxx = \"yyy\", zz = \"abc\" )");
+  }
+
+  @Test
+  public void testDataType() {
+    ParseUnit unit = genericTest("datatype01.p");
+    List<JPNode> nodes = unit.getTopNode().query(ABLNodeType.RETURNS);
+    assertEquals(nodes.size(), 5);
+    assertEquals(nodes.get(0).nextNode().getNodeType(), ABLNodeType.INTEGER);
+    assertEquals(nodes.get(1).nextNode().getNodeType(), ABLNodeType.LOGICAL);
+    assertEquals(nodes.get(2).nextNode().getNodeType(), ABLNodeType.ROWID);
+    assertEquals(nodes.get(3).nextNode().getNodeType(), ABLNodeType.WIDGETHANDLE);
+    assertEquals(nodes.get(4).nextNode().getNodeType(), ABLNodeType.CHARACTER);
+
+    List<JPNode> nodes2 = unit.getTopNode().query(ABLNodeType.TO);
+    assertEquals(nodes2.size(), 3);
+    assertEquals(nodes2.get(0).nextNode().getNodeType(), ABLNodeType.CHARACTER);
+    assertEquals(nodes2.get(1).nextNode().getNodeType(), ABLNodeType.INT64);
+    assertEquals(nodes2.get(2).nextNode().getNodeType(), ABLNodeType.DOUBLE);
+  }
+
+  @Test
+  public void testEditing() {
+    ParseUnit unit = genericTest("editing01.p");
+    List<JPNode> nodes = unit.getTopNode().query(ABLNodeType.EDITING_PHRASE);
+    assertEquals(nodes.size(), 2);
+    assertNotNull(nodes.get(0).getFirstChild());
+    assertEquals(nodes.get(0).getFirstChild().getNodeType(), ABLNodeType.EDITING);
+    assertNotNull(nodes.get(1).getFirstChild());
+    assertEquals(nodes.get(1).getFirstChild().getNodeType(), ABLNodeType.ID);
+    assertEquals(nodes.get(1).getFirstChild().getText(), "foobar");
+  }
+
+  @Test
+  public void testChoose() {
+    ParseUnit unit = genericTest("choose01.p");
+    List<JPNode> nodes = unit.getTopNode().query(ABLNodeType.CHOOSE);
+    assertEquals(nodes.size(), 1);
+    assertNotNull(nodes.get(0).getFirstChild());
+    assertEquals(nodes.get(0).getFirstChild().getNodeType(), ABLNodeType.FIELD);
   }
 }

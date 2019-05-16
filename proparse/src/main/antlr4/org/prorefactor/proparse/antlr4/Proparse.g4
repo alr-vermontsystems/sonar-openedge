@@ -751,7 +751,6 @@ expressionOrValue:
     valueExpression | expression
   ;
 
-// FIXME Move those two rules
 findWhich:
     CURRENT | EACH | FIRST | LAST | NEXT | PREV
   ;
@@ -1234,10 +1233,7 @@ catchEnd:
 
 chooseStatement:
     CHOOSE
-    (  ROW
-    |  FIELD
-    |  FIELDS /* TODO */
-    )
+    ( ROW | FIELD | FIELDS )
     chooseField+ chooseOption* framePhrase? statementEnd
   ;
 
@@ -1249,7 +1245,7 @@ chooseOption:
     AUTORETURN 
   | colorAnyOrValue
   | goOnPhrase
-  | KEYS field // TODO
+  | KEYS field
   | NOERROR_KW
   | pauseExpression
   ;
@@ -1477,7 +1473,7 @@ contextHelpIdExpression:
   ;
 
 convertPhrase:
-    CONVERT convertPhraseOption+ /* TODO Should be limited to two */
+    CONVERT convertPhraseOption+
   ;
 
 convertPhraseOption:
@@ -1623,7 +1619,7 @@ datatypeComNative:
 
 datatypeDll:
     CHARACTER | INT64 | datatypeDllNative
-  | { support.abbrevDatatype(_input.LT(1).getText()) == CHARACTER }? id=ID { /* TODO #id.setType(CHARACTER); */ }
+  | { support.abbrevDatatype(_input.LT(1).getText()) == CHARACTER }? id=ID
   ;
 
 datatypeDllNative:
@@ -1723,7 +1719,7 @@ defBrowseDisplay:
   ;
 
 defBrowseDisplayItemsOrRecord:
-    // TODO Inject in visitor -- If there's more than one display item, then it cannot be a table name.
+    // If there's more than one display item, then it cannot be a table name.
     { isTableName() }? recordAsFormItem
   | defBrowseDisplayItem+
   ;
@@ -2172,7 +2168,7 @@ displayStatement:
   ;
 
 displayItemsOrRecord:
-    // TODO Inject in visitor -- If there's more than one display item, then it cannot be a table name.
+    // If there's more than one display item, then it cannot be a table name.
     { isTableName() }? recordAsFormItem
   | displayItem*
   ;
@@ -2765,43 +2761,31 @@ ioPhraseStateEnd:
     ioOsDir ioOption* statementEnd
   | ioPrinter ioOption* statementEnd
   | TERMINAL ioOption* statementEnd
-  | // TODO This syntax and next three nodes to be confirmed
-    ioPhraseAnyTokens* statementEnd
+  | ioPhraseAnyTokens
   ;
 
-ioPhraseAnyTokens:
+/* ioPhraseAnyTokens:
     ioPhraseAnyTokensSub
   ;
 
 ioPhraseAnyTokensSub:
-    // With input/output THROUGH, we can have a program name followed by any number of arguments,
-    // and any of those arguments could be a VALUE(expression).
-    // Also note that unix commands like echo, lp paged, etc, are not uncommon, so we have to do
-    // full lookahead/backtracking like an LALR parser would.
-    ioOption  # ioPhraseAnyTokensSub1
-  | valueExpression # ioPhraseAnyTokensSub2
-  | ~( PERIOD | VALUE ) notIoOption* # ioPhraseAnyTokensSub3
+    // With input/output THROUGH, we can have a program name followed by any number of arguments, and any of those arguments could be a VALUE(expression).
+    // Also note that unix commands like echo, lp paged, etc, are not uncommon
+    ioOption* statementEnd                 # ioPhraseAnyTokensSub1
+  | valueExpression ioPhraseAnyTokens      # ioPhraseAnyTokensSub2
+  | ~( PERIOD | VALUE ) ioPhraseAnyTokens  # ioPhraseAnyTokensSub3
+  ; */
+
+ioPhraseAnyTokens:
+    // With input/output THROUGH, we can have a program name followed by any number of arguments, and any of those arguments could be a VALUE(expression).
+    // Also note that unix commands like echo, lp paged, etc, are not uncommon
+    ioOption* statementEnd                 # ioPhraseAnyTokensSub1
+  | valueExpression ioOption* statementEnd # ioPhraseAnyTokensSub2
+  | fname1=notPeriodOrValue notIoOption* ioOption* statementEnd  # ioPhraseAnyTokensSub3
   ;
 
-ioOption:
-    // If you add a keyword here, then it probably needs to be added to the FILENAME exclusion list above.
-    APPEND
-  | BINARY
-  | COLLATE
-  | CONVERT ( ( SOURCE | TARGET ) expression )*
-  | NOCONVERT
-  | ECHO
-  | NOECHO
-  | KEEPMESSAGES 
-  | LANDSCAPE
-  | LOBDIR filenameOrValue
-  | MAP anyOrValue
-  | NOMAP
-  | NUMCOPIES anyOrValue
-  | PAGED
-  | PAGESIZE_KW anyOrValue
-  | PORTRAIT
-  | UNBUFFERED 
+notPeriodOrValue:
+    ~( PERIOD | VALUE )
   ;
 
 notIoOption:
@@ -2825,6 +2809,28 @@ notIoOption:
   | PORTRAIT
   | UNBUFFERED
   )
+  ;
+
+
+ioOption:
+    // If you add a keyword here, then it probably needs to be added to the FILENAME exclusion list above.
+    APPEND
+  | BINARY
+  | COLLATE
+  | CONVERT ( ( SOURCE | TARGET ) expression )*
+  | NOCONVERT
+  | ECHO
+  | NOECHO
+  | KEEPMESSAGES 
+  | LANDSCAPE
+  | LOBDIR filenameOrValue
+  | MAP anyOrValue
+  | NOMAP
+  | NUMCOPIES anyOrValue
+  | PAGED
+  | PAGESIZE_KW anyOrValue
+  | PORTRAIT
+  | UNBUFFERED 
   ;
 
 ioOsDir:

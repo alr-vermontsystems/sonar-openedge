@@ -492,7 +492,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<Builder> {
     if (!list.isEmpty()) {
       ProToken.Builder tok = new ProToken.Builder((ProToken) list.get(0).getStart()).setType(ABLNodeType.UNQUOTEDSTRING);
       for (int zz = 1; zz < list.size(); zz++) {
-        tok.mergeWith((ProToken) list.get(zz).getStart());
+        tok.mergeWith(visit(list.get(zz)).getToken());
       }
 
       Builder ch = new Builder(tok.build());
@@ -696,12 +696,23 @@ public class JPNodeVisitor extends ProparseBaseVisitor<Builder> {
 
   @Override
   public Builder visitChooseStatement(ChooseStatementContext ctx) {
-    return createStatementTreeFromFirstNode(ctx);
+    Builder node = createStatementTreeFromFirstNode(ctx);
+    if (node.getDown().getNodeType() == ABLNodeType.FIELDS)
+      node.getDown().changeType(ABLNodeType.FIELD);
+    return node;
   }
 
   @Override
   public Builder visitChooseField(ChooseFieldContext ctx) {
     return createTree(ctx, ABLNodeType.FORM_ITEM).setRuleNode(ctx);
+  }
+
+  @Override
+  public Builder visitChooseOption(ChooseOptionContext ctx) {
+    if (ctx.KEYS() != null)
+      return createTreeFromFirstNode(ctx);
+    else
+      return visitChildren(ctx);
   }
 
   @Override
@@ -1010,6 +1021,15 @@ public class JPNodeVisitor extends ProparseBaseVisitor<Builder> {
   @Override
   public Builder visitCurrentValueFunction(CurrentValueFunctionContext ctx) {
     return createTreeFromFirstNode(ctx);
+  }
+
+  @Override
+  public Builder visitDatatypeDll(DatatypeDllContext ctx) {
+    Builder node = visitChildren(ctx);
+    if ((ctx.id != null) && (support.abbrevDatatype(ctx.id.getText()) == Proparse.CHARACTER))
+      node.changeType(ABLNodeType.CHARACTER);
+
+    return node;
   }
 
   @Override
@@ -1449,7 +1469,6 @@ public class JPNodeVisitor extends ProparseBaseVisitor<Builder> {
 
   @Override
   public Builder visitEditingPhrase(EditingPhraseContext ctx) {
-    // TODO Double check
     return createTree(ctx, ABLNodeType.EDITING_PHRASE);
   }
 
@@ -1776,12 +1795,20 @@ public class JPNodeVisitor extends ProparseBaseVisitor<Builder> {
 
   @Override
   public Builder visitIoPhraseAnyTokensSub3(IoPhraseAnyTokensSub3Context ctx) {
-    ProToken.Builder tok = new ProToken.Builder((ProToken) ctx.getStart()).setType(ABLNodeType.FILENAME);
-    for (int zz = 1; zz < ctx.notIoOption().size(); zz++) {
-      tok.mergeWith((ProToken) ctx.notIoOption(zz).start);
-    }
+    Builder node = visitChildren(ctx.fname1).changeType(ABLNodeType.FILENAME);
 
-    return new Builder(tok.build()).setRuleNode(ctx);
+    ProToken.Builder tok = new ProToken.Builder(node.getToken());
+    List<NotIoOptionContext> list = ctx.notIoOption();
+    for (int zz = 0; zz < list.size(); zz++) {
+      tok.mergeWith(visit(list.get(zz)).getToken());
+    }
+    node.updateToken(tok.build());
+    for (int zz = 0; zz < ctx.ioOption().size(); zz++) {
+      node.getLast().setRight(visit(ctx.ioOption(zz)));
+    }
+    node.getLast().setRight(visit(ctx.statementEnd()));
+
+    return node;
   }
 
   @Override
@@ -2698,13 +2725,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<Builder> {
     Builder lastNode = firstNode.getLast();
 
     for (int zz = 1; zz < ctx.getChildCount(); zz++) {
-      Builder xx = visit(ctx.getChild(zz));
-      if (lastNode != null) {
-        lastNode = lastNode.setRight(xx).getLast();
-      } else if (xx != null) {
-        firstNode = xx;
-        lastNode = firstNode.getLast();
-      }
+      lastNode = lastNode.setRight(visit(ctx.getChild(zz))).getLast();
     }
     return firstNode;
   }
@@ -2739,6 +2760,13 @@ public class JPNodeVisitor extends ProparseBaseVisitor<Builder> {
   }
 
   @Override
+  @Nonnull
+  public Builder visitErrorNode(ErrorNode node) {
+    // Better return an empty node rather than nothing or an error
+    return new Builder(ABLNodeType.EMPTY_NODE);
+  }
+
+  @Override
   protected Builder aggregateResult(Builder aggregate, Builder nextResult) {
     throw new UnsupportedOperationException("Not implemented");
   }
@@ -2746,12 +2774,6 @@ public class JPNodeVisitor extends ProparseBaseVisitor<Builder> {
   @Override
   protected Builder defaultResult() {
     throw new UnsupportedOperationException("Not implemented");
-  }
-
-  @Override
-  public Builder visitErrorNode(ErrorNode node) {
-    // Better return an empty rather than nothing or an error
-    return new Builder(ABLNodeType.EMPTY_NODE);
   }
 
   /**

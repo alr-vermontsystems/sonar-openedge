@@ -289,7 +289,16 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterParameterArgAs(ParameterArgAsContext ctx) {
-    // TODO ?
+    Variable variable = new Variable("", currentScope);
+    if (ctx.datatypeComNative() != null) {
+      variable.setDataType(DataType.getDataType(ctx.datatypeComNative().start.getType()));
+    } else if (ctx.datatypeVar() != null) {
+      variable.setDataType(DataType.getDataType(ctx.datatypeVar().start.getType()));
+    } else {
+      variable.setDataType(DataType.CLASS);
+      variable.setClassName(ctx.typeName().getText());
+    }
+    currSymbol = variable;
   }
 
   @Override
@@ -1089,7 +1098,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterDefineParamVar(DefineParamVarContext ctx) {
-    // TODO defAs()
+    defAs(ctx);
   }
 
   @Override
@@ -1566,25 +1575,23 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterFunctionStatement(FunctionStatementContext ctx) {
-    // John: Need some comments here. Why don't I just fetch any
-    // function forward scope right away? Why wait until funcDef()?
-    // Why bother with a funcForward map specifically, rather than
-    // just a funcScope map generally?
     TreeParserSymbolScope definingScope = currentScope;
     BlockNode blockNode = (BlockNode) support.getNode(ctx);
     scopeAdd(blockNode);
 
     Routine r = new Routine(ctx.id.getText(), definingScope, currentScope);
+    if (ctx.typeName() != null) {
+      r.setReturnDatatypeNode(DataType.CLASS);
+    } else {
+      r.setReturnDatatypeNode(DataType.getDataType(ctx.datatypeVar().getStart().getType()));
+    }
     r.setProgressType(ABLNodeType.FUNCTION);
     r.setDefinitionNode(blockNode);
     blockNode.setSymbol(r);
     definingScope.add(r);
     currentRoutine = r;
 
-    // TODO TP01Support.routineReturnDatatype(functionstate_AST_in);
-
     if (ctx.FORWARDS() != null) {
-      // TODO TP01Support.funcForward();
       funcForwards.put(ctx.id.getText(), currentScope);
     } else {
       // TODO TP01Support.funcDef();

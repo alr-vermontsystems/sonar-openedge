@@ -2401,13 +2401,7 @@ formStatement:
   ;
 
 formatPhrase:
-    // There's a hack in here to break us out of a loop for format_opt because in
-    // a MESSAGE statement, you can have UPDATE myVar AS LOGICAL VIEW-AS ALERT-BOX...
-    // which antlr doesn't handle well because of its "simulated lookahead".
-    // Once again, we are bitten here by LL vs. LR.
-    ( { if (_input.LA(1) == VIEWAS && _input.LA(2) == ALERTBOX) break; }
-      formatOption
-    )+
+    formatOption+
   ;
 
 formatOption:

@@ -61,8 +61,6 @@ public class ParserSupport {
   private String className = "";
 
   // Last field referenced. Used for inline defines using LIKE or AS.
-  private JPNode lastFieldRefNode;
-  private JPNode lastFieldIDNode;
   private String lastFieldIDStr;
 
   private ParseTreeProperty<FieldType> recordExpressions = new ParseTreeProperty<>();
@@ -119,11 +117,6 @@ public class ParserSupport {
   }
 
   // TEMP-ANTLR4
-  public void visitorResetScope(RuleContext ctx) {
-    currentScope = unitScope;
-  }
-
-  // TEMP-ANTLR4
   public void visitorEnterScope(RuleContext ctx) {
     SymbolScope scope = innerScopesMap.get(ctx);
     if (scope != null) {
@@ -167,28 +160,16 @@ public class ParserSupport {
     currentScope.defineBuffer(bufferName, tableName);
   }
 
-  void defineClass(JPNode classNode) {
-    defineClass(classNode.getFirstChild().getText());
-  }
-
   public void defineClass(String name) {
     LOG.trace("defineClass '{}'", name);
     className = ClassFinder.dequote(name);
     unitScope.attachTypeInfo(session.getTypeInfo(className));
   }
 
-  void defInterface(JPNode interfaceNode) {
-    defInterface(interfaceNode.getFirstChild().getText());
-  }
-
   public void defInterface(String name) {
     LOG.trace("defineInterface");
     unitIsInterface = true;
     className = ClassFinder.dequote(name);
-  }
-
-  void defMethod(JPNode idNode) {
-    // Not used anymore
   }
 
   public void defTable(String name, SymbolScope.FieldType ttype) {
@@ -202,17 +183,6 @@ public class ParserSupport {
     currentScope.defineVar(name);
   }
 
-  public void defVarInline() {
-    if (lastFieldIDNode == null) {
-      LOG.warn("Trying to define inline variable, but no ID symbol available");
-    } else {
-      currentScope.defineInlineVar(lastFieldIDNode.getText());
-      // I'm not sure if this would ever be inheritable. Doesn't hurt to check.
-      lastFieldRefNode.attrSet(IConstants.INLINE_VAR_DEF, IConstants.TRUE);
-    }
-  }
-
-  // TEMP-ANTLR4
   public void defVarInlineAntlr4() {
     if (lastFieldIDStr == null) {
       LOG.warn("Trying to define inline variable, but no ID symbol available");
@@ -222,21 +192,11 @@ public class ParserSupport {
   }
 
   public void dropInnerScope() {
-    assert currentScope != unitScope;
     currentScope = currentScope.getSuperScope();
-  }
-
-  public void fieldReference(JPNode refNode, JPNode idNode) {
-    lastFieldRefNode = refNode;
-    lastFieldIDNode = idNode;
   }
 
   public void fieldReference(String idNode) {
     lastFieldIDStr = idNode;
-  }
-
-  void funcBegin(JPNode idNode) {
-    funcBegin(idNode.getText(), null);
   }
 
   public void funcBegin(String name, RuleContext ctx) {
@@ -260,10 +220,6 @@ public class ParserSupport {
     currentScope = currentScope.getSuperScope();
   }
 
-  public void usingState(JPNode typeNameNode) {
-    classFinder.addPath(typeNameNode.getText());
-  }
-
   public void usingState(String typeName) {
     classFinder.addPath(typeName);
   }
@@ -272,6 +228,8 @@ public class ParserSupport {
 
   public boolean recordSemanticPredicate(Token lt1, Token lt2, Token lt3) {
     String recname = lt1.getText();
+    // Since ANTLR4 migration, NAMEDOT doesn't exist anymore in the token stream, as they're filtered out by NameDotTokenFilter
+    // So this 'if' block can probably be removed...
     if (lt2.getType() == ABLNodeType.NAMEDOT.getType()) {
       recname += ".";
       recname += lt3.getText();
@@ -305,13 +263,13 @@ public class ParserSupport {
   }
 
   /** Returns true if the lookahead is a table name, and not a var name. */
-  public boolean isTableNameANTLR4(org.antlr.v4.runtime.Token lt1) {
-    int numDots = CharMatcher.is('.').countIn(lt1.getText());
+  public boolean isTableNameANTLR4(Token token) {
+    int numDots = CharMatcher.is('.').countIn(token.getText());
     if (numDots >= 2)
       return false;
-    if (isVar(lt1.getText()))
+    if (isVar(token.getText()))
       return false;
-    return null != isTable(lt1.getText().toLowerCase());
+    return null != isTable(token.getText().toLowerCase());
   }
 
   public boolean isVar(String name) {
@@ -328,7 +286,7 @@ public class ParserSupport {
     return unitScope.isMethodOrFunction(name);
   }
 
-  public int isMethodOrFunc(org.antlr.v4.runtime.Token token) {
+  public int isMethodOrFunc(Token token) {
     if (token == null)
       return 0;
     return unitScope.isMethodOrFunction(token.getText());
@@ -378,14 +336,6 @@ public class ParserSupport {
 
   public void attrTypeNameLookup(JPNode node) {
     node.attrSet(IConstants.QUALIFIED_CLASS_INT, classFinder.lookup(node.getText()));
-  }
-
-  public void attrTypeName(JPNode node) {
-    if (node == null) {
-      LOG.error("Unable to assign attribute QUALIFIED_CLASS_INT");
-    } else {
-      node.attrSet(IConstants.QUALIFIED_CLASS_INT, className);
-    }
   }
 
   public String getFilename(int fileIndex) {

@@ -130,8 +130,8 @@ public class TreeParser extends ProparseBaseListener {
   private void setContextQualifier(ParseTree ctx, ContextQualifier cq) {
     if ((cq == null) || (ctx == null))
       return;
-    if (LOG.isDebugEnabled()) {
-      LOG.debug(LOG_ADDING_QUAL_TO, indent(), cq, ctx.getText());
+    if (LOG.isTraceEnabled()) {
+      LOG.trace(LOG_ADDING_QUAL_TO, indent(), cq, ctx.getText());
     }
     contextQualifiers.put(ctx, cq);
   }
@@ -1127,13 +1127,16 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterDefinePropertyStatement(DefinePropertyStatementContext ctx) {
     stack.push(defineVariable(ctx, support.getNode(ctx), ctx.n.getText()));
-    defAs(ctx.datatype());
 
   }
 
   @Override
-  public void exitDefinePropertyStatement(DefinePropertyStatementContext ctx) {
-    // TODO Vérifier le moment où le pop est effectué, ce n'est pas exactement le exit
+  public void enterDefinePropertyAs(DefinePropertyAsContext ctx) {
+    defAs(ctx.datatype());
+  }
+
+  @Override
+  public void exitDefinePropertyAs(DefinePropertyAsContext ctx) {
     addToSymbolScope(stack.pop());
   }
 
@@ -1264,7 +1267,6 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterDefineVariableStatement(DefineVariableStatementContext ctx) {
     stack.push(defineVariable(ctx, support.getNode(ctx), ctx.n.getText()));
-    // TODO Vérifier que les modificateurs sont bien là
   }
 
   @Override
@@ -1437,8 +1439,7 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   @Override
-  public void enterExtentPhrase(ExtentPhraseContext ctx) {
-    // TODO Warning: action only has to be applied in limited number of cases i.e. rule extentphrase_def_symbol
+  public void enterExtentPhrase2(ExtentPhrase2Context ctx) {
     if (ctx.constant() != null)
       defExtent(ctx.constant().getText());
   }
@@ -1498,7 +1499,6 @@ public class TreeParser extends ProparseBaseListener {
     } else if (ctx.recordAsFormItem() != null) {
       setContextQualifier(ctx.recordAsFormItem(), qual);
     }
-    // TODO Il reste le cas text_opt (line 1306 de TreeParser01.g)
   }
 
   @Override
@@ -1575,6 +1575,9 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterFunctionStatement(FunctionStatementContext ctx) {
+    if (LOG.isDebugEnabled())
+      LOG.debug("{}> New function definition '{}'", indent(), ctx.id.getText());
+
     TreeParserSymbolScope definingScope = currentScope;
     BlockNode blockNode = (BlockNode) support.getNode(ctx);
     scopeAdd(blockNode);
@@ -1592,28 +1595,25 @@ public class TreeParser extends ProparseBaseListener {
     currentRoutine = r;
 
     if (ctx.FORWARDS() != null) {
+      if (LOG.isDebugEnabled())
+        LOG.debug("{}> FORWARDS definition", indent());
       funcForwards.put(ctx.id.getText(), currentScope);
-    } else {
-      // TODO TP01Support.funcDef();
-      /*
-       * If this function definition had a function forward declaration, then we use the block and scope from that
-       * declaration, in case it is where the parameters were defined. (You can define the params in the FORWARD, and
-       * leave them out at the body.)
-       *
-       * However, if this statement re-defines the formal args, then we use this statement's scope - because the formal
-       * arg names from here will be in effect rather than the names from the FORWARD. (The names don't have to match.)
-       */
-      if (!currentRoutine.getParameters().isEmpty())
-        return;
+    } else if ((ctx.functionParams() == null) || (ctx.functionParams().getChildCount() == 2 /* LEFTPAREN RIGHTPAREN */)) {
+      if (LOG.isDebugEnabled())
+        LOG.debug("{}> No parameter, trying to find them in FORWARDS declaration", indent());
+      // No parameter defined, then we inherit from FORWARDS declaration (if available)
       TreeParserSymbolScope forwardScope = funcForwards.get(ctx.id.getText());
-      /*
-       * if (forwardScope != null) { JPNode node = null; // XXX forwardScope.getRootBlock().getNode(); Routine routine =
-       * (Routine) node.getSymbol(); scopeSwap(forwardScope);
-       *
-       * // Weird (already set at the beginning) blockNode.setBlock(currentBlock); blockNode.setSymbol(routine);
-       * routine.setDefinitionNode(ctx); currentRoutine = routine; }
-       */
-
+      if (forwardScope != null) {
+        if (LOG.isDebugEnabled())
+          LOG.debug("{}> Inherits from FORWARDS definition", indent());
+        Routine r2 = forwardScope.getRoutine();
+        scopeSwap(forwardScope);
+        blockNode.setBlock(currentBlock);
+        blockNode.setSymbol(r2);
+        r2.setDefinitionNode(blockNode);
+        definingScope.add(r2);
+        currentRoutine = r2;
+      }
     }
   }
 
@@ -1876,15 +1876,19 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterOnAssign(OnAssignContext ctx) {
     setContextQualifier(ctx.field(), ContextQualifier.INIT);
-
   }
 
   @Override
-  public void exitOnAssign(OnAssignContext ctx) {
-    // TODO Likely to have side effect, variable has to be defined before starting block
-    if (ctx.OLD() != null) {
-      stack.push(defineVariable(ctx, support.getNode(ctx), ctx.f.getText(), support.getNode(ctx.field())));
-    }
+  public void enterOnAssignOldValue(OnAssignOldValueContext ctx) {
+    Variable var = defineVariable(ctx, support.getNode(ctx.parent), ctx.f.getText());
+    currSymbol = var;
+    stack.push(var);
+  }
+
+  @Override
+  public void exitOnAssignOldValue(OnAssignOldValueContext ctx) {
+    addToSymbolScope(stack.pop());
+    currSymbol = null;
   }
 
   @Override
@@ -1895,7 +1899,6 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void enterRepeatStatement(RepeatStatementContext ctx) {
     blockBegin(ctx);
-    // TODO I think it should be support.getNode().getFirstChild()
     frameBlockCheck(support.getNode(ctx));
   }
 

@@ -28,6 +28,8 @@ import org.prorefactor.core.JPNode;
 import org.prorefactor.core.unittest.util.UnitTestModule;
 import org.prorefactor.refactor.RefactorSession;
 import org.prorefactor.treeparser.ParseUnit;
+import org.prorefactor.treeparser.symbols.Routine;
+import org.prorefactor.treeparser.symbols.Variable;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
@@ -92,5 +94,94 @@ public class TreeParser03Test {
     assertTrue(found2);
   }
 
+  @Test
+  public void test04() {
+    ParseUnit unit = new ParseUnit(new File("src/test/resources/treeparser03/test04.cls"), session);
+    assertNull(unit.getTopNode());
+    unit.treeParser01();
+    assertNotNull(unit.getTopNode());
+    assertNotNull(unit.getRootScope());
+    Variable xx = unit.getRootScope().getVariable("xx");
+    assertNotNull(xx);
+    Variable yy = unit.getRootScope().getVariable("yy");
+    assertNotNull(yy);
+    Variable zz = unit.getRootScope().getVariable("zz");
+    assertNotNull(zz);
+  }
 
+  @Test
+  public void test05() {
+    ParseUnit unit = new ParseUnit(new File("src/test/resources/treeparser03/test05.p"), session);
+    assertNull(unit.getTopNode());
+    unit.treeParser01();
+    assertNotNull(unit.getTopNode());
+    assertNotNull(unit.getRootScope());
+
+    Routine f1 = unit.getRootScope().lookupRoutine("f1");
+    assertNotNull(f1);
+    assertEquals(f1.getParameters().size(), 1);
+    assertEquals(f1.getParameters().get(0).getSymbol().getName(), "zz");
+    assertEquals(f1.getParameters().get(0).getSymbol().getNumReads(), 1);
+    assertEquals(f1.getParameters().get(0).getSymbol().getNumWrites(), 0);
+
+    Routine f2 = unit.getRootScope().lookupRoutine("f2");
+    assertNotNull(f2);
+    assertEquals(f2.getParameters().size(), 2);
+    assertEquals(f2.getParameters().get(0).getSymbol().getName(), "a");
+    assertEquals(f2.getParameters().get(0).getSymbol().getNumReads(), 0);
+    assertEquals(f2.getParameters().get(0).getSymbol().getNumWrites(), 0);
+    assertEquals(f2.getParameters().get(1).getSymbol().getName(), "zz");
+    assertEquals(f2.getParameters().get(1).getSymbol().getNumReads(), 1);
+    assertEquals(f2.getParameters().get(1).getSymbol().getNumWrites(), 0);
+
+    Routine f3 = unit.getRootScope().lookupRoutine("f3");
+    assertNotNull(f3);
+    assertEquals(f3.getParameters().size(), 1);
+    assertEquals(f3.getParameters().get(0).getSymbol().getName(), "a");
+    assertEquals(f3.getParameters().get(0).getSymbol().getNumReads(), 1);
+    assertEquals(f3.getParameters().get(0).getSymbol().getNumWrites(), 0);
+
+    Routine f4 = unit.getRootScope().lookupRoutine("f4");
+    assertNotNull(f4);
+    assertEquals(f4.getParameters().size(), 0);
+
+    Routine f5 = unit.getRootScope().lookupRoutine("f5");
+    assertNotNull(f5);
+    assertEquals(f5.getParameters().size(), 0);
+  }
+
+  @Test
+  public void test06() {
+    ParseUnit unit = new ParseUnit(new File("src/test/resources/treeparser03/test06.p"), session);
+    assertNull(unit.getTopNode());
+    unit.treeParser01();
+    assertNotNull(unit.getTopNode());
+    assertNotNull(unit.getRootScope());
+  }
+
+  @Test
+  public void test07() {
+    ParseUnit unit = new ParseUnit(new File("src/test/resources/treeparser03/test07.cls"), session);
+    assertNull(unit.getTopNode());
+    unit.treeParser01();
+    assertNotNull(unit.getTopNode());
+    assertNotNull(unit.getRootScope());
+    Variable prop = unit.getRootScope().getVariable("cNextSalesRepName");
+    assertNotNull(prop);
+    assertEquals(prop.getNumReads(), 1);
+    assertEquals(prop.getNumWrites(), 0);
+  }
+
+  @Test
+  public void test08() {
+    ParseUnit unit = new ParseUnit(new File("src/test/resources/treeparser03/test08.p"), session);
+    assertNull(unit.getTopNode());
+    unit.treeParser01();
+    assertNotNull(unit.getTopNode());
+    assertNotNull(unit.getRootScope());
+    Variable xx = unit.getRootScope().getChildScopes().get(0).getVariable("xx");
+    assertNotNull(xx);
+    assertEquals(xx.getNumReads(), 1);
+    assertEquals(xx.getNumWrites(), 0);
+  }
 }

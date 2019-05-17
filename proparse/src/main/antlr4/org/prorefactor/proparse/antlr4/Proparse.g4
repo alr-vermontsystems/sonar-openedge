@@ -1953,7 +1953,7 @@ defineParameterStatementSub2:
 defineParamVar:
     // See PSC's <varprm> rule.
     ( AS HANDLE TO? datatypeDll | AS CLASS typeName | AS datatypeParam )
-    ( caseSensitiveOrNot | formatExpression | decimalsExpr | initialConstant | labelConstant | NOUNDO | extentPhrase )*
+    ( caseSensitiveOrNot | formatExpression | decimalsExpr | initialConstant | labelConstant | NOUNDO | extentPhrase2 )*
   ;
 
 defineParamVarLike:
@@ -1964,10 +1964,14 @@ defineParamVarLike:
 
 definePropertyStatement:
     DEFINE defineShare? ( PRIVATE | PROTECTED | PUBLIC | ABSTRACT | STATIC | OVERRIDE )*
-    PROPERTY n=newIdentifier AS datatype
-    ( extentPhrase | initialConstant | NOUNDO )*
+    PROPERTY n=newIdentifier definePropertyAs
     definePropertyAccessor definePropertyAccessor?
     { support.defVar($n.text); }
+  ;
+
+definePropertyAs:
+    AS datatype
+    ( extentPhrase2 | initialConstant | NOUNDO )*
   ;
 
 definePropertyAccessor:
@@ -2087,7 +2091,7 @@ defineWorkTableStatement:
   ;
 
 defineVariableStatement:
-    DEFINE defineShare? ( PRIVATE | PROTECTED | PUBLIC | ABSTRACT | STATIC | OVERRIDE )*
+    DEFINE defineShare? ( PRIVATE | PROTECTED | PUBLIC | STATIC | SERIALIZABLE | NONSERIALIZABLE )*
     VARIABLE n=newIdentifier fieldOption* triggerPhrase? statementEnd
     { support.defVar($n.text); }
   ;
@@ -2288,6 +2292,10 @@ extentPhrase:
     EXTENT constant?
   ;
 
+extentPhrase2:
+    EXTENT constant?
+  ;
+
 fieldFormItem:
     field formatPhrase?
   ;
@@ -2308,7 +2316,7 @@ fieldOption:
   | contextHelpIdExpression
   | decimalsExpr
   | DROPTARGET
-  | extentPhrase
+  | extentPhrase2
   | fontExpression
   | formatExpression
   | helpConstant
@@ -2597,7 +2605,7 @@ functionParamStd:
   | { _input.LA(2) != NAMEDOT}? DATASET FOR? identifier APPEND? BIND?  # functionParamStandardDataset
   | { _input.LA(2) != NAMEDOT}? DATASETHANDLE FOR? hn2=identifier APPEND? BIND? { support.defVar($hn2.text); }  # functionParamStandardDatasetHandle
   | // When declaring a function, it's possible to just list the datatype without an identifier AS
-    ( CLASS typeName | datatypeVar ) extentPhrase? # functionParamStandardOther
+    ( CLASS typeName | datatypeVar ) extentPhrase2? # functionParamStandardOther
   ;
 
 externalFunctionStatement:
@@ -2978,12 +2986,16 @@ onStatement:
 
 onAssign:
     ASSIGN OF field triggerTableLabel?
-       ( OLD VALUE? f=identifier defineParamVar? { support.defVar($f.text); } )?
+       onAssignOldValue?
        OVERRIDE?
        ( REVERT statementEnd
        | PERSISTENT runStatement
        | { support.addInnerScope(_localctx.parent); } blockOrStatement { support.dropInnerScope(); }
        )
+  ;
+
+onAssignOldValue:
+    OLD VALUE? f=identifier defineParamVar? { support.defVar($f.text); }
   ;
 
 onEventOfDbObject:

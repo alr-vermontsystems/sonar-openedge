@@ -20,15 +20,17 @@ import org.prorefactor.core.JPNode;
 import org.prorefactor.core.ProToken;
 import org.prorefactor.treeparser.Block;
 
+/**
+ * Specialized type of JPNode for those token types: DO, FOR, REPEAT, FUNCTION, PROCEDURE, CONSTRUCTOR, DESTRUCTOR,
+ * METHOD, CANFIND, CATCH, ON, PROPERTY_GETTER, PROPERTY_SETTER
+ */
 public class BlockNode extends JPNode {
   public BlockNode(ProToken t) {
     super(t);
   }
 
   public Block getBlock() {
-    Block block = (Block) getLink(IConstants.BLOCK);
-    assert block != null;
-    return block;
+    return (Block) getLink(IConstants.BLOCK);
   }
 
   public void setBlock(Block block) {

@@ -1498,6 +1498,11 @@ public class JPNodeVisitor extends ProparseBaseVisitor<Builder> {
   }
 
   @Override
+  public Builder visitExtentPhrase2(ExtentPhrase2Context ctx) {
+    return createTreeFromFirstNode(ctx);
+  }
+
+  @Override
   public Builder visitFieldFormItem(FieldFormItemContext ctx) {
     return createTree(ctx, ABLNodeType.FORM_ITEM).setRuleNode(ctx);
   }

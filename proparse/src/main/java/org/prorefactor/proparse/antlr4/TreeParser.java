@@ -1238,7 +1238,8 @@ public class TreeParser extends ProparseBaseListener {
   public void exitDefTableLike(DefTableLikeContext ctx) {
     defineTableLike(ctx.record());
     for (DefTableUseIndexContext useIndex : ctx.defTableUseIndex()) {
-      defineUseIndex(support.getNode(ctx.record()), support.getNode(useIndex.identifier()), useIndex.identifier().getText());
+      defineUseIndex(support.getNode(ctx.record()), support.getNode(useIndex.identifier()),
+          useIndex.identifier().getText());
     }
   }
 
@@ -1599,7 +1600,8 @@ public class TreeParser extends ProparseBaseListener {
       if (LOG.isDebugEnabled())
         LOG.debug("{}> FORWARDS definition", indent());
       funcForwards.put(ctx.id.getText(), currentScope);
-    } else if ((ctx.functionParams() == null) || (ctx.functionParams().getChildCount() == 2 /* LEFTPAREN RIGHTPAREN */)) {
+    } else if ((ctx.functionParams() == null)
+        || (ctx.functionParams().getChildCount() == 2 /* LEFTPAREN RIGHTPAREN */)) {
       if (LOG.isDebugEnabled())
         LOG.debug("{}> No parameter, trying to find them in FORWARDS declaration", indent());
       // No parameter defined, then we inherit from FORWARDS declaration (if available)
@@ -2437,6 +2439,8 @@ public class TreeParser extends ProparseBaseListener {
   private void defineTableLike(ParseTree ctx) {
     // Get table for "LIKE table"
     ITable table = astTableLink(support.getNode(ctx));
+    if (table == null)
+      return;
     currDefTableLike = table;
     // For each field in "table", create a field def in currDefTable
     for (IField field : table.getFieldPosOrder()) {
@@ -2446,6 +2450,8 @@ public class TreeParser extends ProparseBaseListener {
 
   private void defineUseIndex(JPNode recNode, JPNode idNode, String name) {
     ITable table = astTableLink(recNode);
+    if (table == null)
+      return;
     IIndex idx = table.lookupIndex(name);
     if (idx != null) {
       // ABL compiler quirk: idNode doesn't have to be a real index. Undefined behavior in this case

@@ -2572,7 +2572,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<Builder> {
   @Override
   public Builder visitTriggerOfSub2(TriggerOfSub2Context ctx) {
     support.defVar(ctx.id.getText());
-    return createTreeFromFirstNode(ctx);
+    return createTreeFromFirstNode(ctx).setRuleNode(ctx);
   }
 
   @Override
@@ -2582,7 +2582,7 @@ public class JPNodeVisitor extends ProparseBaseVisitor<Builder> {
 
   @Override
   public Builder visitTriggerOld(TriggerOldContext ctx) {
-    Builder node = createTreeFromFirstNode(ctx);
+    Builder node = createTreeFromFirstNode(ctx).setRuleNode(ctx);
     support.defVar(ctx.id.getText());
     return node;
   }

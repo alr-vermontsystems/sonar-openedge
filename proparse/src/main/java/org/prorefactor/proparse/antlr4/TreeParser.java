@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import org.prorefactor.core.ABLNodeType;
@@ -666,7 +667,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void exitCatchStatement(CatchStatementContext ctx) {
-    scopeClose(support.getNode(ctx));
+    scopeClose();
   }
 
   @Override
@@ -720,7 +721,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void exitConstructorStatement(ConstructorStatementContext ctx) {
-    scopeClose(support.getNode(ctx));
+    scopeClose();
     currentRoutine = rootRoutine;
   }
 
@@ -811,7 +812,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void exitCanFindFunction(CanFindFunctionContext ctx) {
-    scopeClose(support.getNode(ctx));
+    scopeClose();
   }
 
   @Override
@@ -1155,13 +1156,13 @@ public class TreeParser extends ProparseBaseListener {
   @Override
   public void exitDefinePropertyAccessorGetBlock(DefinePropertyAccessorGetBlockContext ctx) {
     if (ctx.codeBlock() != null)
-      propGetSetEnd(support.getNode(ctx));
+      propGetSetEnd();
   }
 
   @Override
   public void exitDefinePropertyAccessorSetBlock(DefinePropertyAccessorSetBlockContext ctx) {
     if (ctx.codeBlock() != null)
-      propGetSetEnd(support.getNode(ctx));
+      propGetSetEnd();
   }
 
   @Override
@@ -1298,7 +1299,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void exitDestructorStatement(DestructorStatementContext ctx) {
-    scopeClose(support.getNode(ctx));
+    scopeClose();
     currentRoutine = rootRoutine;
   }
 
@@ -1619,7 +1620,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void exitFunctionStatement(FunctionStatementContext ctx) {
-    scopeClose(support.getNode(ctx));
+    scopeClose();
     currentRoutine = rootRoutine;
   }
 
@@ -1702,7 +1703,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void exitMethodStatement(MethodStatementContext ctx) {
-    scopeClose(support.getNode(ctx));
+    scopeClose();
     currentRoutine = rootRoutine;
   }
 
@@ -1732,7 +1733,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void exitExternalProcedureStatement(ExternalProcedureStatementContext ctx) {
-    scopeClose(support.getNode(ctx));
+    scopeClose();
     currentRoutine = rootRoutine;
   }
 
@@ -1752,7 +1753,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void exitProcedureStatement(ProcedureStatementContext ctx) {
-    scopeClose(support.getNode(ctx));
+    scopeClose();
     currentRoutine = rootRoutine;
   }
 
@@ -1840,7 +1841,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void exitOnStatement(OnStatementContext ctx) {
-    scopeClose(support.getNode(ctx));
+    scopeClose();
   }
 
   @Override
@@ -2056,7 +2057,7 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void exitTriggerOn(TriggerOnContext ctx) {
-    scopeClose(support.getNode(ctx));
+    scopeClose();
   }
 
   @Override
@@ -2252,7 +2253,7 @@ public class TreeParser extends ProparseBaseListener {
     blockNode.setBlock(currentBlock);
   }
 
-  private void scopeClose(JPNode scopeRootNode) {
+  private void scopeClose() {
     if (LOG.isDebugEnabled())
       LOG.debug("{}> End of scope", indent());
 
@@ -2326,9 +2327,8 @@ public class TreeParser extends ProparseBaseListener {
     // The tree parser is responsible for calling addToScope at the end of the statement or when it is otherwise safe to
     // do so.
     Variable variable = new Variable(name, currentScope, parameter);
-    // FIXME En cas de xyz like foo.bar
     if (defNode == null)
-      LOG.info("Unable to set JPNode symbol for variable {}", ctx.getText());
+      LOG.warn("Unable to set JPNode symbol for variable {}", ctx.getText());
     else {
       defNode.getIdNode().setSymbol(variable);
       variable.setDefinitionNode(defNode.getIdNode());
@@ -2356,7 +2356,6 @@ public class TreeParser extends ProparseBaseListener {
     if (LOG.isDebugEnabled())
       LOG.debug("{}> Variable extent '{}'", indent(), text);
 
-    // FIXME ClassCastException TableBuffer -> Primative
     Primative primative = (Primative) currSymbol;
     if (primative == null)
       return;
@@ -2373,8 +2372,6 @@ public class TreeParser extends ProparseBaseListener {
     Primative newPrim = (Primative) currSymbol;
     if (likePrim != null) {
       newPrim.assignAttributesLike(likePrim);
-      assert newPrim.getDataType() != null : "Failed to set datatype at " + likeNode.getFileIndex() + " line "
-          + likeNode.getLine();
     } else {
       LOG.error("Failed to find LIKE datatype at {} line {}", likeNode.getFileIndex(), likeNode.getLine());
     }
@@ -2406,13 +2403,11 @@ public class TreeParser extends ProparseBaseListener {
 
   public Event defineEvent(ParseTree ctx, JPNode defNode, JPNode idNode, String name) {
     LOG.trace("Entering defineEvent {} - {}", defNode, idNode);
-    /*
-     * String name = idNode.getText(); if (name == null || name.length() == 0) name = idNode.getNodeType().name();
-     */
     Event event = new Event(name, currentScope);
     event.setDefinitionNode(defNode.getIdNode());
     currSymbol = event;
     defNode.getIdNode().setLink(IConstants.SYMBOL, event);
+
     return event;
   }
 
@@ -2517,9 +2512,7 @@ public class TreeParser extends ProparseBaseListener {
   private ITable astTableLink(JPNode tableAST) {
     LOG.trace("Entering astTableLink {}", tableAST);
     TableBuffer buffer = (TableBuffer) tableAST.getLink(IConstants.SYMBOL);
-    assert buffer != null;
-    // FIXME NPE
-    return buffer.getTable();
+    return buffer == null ? null : buffer.getTable();
   }
 
   /**
@@ -2529,8 +2522,10 @@ public class TreeParser extends ProparseBaseListener {
   public TableBuffer defineBuffer(ParseTree ctx, JPNode defAST, JPNode idNode, String name, JPNode tableAST,
       boolean init) {
     LOG.trace("Entering defineBuffer {} {} {}", defAST, tableAST, init);
-    // FIXME NPE
     ITable table = astTableLink(tableAST.getIdNode());
+    if (table == null)
+      return null;
+
     TableBuffer bufSymbol = currentScope.defineBuffer(name, table);
     currSymbol = bufSymbol;
     currSymbol.setDefinitionNode(defAST.getIdNode());
@@ -2564,7 +2559,9 @@ public class TreeParser extends ProparseBaseListener {
   }
 
   public void propGetSetBegin(ParseTree ctx, JPNode propAST) {
-    LOG.trace("Entering propGetSetBegin {}", propAST);
+    if (LOG.isTraceEnabled())
+      LOG.trace("Entering propGetSetBegin {}", propAST);
+
     scopeAdd(propAST);
     BlockNode blockNode = (BlockNode) propAST;
     TreeParserSymbolScope definingScope = currentScope.getParentScope();
@@ -2577,9 +2574,11 @@ public class TreeParser extends ProparseBaseListener {
     currentRoutine = r;
   }
 
-  public void propGetSetEnd(JPNode propAST) {
-    LOG.trace("Entering propGetSetEnd {}", propAST);
-    scopeClose(propAST);
+  public void propGetSetEnd() {
+    if (LOG.isTraceEnabled())
+      LOG.trace("Entering propGetSetEnd");
+
+    scopeClose();
     currentRoutine = rootRoutine;
   }
 

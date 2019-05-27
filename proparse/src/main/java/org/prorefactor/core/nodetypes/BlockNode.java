@@ -15,6 +15,9 @@
  ********************************************************************************/
 package org.prorefactor.core.nodetypes;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import org.prorefactor.core.IConstants;
 import org.prorefactor.core.JPNode;
 import org.prorefactor.core.ProToken;
@@ -29,11 +32,12 @@ public class BlockNode extends JPNode {
     super(t);
   }
 
+  @Nullable
   public Block getBlock() {
     return (Block) getLink(IConstants.BLOCK);
   }
 
-  public void setBlock(Block block) {
+  public void setBlock(@Nonnull Block block) {
     setLink(IConstants.BLOCK, block);
   }
 

@@ -29,6 +29,7 @@ import org.prorefactor.proparse.ParserSupport;
 import org.prorefactor.proparse.SymbolScope.FieldType;
 import org.prorefactor.proparse.antlr4.AST;
 import org.prorefactor.treeparser.symbols.FieldContainer;
+import org.prorefactor.treeparser.symbols.ISymbol;
 import org.prorefactor.treeparser.symbols.Symbol;
 
 import com.google.common.base.Splitter;
@@ -685,7 +686,7 @@ public class JPNode implements AST {
   }
 
   /** Assigned by the tree parser. */
-  public void setSymbol(Symbol symbol) {
+  public void setSymbol(ISymbol symbol) {
     setLink(IConstants.SYMBOL, symbol);
   }
 

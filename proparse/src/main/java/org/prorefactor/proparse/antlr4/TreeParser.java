@@ -60,6 +60,8 @@ import org.prorefactor.treeparser.symbols.widgets.Browse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Strings;
+
 public class TreeParser extends ProparseBaseListener {
   private static final Logger LOG = LoggerFactory.getLogger(TreeParser.class);
 
@@ -465,14 +467,14 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterExprtWidName(ExprtWidNameContext ctx) {
-    widattr(ctx, support.getNode(ctx.widName()), contextQualifiers.removeFrom(ctx));
+    widattr(ctx, contextQualifiers.removeFrom(ctx));
   }
 
   @Override
   public void enterExprtExprt2(ExprtExprt2Context ctx) {
     ContextQualifier qual = contextQualifiers.removeFrom(ctx);
     if ((ctx.colonAttribute() != null) && (ctx.expressionTerm2() instanceof Exprt2FieldContext)) {
-      widattr(ctx, null, qual);
+      widattr(ctx, qual);
     } else {
       setContextQualifier(ctx.expressionTerm2(), qual);
       if (ctx.colonAttribute() != null)
@@ -495,12 +497,12 @@ public class TreeParser extends ProparseBaseListener {
 
   @Override
   public void enterWidattrExprt2(WidattrExprt2Context ctx) {
-    widattr(ctx, support.getNode(ctx.expressionTerm2()), contextQualifiers.removeFrom(ctx));
+    widattr(ctx, contextQualifiers.removeFrom(ctx));
   }
 
   @Override
   public void enterWidattrWidName(WidattrWidNameContext ctx) {
-    widattr(ctx, support.getNode(ctx.widName()), contextQualifiers.removeFrom(ctx));
+    widattr(ctx, contextQualifiers.removeFrom(ctx));
   }
 
   @Override
@@ -2568,7 +2570,7 @@ public class TreeParser extends ProparseBaseListener {
     currentRoutine = r;
   }
 
-  public void propGetSetEnd() {
+  private void propGetSetEnd() {
     if (LOG.isTraceEnabled())
       LOG.trace("Entering propGetSetEnd");
 
@@ -2576,41 +2578,40 @@ public class TreeParser extends ProparseBaseListener {
     currentRoutine = rootRoutine;
   }
 
-  private void widattr(ExprtWidNameContext ctx, JPNode idNode, ContextQualifier cq) {
-    if ((ctx.widName().systemHandleName() != null) && (ctx.widName().systemHandleName().THISOBJECT() != null)) {
-      if (ctx.colonAttribute().OBJCOLON(0) != null) {
-        String name = ctx.colonAttribute().id.getText();
+  // Called from expressionTerm2 rule, exprtWidName option
+  // Check if THIS-OBJECT:SomeAttribute 
+  private void widattr(ExprtWidNameContext ctx, ContextQualifier cq) {
+    if ((ctx.widName().systemHandleName() != null) && (ctx.widName().systemHandleName().THISOBJECT() != null)
+        && !ctx.colonAttribute().OBJCOLON().isEmpty() && (ctx.colonAttribute().OBJCOLON(0) != null)) {
+      FieldLookupResult result = currentBlock.lookupField(ctx.colonAttribute().id.getText(), true);
+      if (result == null)
+        return;
 
-        FieldLookupResult result = currentBlock.lookupField(name, true);
-        if (result == null)
-          return;
-
-        // Variable
-        if (result.getSymbol() instanceof Variable) {
-          result.getSymbol().noteReference(cq);
-        }
+      // Variable
+      if (result.getSymbol() instanceof Variable) {
+        result.getSymbol().noteReference(cq);
       }
     }
   }
 
-  private void widattr(WidattrWidNameContext ctx, JPNode idNode, ContextQualifier cq) {
-    if ((ctx.widName().systemHandleName() != null) && (ctx.widName().systemHandleName().THISOBJECT() != null)) {
-      if (ctx.colonAttribute().OBJCOLON(0) != null) {
-        String name = ctx.colonAttribute().id.getText();
+  // Called from widattr rule, widattrWidName option
+  // Check if THIS-OBJECT-SomeAttribute (same as previous rule)
+  private void widattr(WidattrWidNameContext ctx, ContextQualifier cq) {
+    if ((ctx.widName().systemHandleName() != null) && (ctx.widName().systemHandleName().THISOBJECT() != null)
+        && !ctx.colonAttribute().OBJCOLON().isEmpty() && (ctx.colonAttribute().OBJCOLON(0) != null)) {
+      FieldLookupResult result = currentBlock.lookupField(ctx.colonAttribute().id.getText(), true);
+      if (result == null)
+        return;
 
-        FieldLookupResult result = currentBlock.lookupField(name, true);
-        if (result == null)
-          return;
-
-        // Variable
-        if (result.getSymbol() instanceof Variable) {
-          result.getSymbol().noteReference(cq);
-        }
+      // Variable
+      if (result.getSymbol() instanceof Variable) {
+        result.getSymbol().noteReference(cq);
       }
     }
   }
 
-  private void widattr(WidattrExprt2Context ctx, JPNode idNode, ContextQualifier cq) {
+  // Called from widattr rule, widattrExprt2 option
+  private void widattr(WidattrExprt2Context ctx, ContextQualifier cq) {
     if (ctx.expressionTerm2() instanceof Exprt2FieldContext) {
       Exprt2FieldContext ctx2 = (Exprt2FieldContext) ctx.expressionTerm2();
       if (ctx.colonAttribute().OBJCOLON(0) != null) {
@@ -2635,7 +2636,7 @@ public class TreeParser extends ProparseBaseListener {
     }
   }
 
-  private void widattr(ExprtExprt2Context ctx, JPNode idNode, ContextQualifier cq) {
+  private void widattr(ExprtExprt2Context ctx, ContextQualifier cq) {
     if (ctx.expressionTerm2() instanceof Exprt2FieldContext) {
       Exprt2FieldContext ctx2 = (Exprt2FieldContext) ctx.expressionTerm2();
       if (ctx.colonAttribute().OBJCOLON(0) != null) {
@@ -2676,7 +2677,7 @@ public class TreeParser extends ProparseBaseListener {
     }
   }
 
-  public void field(ParseTree ctx, JPNode refAST, JPNode idNode, String name, ContextQualifier cq,
+  private void field(ParseTree ctx, JPNode refAST, JPNode idNode, String name, ContextQualifier cq,
       TableNameResolution resolution) {
     LOG.trace("Entering field {} {} {} {}", refAST, idNode, cq, resolution);
     FieldRefNode refNode = (FieldRefNode) refAST;
@@ -2711,9 +2712,8 @@ public class TreeParser extends ProparseBaseListener {
     } else {
       // If we are in a FIELDS phrase, then we know which table the field is from.
       // The field lookup in Table expects an unqualified name.
-      // FIXME NPE
-      String[] parts = name.split("\\.");
-      String fieldPart = parts[parts.length - 1];
+      String[] parts = Strings.nullToEmpty(name).split("\\.");
+      String fieldPart = parts.length > 0 ? parts[parts.length - 1] : "";
       TableBuffer ourBuffer = resolution == TableNameResolution.PREVIOUS ? prevTableReferenced : lastTableReferenced;
       IField field = ourBuffer.getTable().lookupField(fieldPart);
       if (field == null) {
@@ -2723,22 +2723,14 @@ public class TreeParser extends ProparseBaseListener {
         ABLNodeType parentType = refNode.getParent().getNodeType();
         if (parentType == ABLNodeType.FIELDS || parentType == ABLNodeType.EXCEPT)
           return;
-        // TODO Throw exception
       }
       FieldBuffer fieldBuffer = ourBuffer.getFieldBuffer(field);
       result = new FieldLookupResult.Builder().setSymbol(fieldBuffer).build();
     }
 
-    // TODO Once we've added static member resolution, we can re-add this test.
+    // TODO Add static resolution
     if (result == null)
       return;
-    // if (result == null)
-    // throw new Error(
-    // idNode.getFilename()
-    // + ":"
-    // + idNode.getLine()
-    // + " Unknown field or variable name: " + name
-    // );
 
     if (result.isUnqualified())
       refNode.attrSet(IConstants.UNQUALIFIED_FIELD, IConstants.TRUE);
@@ -2761,8 +2753,7 @@ public class TreeParser extends ProparseBaseListener {
     } else {
       refNode.attrSet(IConstants.STORETYPE, IConstants.ST_VAR);
     }
-
-  } // field()
+  }
 
   @Override
   public void enterEveryRule(ParserRuleContext ctx) {

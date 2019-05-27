@@ -30,7 +30,12 @@ public class DescriptiveErrorListener extends BaseErrorListener {
       String msg, RecognitionException e) {
     ProToken tok = (ProToken) offendingSymbol;
     ParserSupport support = ((Proparse) recognizer).getParserSupport();
-    LOG.error("Syntax error -- {} -- {}:{}:{} -- {}", support.getFilename(0), support.getFilename(tok.getFileIndex()),
-        line, charPositionInLine, msg);
+    if (tok.getFileIndex() != 0) {
+      LOG.error("Syntax error -- {} -- {}:{}:{} -- {}", support.getFilename(0), support.getFilename(tok.getFileIndex()),
+          line, charPositionInLine, msg);
+    } else {
+      LOG.error("Syntax error -- {}:{}:{} -- {}", support.getFilename(tok.getFileIndex()), line, charPositionInLine,
+          msg);
+    }
   }
 }

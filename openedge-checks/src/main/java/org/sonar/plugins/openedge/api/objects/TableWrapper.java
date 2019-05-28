@@ -21,9 +21,7 @@ package org.sonar.plugins.openedge.api.objects;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -45,7 +43,6 @@ public class TableWrapper implements ITable {
   private final IDatabase db;
   private final Table table;
 
-  private final Map<String, IField> fieldsMap = new HashMap<>();
   private final List<IField> fields = new ArrayList<>();
   private final List<IIndex> indexes = new ArrayList<>();
   private final SortedSet<IField> sortedFields = new TreeSet<>(Constants.FIELD_NAME_ORDER);
@@ -56,7 +53,6 @@ public class TableWrapper implements ITable {
 
     for (Field fld : table.getFields()) {
       IField iFld = new FieldWrapper(this, fld);
-      fieldsMap.put(iFld.getName().toLowerCase(), iFld);
       fields.add(iFld);
       sortedFields.add(iFld);
     }
@@ -92,7 +88,11 @@ public class TableWrapper implements ITable {
 
   @Override
   public IField lookupField(String lookupName) {
-    return fieldsMap.get(lookupName.toLowerCase());
+    for (IField fld : fields) {
+      if (fld.getName().toLowerCase().startsWith(lookupName.toLowerCase()))
+        return fld;
+    }
+    return null;
   }
 
   @Override
